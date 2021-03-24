@@ -1,0 +1,46 @@
+# Build to add Python wrapper with SWIG
+
+## Windows 
+1. Install swig by downloading swig from their webpage, the download should include a pre-compiled build for windows.
+2. Add the path to the pre-compiled swig.exe file that you downloaded to path variabel in system enviroment. 
+3. Download a C/C++ compiler such as Visual Studio(_MSC_VER) or MinGW (preferable 64bit,__GNUC__,  __MINGW32__ ).  
+4. Add the path to the downloaded pre-compiled compiler to system enviroment in windows path variabel.
+5. Test that you can access swig run in cmd.
+    ```
+    swig -version
+    ```
+    This will give you version number of your swig etc.
+6. Test you compiler by running the command to run the compiler, this will be different depending on your compiler.
+    On MinGW:
+    ```
+    g++ --version
+    ```
+    This will give output for the MinGW compiler.
+7. Start your python virtual environment or use your base environment at your own risk.
+8. Start terminal and move to iso22133 folder to the setup.py file folder.
+9. Run the following command(It will build the python extension): 
+    ```
+    python setup.py build_ext
+    ```
+10. Now install the extension to your python virtual enviroment or add the generated .pyd (i think) file to your path in system enviroment.
+11. For installation run in terminal:
+    ```
+    python setup.py install
+    ```
+    
+## Linux
+1. First install SWIG run:
+    ```
+    sudo apt install swig
+    ```
+2. Start your python virtual environment or use your base environment at your own risk.
+3. Start terminal and move to iso22133 folder to the setup.py file folder.
+4. Run the following command (it will build the python extension): 
+    ```
+    python setup.py build_ext
+    ```
+5. Now install the extension to your python virtual enviroment or add the generated .so file to your path in .bashrc(.zshrc)
+6. For installation run in terminal:
+    ```
+    python setup.py install
+    ```
