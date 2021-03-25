@@ -777,17 +777,6 @@ typedef struct {
 //! GDRM field descriptions
 static DebugStrings_t GDRMDataCodeDescription = {"Data code",	"",			&printU32};
 
-/*! RDCI message - Request Direct Control Ids*/
-typedef struct {
-	HeaderType header;
-	FooterType footer;
-} RDCIType;						//13 bytes
-
-//! RDCI value IDs
-
-//! RDCI field descriptions
-static DebugStrings_t RDCIMessageIdDescription = {"MessageID",	"",			&printU32};
-
 
 /*! DCTI message - Direct Control Transmitter Ids*/
 typedef struct {
@@ -860,9 +849,6 @@ static ISOMessageReturnValue convertHEABToHostRepresentation(
 static ISOMessageReturnValue convertGDRMToHostRepresentation(
 		GDRMType* GDRMData,
 		GdrmMessageDataType* gdrmData);
-static ISOMessageReturnValue convertRDCIToHostRepresentation(
-		RDCIType* RDCIData,
-		RdciMessageDataType* rdciData);
 static ISOMessageReturnValue convertDCTIToHostRepresentation(DCTIType* DCTIData,
 		DctiMessageDataType* dctiData);
 static void convertMONRToHostRepresentation(
@@ -4977,133 +4963,6 @@ ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuf
  }
 
 
-
-/*!
- * \brief encodeRDCIMessage Constructs an ISO RDCI message (Request Direct Control Ids)
- * \param rdciDataBuffer Data buffer in which to place encoded RDCI message
- * \param bufferLength Size of data buffer in which to place encoded RDCI message
- * \param debug Flag for enabling debugging
- * \return number of bytes written to the data buffer, or -1 if an error occurred
- */
-ssize_t encodeRDCIMessage(char *rdciDataBuffer, const size_t bufferLength,
-							const char debug) {
-
-	RDCIType RDCIData;
-
-	memset(rdciDataBuffer, 0, bufferLength);
-
-	// If buffer too small to hold RDCI data, generate an error
-	if (bufferLength < sizeof (RDCIType)) {
-		fprintf(stderr, "Buffer too small to hold necessary RDCI data\n");
-		return -1;
-	}
-
-	RDCIData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_RDCI, sizeof (RDCIType), debug);
-
-	if (debug) {
-		printf("RDCI message:\n\tMessage ID: 0x%x\n" , RDCIData.header.MessageIdU16);
-	}
-
-	// Construct footer
-	RDCIData.footer = buildISOFooter(&RDCIData, sizeof (RDCIType), debug);
-
-	memcpy(rdciDataBuffer, &RDCIData, sizeof (RDCIType));
-
-	return sizeof (RDCIType);
-}
-
-
-/*!
- * \brief decodeRDCIMessage Fills RDCI data elements from a buffer of raw data
- * \param rdciDataBuffer Raw data to be decoded
- * \param bufferLength Number of bytes in buffer of raw data to be decoded
- * \param rdciData Struct to be filled
- * \param debug Flag for enabling of debugging
- * \return value according to ::ISOMessageReturnValue
- */
-ISOMessageReturnValue decodeRDCIMessage(const char *rdciDataBuffer,
-										const size_t bufferLength,
-										RdciMessageDataType* rdciData,
-										const char debug) {
-
-	RDCIType RDCIData;
-	const char *p = rdciDataBuffer;
-	ISOMessageReturnValue retval = MESSAGE_OK;
-	uint16_t valueID = 0;
-	uint16_t contentLength = 0;
-	ssize_t expectedContentLength = 0;
-
-	if (rdciDataBuffer == NULL || rdciData == NULL) {
-		errno = EINVAL;
-		fprintf(stderr, "Input pointers to RDCI parsing function cannot be null\n");
-		return ISO_FUNCTION_ERROR;
-	}
-
-	memset(&RDCIData, 0, sizeof (RDCIData));
-	memset(rdciData, 0, sizeof (*rdciData));
-
-	// Decode ISO header
-	if ((retval = decodeISOHeader(p, bufferLength, &RDCIData.header, debug)) != MESSAGE_OK) {
-		return retval;
-	}
-	p += sizeof (RDCIData.header);
-
-	// If message is not a RDCI message, generate an error
-	if (RDCIData.header.MessageIdU16 != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_RDCI) {
-		fprintf(stderr, "Attempted to pass non-RDCI message into RDCI parsing function\n");
-		return MESSAGE_TYPE_ERROR;
-	}
-
-
-	if (RDCIData.header.MessageLengthU32 > sizeof (RDCIType) - sizeof (HeaderType) - sizeof (FooterType)) {
-		fprintf(stderr, "RDCI message exceeds expected message length\n");
-		return MESSAGE_LENGTH_ERROR;
-	}
-
-	//If data is added to the message add the retreiving code here
-
-	// Decode footer
-	if ((retval =
-		 decodeISOFooter(p, bufferLength - (size_t) (p - rdciDataBuffer), &RDCIData.footer,
-						 debug)) != MESSAGE_OK) {
-		fprintf(stderr, "Error decoding RDCI footer\n");
-		return retval;
-	}
-
-
-	if (debug) {
-		printf("RDCI message:\n");
-		printf("\tMessage id: 0x%x\n", RDCIData.header.MessageIdU16);
-	}
-
-	retval = convertRDCIToHostRepresentation(&RDCIData, rdciData);
-
-	return retval;
-}
-
-
-
-/*!
- * \brief convertRDCIToHostRepresentation Converts a RDCI message to be used by host
- * \param RDCIData Data struct containing ISO formatted data
- * \param rdciData Output data struct, to be used by host
- * \return Value according to ::ISOMessageReturnValue
- */
-ISOMessageReturnValue convertRDCIToHostRepresentation(RDCIType* RDCIData,
-		RdciMessageDataType* rdciData) {
-
-
-	if (RDCIData == NULL || rdciData == NULL) {
-		errno = EINVAL;
-		fprintf(stderr, "RDCI input pointer error");
-		return ISO_FUNCTION_ERROR;
-	}
-
-	rdciData->messageID = RDCIData->header.MessageIdU16;
-
-
-	return MESSAGE_OK;
-}
 
 
 /*!
