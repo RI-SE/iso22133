@@ -23,6 +23,9 @@ extern "C" {
 
 #include "positioning.h"
 
+#define ISO_22133_OBJECT_UDP_PORT 53240
+#define ISO_22133_DEFAULT_OBJECT_TCP_PORT 53241
+
 /*! OSEM settings */
 typedef struct {
 	uint32_t desiredTransmitterID;
