@@ -1673,6 +1673,11 @@ ssize_t encodeOSEMMessage(
 	struct tm *printableTime;
 	char *p = osemDataBuffer;
 
+	if (objectSettings == NULL) {
+		fprintf(stderr, "Invalid object settings input pointer\n");
+		return -1;
+	}
+
 	// Get local time from real time system clock
 	if (objectSettings->isTimestampValid) {
 		time_t tval = objectSettings->currentTime.tv_sec;
