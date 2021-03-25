@@ -407,7 +407,7 @@ ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const uint16_t traj
 ssize_t encodeTRAJMessagePoint(const struct timeval * pointTimeFromStart, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const float curvature, char * trajDataBufferPointer, const size_t remainingBufferLength, const char debug);
 ssize_t encodeTRAJMessageFooter(char * trajDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeSTRTMessage(const struct timeval* timeOfStart, char * strtDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeOSEMMessage(const struct timeval* controlCenterTime, const uint32_t *desiredTransmitterID, const double_t * latitude_deg, const double_t * longitude_deg, const float * altitude_m, const float * maxPositionDeviation_m, const float * maxLateralDeviation_m, const float * minimumPositioningAccuracy_m, char * osemDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeOSEMMessage(const ObjectSettingsType* objectSettingsData, char * osemDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeOSEMMessage(ObjectSettingsType *objectSettingsData, const char * osemDataBuffer, const size_t bufferLength, uint32_t *senderID, const char debug);
 ssize_t encodeOSTMMessage(const ObjectCommandType command, char * ostmDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeOSTMMessage(const char* monrDataBuffer, const size_t bufferLength, ObjectCommandType* command, const char debug);
