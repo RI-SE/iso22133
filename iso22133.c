@@ -2474,6 +2474,7 @@ ssize_t decodeHEABMessage(const char *heabDataBuffer,
 		fprintf(stderr, "Error decoding HEAB footer\n");
 		return retval;
 	}
+	p += sizeof (HEABData.footer);
 
 	if (debug) {
 		printf("HEAB message:\n");
