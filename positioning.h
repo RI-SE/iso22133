@@ -59,6 +59,7 @@ typedef enum {
 /*! Enumeration of observable object states */
 typedef enum {
 	OBJECT_STATE_UNKNOWN,
+	OBJECT_STATE_INIT,
 	OBJECT_STATE_DISARMED,
 	OBJECT_STATE_ARMED,
 	OBJECT_STATE_RUNNING,

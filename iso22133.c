@@ -3245,6 +3245,9 @@ void convertMONRToHostRepresentation(const MONRType * MONRData,
 
 	// State
 	switch (MONRData->state) {
+	case ISO_OBJECT_STATE_INIT:
+		monitorData->state = OBJECT_STATE_INIT;
+		break;
 	case ISO_OBJECT_STATE_DISARMED:
 		monitorData->state = OBJECT_STATE_DISARMED;
 		break;
@@ -3264,7 +3267,6 @@ void convertMONRToHostRepresentation(const MONRType * MONRData,
 		monitorData->state = OBJECT_STATE_REMOTE_CONTROL;
 		break;
 	case ISO_OBJECT_STATE_OFF:
-	case ISO_OBJECT_STATE_INIT:
 	default:
 		monitorData->state = OBJECT_STATE_UNKNOWN;
 		break;
