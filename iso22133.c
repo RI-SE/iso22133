@@ -878,6 +878,8 @@ static ISOMessageReturnValue verifyChecksum(
 		const char debug);
 static ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCMMData, 
 		RemoteControlManoeuvreMessageType* rcmmData);
+ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
+		GeneralResponseMessageType* gremData);
 static uint16_t crcByte(const uint16_t crc, const uint8_t byte);
 static uint16_t crc16(const uint8_t * data, size_t dataLen);
 static int encodeContent(uint16_t valueID, const void* src, char** dest, const size_t contentSize, size_t* bufferSpace, DebugStrings_t *debugStruct, const char debug);
@@ -2475,6 +2477,7 @@ ssize_t decodeHEABMessage(const char *heabDataBuffer,
 		fprintf(stderr, "Error decoding HEAB footer\n");
 		return retval;
 	}
+	p += sizeof (HEABData.footer);
 
 	if (debug) {
 		printf("HEAB message:\n");
@@ -3243,6 +3246,9 @@ void convertMONRToHostRepresentation(const MONRType * MONRData,
 
 	// State
 	switch (MONRData->state) {
+	case ISO_OBJECT_STATE_INIT:
+		monitorData->state = OBJECT_STATE_INIT;
+		break;
 	case ISO_OBJECT_STATE_DISARMED:
 		monitorData->state = OBJECT_STATE_DISARMED;
 		break;
@@ -3262,7 +3268,6 @@ void convertMONRToHostRepresentation(const MONRType * MONRData,
 		monitorData->state = OBJECT_STATE_REMOTE_CONTROL;
 		break;
 	case ISO_OBJECT_STATE_OFF:
-	case ISO_OBJECT_STATE_INIT:
 	default:
 		monitorData->state = OBJECT_STATE_UNKNOWN;
 		break;

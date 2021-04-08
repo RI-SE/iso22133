@@ -6,6 +6,7 @@
 #include "positioning.h"
 
 static const char unknownStateString[] = "UNKNOWN";
+static const char initStateString[] = "INIT";
 static const char disarmedStateString[] = "DISARMED";
 static const char armedStateString[] = "ARMED";
 static const char runningStateString[] = "RUNNING";
@@ -47,6 +48,8 @@ const char *objectStateToASCII(const ObjectStateType state) {
 		return abortingStateString;
 	case OBJECT_STATE_REMOTE_CONTROL:
 		return remoteControlStateString;
+	case OBJECT_STATE_INIT:
+		return initStateString;
 	case OBJECT_STATE_UNKNOWN:
 	default:
 		return unknownStateString;
