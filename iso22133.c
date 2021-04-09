@@ -1712,14 +1712,14 @@ ssize_t encodeOSEMMessage(
 
 	OSEMData.longitudeValueID = VALUE_ID_OSEM_LONGITUDE;
 	OSEMData.longitudeContentLength = sizeof (OSEMData.longitude) - SizeDifference64bitTo48bit;
-	OSEMData.latitude = objectSettings->coordinateSystemOrigin.isLongitudeValid ?
+	OSEMData.longitude = objectSettings->coordinateSystemOrigin.isLongitudeValid ?
 				(int64_t)(objectSettings->coordinateSystemOrigin.longitude_deg * LONGITUDE_ONE_DEGREE_VALUE)
 			  : LONGITUDE_UNAVAILABLE_VALUE;
 
 	OSEMData.altitudeValueID = VALUE_ID_OSEM_ALTITUDE;
 	OSEMData.altitudeContentLength = sizeof (OSEMData.altitude);
-	OSEMData.latitude = objectSettings->coordinateSystemOrigin.isAltitudeValid ?
-				(int64_t)(objectSettings->coordinateSystemOrigin.altitude_m * ALTITUDE_ONE_METER_VALUE)
+	OSEMData.altitude = objectSettings->coordinateSystemOrigin.isAltitudeValid ?
+				(int32_t)(objectSettings->coordinateSystemOrigin.altitude_m * ALTITUDE_ONE_METER_VALUE)
 			  : ALTITUDE_UNAVAILABLE_VALUE;
 
 	OSEMData.dateValueID = VALUE_ID_OSEM_DATE;
