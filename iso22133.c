@@ -1664,26 +1664,25 @@ ssize_t encodeTRAJMessageFooter(char *trajDataBuffer, const size_t remainingBuff
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to the buffer, or -1 in case of an error
  */
-ssize_t encodeOSEMMessage(const struct timeval *controlCenterTime,
-						  const uint32_t * desiredTransmitterID,
-						  const double_t * latitude_deg,
-						  const double_t * longitude_deg,
-						  const float *altitude_m,
-						  const float *maxWayDeviation_m,
-						  const float *maxLateralDeviation_m,
-						  const float *minimumPositioningAccuracy_m,
-						  char *osemDataBuffer,
-						  const size_t bufferLength,
-						  const char debug) {
+ssize_t encodeOSEMMessage(
+		const ObjectSettingsType* objectSettings,
+		char *osemDataBuffer,
+		const size_t bufferLength,
+		const char debug) {
 
 	const char SizeDifference64bitTo48bit = 2;
 	OSEMType OSEMData;
 	struct tm *printableTime;
 	char *p = osemDataBuffer;
 
+	if (objectSettings == NULL) {
+		fprintf(stderr, "Invalid object settings input pointer\n");
+		return -1;
+	}
+
 	// Get local time from real time system clock
-	if (controlCenterTime != NULL) {
-		time_t tval = controlCenterTime->tv_sec;
+	if (objectSettings->isTimestampValid) {
+		time_t tval = objectSettings->currentTime.tv_sec;
 		printableTime = localtime(&tval);
 	}
 
@@ -1702,61 +1701,63 @@ ssize_t encodeOSEMMessage(const struct timeval *controlCenterTime,
 	// Fill the OSEM struct with relevant values
 	OSEMData.desiredTransmitterIDValueID = VALUE_ID_OSEM_TRANSMITTER_ID;
 	OSEMData.desiredTransmitterIDContentLength = sizeof (OSEMData.desiredTransmitterID);
-	OSEMData.desiredTransmitterID = (desiredTransmitterID == NULL) ?
-				TRANSMITTER_ID_UNAVAILABLE_VALUE : *desiredTransmitterID;
+	OSEMData.desiredTransmitterID = objectSettings->isTransmitterIDValid ?
+				objectSettings->desiredTransmitterID : TRANSMITTER_ID_UNAVAILABLE_VALUE;
 
 	OSEMData.latitudeValueID = VALUE_ID_OSEM_LATITUDE;
 	OSEMData.latitudeContentLength = sizeof (OSEMData.latitude) - SizeDifference64bitTo48bit;
-	OSEMData.latitude = (latitude_deg == NULL) ?
-		LATITUDE_UNAVAILABLE_VALUE : (int64_t) (*latitude_deg * LATITUDE_ONE_DEGREE_VALUE);
+	OSEMData.latitude = objectSettings->coordinateSystemOrigin.isLatitudeValid ?
+				(int64_t)(objectSettings->coordinateSystemOrigin.latitude_deg * LATITUDE_ONE_DEGREE_VALUE)
+			  : LATITUDE_UNAVAILABLE_VALUE;
 
 	OSEMData.longitudeValueID = VALUE_ID_OSEM_LONGITUDE;
 	OSEMData.longitudeContentLength = sizeof (OSEMData.longitude) - SizeDifference64bitTo48bit;
-	OSEMData.longitude = (longitude_deg == NULL) ?
-		LONGITUDE_UNAVAILABLE_VALUE : (int64_t) (*longitude_deg * LONGITUDE_ONE_DEGREE_VALUE);
+	OSEMData.longitude = objectSettings->coordinateSystemOrigin.isLongitudeValid ?
+				(int64_t)(objectSettings->coordinateSystemOrigin.longitude_deg * LONGITUDE_ONE_DEGREE_VALUE)
+			  : LONGITUDE_UNAVAILABLE_VALUE;
 
 	OSEMData.altitudeValueID = VALUE_ID_OSEM_ALTITUDE;
 	OSEMData.altitudeContentLength = sizeof (OSEMData.altitude);
-	OSEMData.altitude = (altitude_m == NULL) ?
-		ALTITUDE_UNAVAILABLE_VALUE : (int32_t) (*altitude_m * ALTITUDE_ONE_METER_VALUE);
+	OSEMData.altitude = objectSettings->coordinateSystemOrigin.isAltitudeValid ?
+				(int32_t)(objectSettings->coordinateSystemOrigin.altitude_m * ALTITUDE_ONE_METER_VALUE)
+			  : ALTITUDE_UNAVAILABLE_VALUE;
 
 	OSEMData.dateValueID = VALUE_ID_OSEM_DATE;
 	OSEMData.dateContentLength = sizeof (OSEMData.date);
-	OSEMData.date =
-		controlCenterTime !=
-		NULL ? (uint32_t) ((printableTime->tm_year + 1900) * 10000 + (printableTime->tm_mon + 1) * 100 +
+	OSEMData.date = objectSettings->isTimestampValid ?
+				(uint32_t) ((printableTime->tm_year + 1900) * 10000 + (printableTime->tm_mon + 1) * 100 +
 						   (printableTime->tm_mday))
-		: DATE_UNAVAILABLE_VALUE;
+			  : DATE_UNAVAILABLE_VALUE;
 
 	OSEMData.GPSWeekValueID = VALUE_ID_OSEM_GPS_WEEK;
 	OSEMData.GPSWeekContentLength = sizeof (OSEMData.GPSWeek);
-	int32_t GPSWeek = getAsGPSWeek(controlCenterTime);
+	int32_t GPSWeek = getAsGPSWeek(&objectSettings->currentTime);
 
 	OSEMData.GPSWeek = GPSWeek < 0 ? GPS_WEEK_UNAVAILABLE_VALUE : (uint16_t) GPSWeek;
 
 	OSEMData.GPSQmsOfWeekValueID = VALUE_ID_OSEM_GPS_QUARTER_MILLISECOND_OF_WEEK;
 	OSEMData.GPSQmsOfWeekContentLength = sizeof (OSEMData.GPSQmsOfWeek);
-	int64_t GPSQmsOfWeek = getAsGPSQuarterMillisecondOfWeek(controlCenterTime);
+	int64_t GPSQmsOfWeek = getAsGPSQuarterMillisecondOfWeek(&objectSettings->currentTime);
 
 	OSEMData.GPSQmsOfWeek = GPSQmsOfWeek < 0 ? GPS_SECOND_OF_WEEK_UNAVAILABLE_VALUE : (uint32_t) GPSQmsOfWeek;
 
 	OSEMData.maxWayDeviationValueID = VALUE_ID_OSEM_MAX_WAY_DEVIATION;
 	OSEMData.maxWayDeviationContentLength = sizeof (OSEMData.maxWayDeviation);
-	OSEMData.maxWayDeviation = (maxWayDeviation_m == NULL) ?
-		MAX_WAY_DEVIATION_UNAVAILABLE_VALUE : (uint16_t) (*maxWayDeviation_m *
-														  MAX_WAY_DEVIATION_ONE_METER_VALUE);
+	OSEMData.maxWayDeviation = objectSettings->isPositionDeviationLimited ?
+				(uint16_t)(objectSettings->maxPositionDeviation_m * MAX_WAY_DEVIATION_ONE_METER_VALUE)
+			  : MAX_WAY_DEVIATION_UNAVAILABLE_VALUE;
 
 	OSEMData.maxLateralDeviationValueID = VALUE_ID_OSEM_MAX_LATERAL_DEVIATION;
 	OSEMData.maxLateralDeviationContentLength = sizeof (OSEMData.maxLateralDeviation);
-	OSEMData.maxLateralDeviation = (maxLateralDeviation_m == NULL) ?
-		MAX_LATERAL_DEVIATION_UNAVAILABLE_VALUE : (uint16_t) (*maxLateralDeviation_m *
-															  MAX_LATERAL_DEVIATION_ONE_METER_VALUE);
+	OSEMData.maxLateralDeviation = objectSettings->isLateralDeviationLimited ?
+				(uint16_t)(objectSettings->maxLateralDeviation_m * MAX_LATERAL_DEVIATION_ONE_METER_VALUE)
+			  : MAX_LATERAL_DEVIATION_UNAVAILABLE_VALUE;
 
 	OSEMData.minPosAccuracyValueID = VALUE_ID_OSEM_MIN_POSITIONING_ACCURACY;
 	OSEMData.minPosAccuracyContentLength = sizeof (OSEMData.minPosAccuracy);
-	OSEMData.minPosAccuracy = (minimumPositioningAccuracy_m == NULL) ?
-		MIN_POSITIONING_ACCURACY_NOT_REQUIRED_VALUE : (uint16_t) (*minimumPositioningAccuracy_m *
-																  MIN_POSITIONING_ACCURACY_ONE_METER_VALUE);
+	OSEMData.minPosAccuracy = objectSettings->isPositioningAccuracyRequired ?
+				(uint16_t)(objectSettings->minRequiredPositioningAccuracy_m * MIN_POSITIONING_ACCURACY_ONE_METER_VALUE)
+			  : MIN_POSITIONING_ACCURACY_NOT_REQUIRED_VALUE;
 
 	if (debug) {
 		printf
