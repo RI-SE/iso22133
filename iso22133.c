@@ -4266,6 +4266,7 @@ ssize_t decodeOPROMessage(
 		fprintf(stderr, "Error decoding OPRO footer\n");
 		return retval;
 	}
+	p += sizeof (OPROData.footer);
 
 	if ((retval = verifyChecksum(oproDataBuffer, OPROData.header.MessageLengthU32 + sizeof (OPROData.header),
 								 OPROData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
