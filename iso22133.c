@@ -4309,7 +4309,7 @@ ssize_t decodeOPROMessage(
 
 	// Fill output struct with parsed data
 	retval = convertOPROToHostRepresentation(&OPROData, objectPropertiesData);
-	return retval;
+	return retval < 0 ? retval : p - oproDataBuffer;
 }
 
 /*!
