@@ -396,6 +396,14 @@ typedef struct {
 	bool isObjectZDisplacementValid;
 } ForeignObjectPropertiesType;
 
+/*! STRT message contents */ 
+typedef struct {
+	uint32_t transmitterID;
+	uint16_t GPSWeek;
+	uint32_t GPSSOW;
+	struct timeval startTime;
+} StartMessageType;
+
 typedef struct{
 	GeneralResponseStatus status;
 } GeneralResponseMessageType;

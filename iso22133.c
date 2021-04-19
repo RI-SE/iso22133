@@ -885,6 +885,9 @@ static uint16_t crc16(const uint8_t * data, size_t dataLen);
 static int encodeContent(uint16_t valueID, const void* src, char** dest, const size_t contentSize, size_t* bufferSpace, DebugStrings_t *debugStruct, const char debug);
 
 static void printContent(const uint16_t valueID, const uint16_t contentLength, const void* value, DebugStrings_t* deb);
+static void convertSTRTToHostRepresentation(
+		const STRTType * STRTData,
+		StartMessageType * startdata);
 
 // Time functions
 static int8_t setToGPStime(struct timeval *time, const uint16_t GPSweek, const uint32_t GPSqmsOfWeek);
@@ -2331,6 +2334,162 @@ ssize_t encodeSTRTMessage(const struct timeval *timeOfStart, char *strtDataBuffe
 	memcpy(strtDataBuffer, &STRTData, sizeof (STRTType));
 
 	return sizeof (STRTType);
+}
+
+/*!
+ * \brief decodeSTRTMessage Fills a start message struct from a buffer of raw data
+ * \param strtDataBuffer Raw data to be decoded
+ * \param bufferLength Number of bytes in buffer of raw data to be decoded
+ * \param objectID Optional output ID of object sending the parsed STRT data
+ * \param startData Struct to be filled
+ * \param debug Flag for enabling of debugging
+ * \return Number of bytes decoded, or negative value according to ::ISOMessageReturnValue
+ */
+ssize_t decodeSTRTMessage(const char *strtDataBuffer,
+										const size_t bufferLength,
+										uint32_t * objectID,
+										StartMessageType * startData, const char debug) {
+
+	STRTType STRTData; 
+	const char *p = strtDataBuffer;
+	const uint16_t ExpectedSTRTStructSize = (uint16_t) (sizeof (STRTData) - sizeof (STRTData.header)
+														- sizeof (STRTData.footer.Crc));
+	ssize_t retval = MESSAGE_OK;
+
+	if (startData == NULL || strtDataBuffer == NULL) {
+		errno = EINVAL;
+		fprintf(stderr, "Input pointers to STRT parsing function cannot be null\n");
+		return ISO_FUNCTION_ERROR;
+	}								
+
+	// Init struct with zeros 
+	memset(startData, 0, sizeof (*startData));
+	*objectID = 0;
+
+	// Decode ISO header
+	if ((retval = decodeISOHeader(p, bufferLength, &STRTData.header, debug)) != MESSAGE_OK) {
+		memset(startData, 0, sizeof (*startData));
+		return retval;
+	}
+	p += sizeof (STRTData.header);
+	*objectID = STRTData.header.TransmitterIdU8;
+
+	// If message is not a STRT message, generate an error
+	if (STRTData.header.MessageIdU16 != MESSAGE_ID_STRT) {
+		fprintf(stderr, "Attempted to pass non-STRT message into STRT parsing function\n");
+		return MESSAGE_TYPE_ERROR;
+	}
+
+	if (STRTData.header.MessageLengthU32 > sizeof (STRTType) - sizeof (HeaderType) - sizeof (FooterType)) {
+		fprintf(stderr, "STRT message exceeds expected message length\n");
+		return MESSAGE_LENGTH_ERROR;
+	}
+	
+	// Decode content
+	memcpy(&STRTData.StartTimeValueIdU16, p, sizeof (STRTData.StartTimeValueIdU16));
+	p += sizeof (STRTData.StartTimeValueIdU16);
+	STRTData.StartTimeValueIdU16 = le16toh(STRTData.StartTimeValueIdU16);
+
+	if (STRTData.StartTimeValueIdU16 != VALUE_ID_STRT_GPS_QMS_OF_WEEK) {
+		fprintf(stderr, "StartTime Value Id differs from expected\n");
+		return MESSAGE_VALUE_ID_ERROR;
+	}
+
+	memcpy(&STRTData.StartTimeContentLengthU16, p, sizeof (STRTData.StartTimeContentLengthU16));
+	p += sizeof (STRTData.StartTimeContentLengthU16);
+	STRTData.StartTimeContentLengthU16 = le16toh(STRTData.StartTimeContentLengthU16);
+
+	if (STRTData.StartTimeContentLengthU16 != sizeof(STRTData.StartTimeU32)) {
+		fprintf(stderr, "StartTime Content Length %u differs from the expected length %u\n",
+		STRTData.StartTimeContentLengthU16, sizeof(STRTData.StartTimeU32));
+		return MESSAGE_LENGTH_ERROR;
+	}
+
+	memcpy(&STRTData.StartTimeU32, p, sizeof (STRTData.StartTimeU32));
+	p += sizeof (STRTData.StartTimeU32);
+	STRTData.StartTimeU32 = le32toh(STRTData.StartTimeU32);
+
+	memcpy(&STRTData.GPSWeekValueID, p, sizeof (STRTData.GPSWeekValueID));
+	p += sizeof (STRTData.GPSWeekValueID);
+	STRTData.GPSWeekValueID = le16toh(STRTData.GPSWeekValueID);
+
+	if (STRTData.GPSWeekValueID != VALUE_ID_STRT_GPS_WEEK) {
+		fprintf(stderr, "GPSWeek Value Id differs from expected\n");
+		return MESSAGE_VALUE_ID_ERROR;
+	}
+
+	memcpy(&STRTData.GPSWeekContentLength, p, sizeof (STRTData.GPSWeekContentLength));
+	p += sizeof (STRTData.GPSWeekContentLength);
+	STRTData.GPSWeekContentLength = le16toh(STRTData.GPSWeekContentLength);
+
+	if (STRTData.GPSWeekContentLength != sizeof(STRTData.GPSWeek)) {
+		fprintf(stderr, "GPSWeek Content Length %u differs from the expected length %u\n",
+		STRTData.GPSWeekContentLength, sizeof(STRTData.GPSWeek));
+		return MESSAGE_LENGTH_ERROR;
+	}
+
+	memcpy(&STRTData.GPSWeek, p, sizeof (STRTData.GPSWeek));
+	p += sizeof (STRTData.GPSWeek);
+	STRTData.GPSWeek = le16toh(STRTData.GPSWeek);
+
+	// Decode footer
+	if ((retval =
+		 decodeISOFooter(p, bufferLength - (size_t) (p - strtDataBuffer), &STRTData.footer,
+						 debug)) != MESSAGE_OK) {
+		fprintf(stderr, "Error decoding MONR footer\n");
+		return retval;
+	}
+	p += sizeof (STRTData.footer);
+
+	if ((retval = verifyChecksum(&STRTData, sizeof (STRTData) - sizeof (STRTData.footer),
+								 STRTData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
+		fprintf(stderr, "STRT checksum error\n");
+		return retval;
+	}
+
+	if (debug) {
+		printf("STRT:\n");
+		printf("SyncWord = %x\n", STRTData.header.SyncWordU16);
+		printf("TransmitterId = %d\n", STRTData.header.TransmitterIdU8);
+		printf("PackageCounter = %d\n", STRTData.header.MessageCounterU8);
+		printf("AckReq = %d\n", STRTData.header.AckReqProtVerU8);
+		printf("MessageId = %d\n", STRTData.header.MessageIdU16);
+		printf("MessageLength = %d\n", STRTData.header.MessageLengthU32);
+		printf("StartTime value ID: 0x%x\n", STRTData.StartTimeValueIdU16);
+		printf("StartTime content length: %u\n", STRTData.StartTimeContentLengthU16);
+ 		printf("StartTime value: %u\n", STRTData.StartTimeU32);
+		printf("GPSWeek value ID: 0x%x\n", STRTData.GPSWeekValueID);
+		printf("GPSWeek content length: %u\n", STRTData.GPSWeekContentLength);
+		printf("GPSWeek value: %u\n", STRTData.GPSWeek);
+		
+
+	}
+
+
+	// Fill output struct with parsed data
+	convertSTRTToHostRepresentation(&STRTData,startData);
+
+	return retval < 0 ? retval : p - strtDataBuffer;
+
+}
+
+/*!
+ * \brief convertSTRTToHostRepresentation Converts a STRT message to the internal representation for
+ * start data
+ * \param STRTData STRT message to be converted
+ * \param startData Struct in which result is to be placed
+ */
+
+void convertSTRTToHostRepresentation(const STRTType * STRTData,
+									 StartMessageType * startData) {
+	
+	startData->transmitterID = STRTData->header.TransmitterIdU8;
+	startData->GPSWeek = STRTData->GPSWeek;
+	startData->GPSSOW = STRTData->StartTimeU32;						
+	
+	setToGPStime(&startData->startTime,STRTData->GPSWeek,STRTData->StartTimeU32);
+
+
 }
 
 
