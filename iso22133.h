@@ -396,6 +396,14 @@ typedef struct {
 	bool isObjectZDisplacementValid;
 } ForeignObjectPropertiesType;
 
+/*! STRT message contents */ 
+typedef struct {
+	uint32_t transmitterID;
+	uint16_t GPSWeek;
+	uint32_t GPSSOW;
+	struct timeval startTime;
+} StartMessageType;
+
 typedef struct{
 	GeneralResponseStatus status;
 } GeneralResponseMessageType;
@@ -407,6 +415,7 @@ ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const uint16_t traj
 ssize_t encodeTRAJMessagePoint(const struct timeval * pointTimeFromStart, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const float curvature, char * trajDataBufferPointer, const size_t remainingBufferLength, const char debug);
 ssize_t encodeTRAJMessageFooter(char * trajDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeSTRTMessage(const struct timeval* timeOfStart, char * strtDataBuffer, const size_t bufferLength, const char debug);
+ssize_t decodeSTRTMessage(const char *strtDataBuffer, const size_t bufferLength, uint32_t * objectID, StartMessageType * startData, const char debug) ;
 ssize_t encodeOSEMMessage(const ObjectSettingsType* objectSettingsData, char * osemDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeOSEMMessage(ObjectSettingsType *objectSettingsData, const char * osemDataBuffer, const size_t bufferLength, uint32_t *senderID, const char debug);
 ssize_t encodeOSTMMessage(const ObjectCommandType command, char * ostmDataBuffer, const size_t bufferLength, const char debug);
