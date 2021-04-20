@@ -4266,6 +4266,7 @@ ssize_t decodeOPROMessage(
 		fprintf(stderr, "Error decoding OPRO footer\n");
 		return retval;
 	}
+	p += sizeof (OPROData.footer);
 
 	if ((retval = verifyChecksum(oproDataBuffer, OPROData.header.MessageLengthU32 + sizeof (OPROData.header),
 								 OPROData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
@@ -4309,7 +4310,7 @@ ssize_t decodeOPROMessage(
 
 	// Fill output struct with parsed data
 	retval = convertOPROToHostRepresentation(&OPROData, objectPropertiesData);
-	return retval;
+	return retval < 0 ? retval : p - oproDataBuffer;
 }
 
 /*!
