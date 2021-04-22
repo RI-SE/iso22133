@@ -2302,13 +2302,14 @@ ssize_t encodeSTRTMessage(const StartMessageType* startData, char *strtDataBuffe
 	STRTData.StartTimeContentLengthU16 = sizeof (STRTData.StartTimeU32);
 	int64_t startTime = getAsGPSQuarterMillisecondOfWeek(&startData->startTime);
 
-	STRTData.StartTimeU32 = startData == NULL || startTime < 0 ?
+	STRTData.StartTimeU32 = startData == NULL || startTime < 0 || !startData->isTimestampValid ?
 		GPS_SECOND_OF_WEEK_UNAVAILABLE_VALUE : (uint32_t) startTime;
 	STRTData.GPSWeekValueID = VALUE_ID_STRT_GPS_WEEK;
 	STRTData.GPSWeekContentLength = sizeof (STRTData.GPSWeek);
 	int32_t GPSWeek = getAsGPSWeek(&startData->startTime);
 
-	STRTData.GPSWeek = startData == NULL || GPSWeek < 0 ? GPS_WEEK_UNAVAILABLE_VALUE : (uint16_t) GPSWeek;
+	STRTData.GPSWeek = startData == NULL || GPSWeek < 0 || !startData->isTimestampValid ?
+				GPS_WEEK_UNAVAILABLE_VALUE : (uint16_t) GPSWeek;
 
 	if (debug) {
 		printf("STRT message:\n\tGPS second of week value ID: 0x%x\n\t"
