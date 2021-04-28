@@ -1793,7 +1793,6 @@ ssize_t encodeTRAJMessageFooter(char *trajDataBuffer, const size_t remainingBuff
 ssize_t decodeTRAJMessagePoint(
 		TrajectorWaypointType* wayPoint,
 		const char* trajDataBuffer,
-		const size_t bufferLength,
 		const char debug) {
 
 	TRAJPointType TRAJPointData;
