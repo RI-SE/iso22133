@@ -1537,7 +1537,6 @@ ssize_t decodeTRAJMessageHeader(
  */
 ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJHeaderData,
 				uint32_t trajectoryLength,	TrajectorHeaderType* trajectoryHeaderData) {
-	
 	if (TRAJHeaderData == NULL || trajectoryHeaderData == NULL) {
 		errno = EINVAL;
 		fprintf(stderr, "TRAJ header input pointer error");

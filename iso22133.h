@@ -301,8 +301,6 @@ typedef enum {
 	MANOEUVRE_BACK_TO_START = 3
 } RemoteControlManoeuvreCommandType;
 
-
-
 /**
  * @brief struct for RCMM
  * 
