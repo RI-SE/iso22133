@@ -41,6 +41,34 @@ typedef struct {
 	bool isTimestampValid;
 } ObjectSettingsType;
 
+/*! ISO message constants */
+typedef enum {
+	ISO_TRAJ_HEADER_SIZE = 91,
+	ISO_TRAJ_WAYPOINT_SIZE = 70
+} ISOConstantsType;
+
+/*! Trajectory header */
+typedef struct {
+	uint16_t trajectoryID;
+	char trajectoryName[64];
+	uint16_t trajectoryVersion;
+	uint32_t trajectoryLength;
+	uint32_t wayPoints;
+} TrajectorHeaderType;
+
+/*! Trajectory WayPoint */
+typedef struct {
+	uint32_t relativeTime;
+	int32_t xPosition;
+	int32_t yPosition;
+	int32_t zPosition;
+	uint16_t heading;
+	int16_t longitudinalSpeed;
+	int16_t lateralSpeed;
+	int16_t longitudinalAcceleration;
+	int16_t lateralAcceleration;
+	float_t curvature;
+} TrajectorWaypointType;
 
 /*! OSTM commands */
 typedef enum {
@@ -405,7 +433,9 @@ ssize_t encodeMONRMessage(const struct timeval* objectTime, const CartesianPosit
 ssize_t decodeMONRMessage(const char * monrDataBuffer, const size_t bufferLength, const struct timeval currentTime, uint32_t * objectID, ObjectMonitorType * MonitorData, const char debug);
 ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const uint16_t trajectoryVersion, const char * trajectoryName, const size_t nameLength, const uint32_t numberOfPointsInTraj, char * trajDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeTRAJMessagePoint(const struct timeval * pointTimeFromStart, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const float curvature, char * trajDataBufferPointer, const size_t remainingBufferLength, const char debug);
+ssize_t decodeTRAJMessagePoint(TrajectorWaypointType* wayPoints, const char* trajDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeTRAJMessageFooter(char * trajDataBuffer, const size_t bufferLength, const char debug);
+ssize_t decodeTRAJMessageHeader(TrajectorHeaderType* trajHeader, const char* trajDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeSTRTMessage(const struct timeval* timeOfStart, char * strtDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeOSEMMessage(const ObjectSettingsType* objectSettingsData, char * osemDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeOSEMMessage(ObjectSettingsType *objectSettingsData, const char * osemDataBuffer, const size_t bufferLength, uint32_t *senderID, const char debug);
