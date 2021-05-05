@@ -68,7 +68,7 @@ typedef struct {
 	int16_t longitudinalAcceleration;
 	int16_t lateralAcceleration;
 	float_t curvature;
-} TrajectorWaypointType;
+} TrajectoryWaypointType;
 
 /*! OSTM commands */
 typedef enum {
