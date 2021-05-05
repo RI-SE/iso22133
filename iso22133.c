@@ -178,6 +178,11 @@ typedef struct {
 	uint16_t trajectoryVersion;
 } TRAJHeaderType;
 
+//! TRAJ header field descriptions
+static DebugStrings_t TrajectoryIDDescription = {"Trajectory ID",	"",			&printU32};
+static DebugStrings_t TrajectoryNameDescription = {"Trajectory name",	"",		&printU32};
+static DebugStrings_t TrajectoryVersionDescription = {"Trajectory version",	"",	&printU32};
+
 typedef struct {
 	uint16_t relativeTimeValueID;
 	uint16_t relativeTimeContentLength;
@@ -880,6 +885,10 @@ static ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCMMData
 		RemoteControlManoeuvreMessageType* rcmmData);
 ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
 		GeneralResponseMessageType* gremData);
+static ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJHeaderData,
+				uint32_t trajectoryLength,	TrajectoryHeaderType* trajectoryHeaderData);
+static ISOMessageReturnValue convertTRAJPointToHostRepresentation(TRAJPointType* TRAJPointData,
+														TrajectoryWaypointType* wayPoint);
 static uint16_t crcByte(const uint16_t crc, const uint8_t byte);
 static uint16_t crc16(const uint8_t * data, size_t dataLen);
 static int encodeContent(uint16_t valueID, const void* src, char** dest, const size_t contentSize, size_t* bufferSpace, DebugStrings_t *debugStruct, const char debug);
@@ -1423,6 +1432,128 @@ ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const uint16_t traj
 	return sizeof (TRAJHeaderType);
 }
 
+/*!
+ * \brief decodeTRAJMessageHeader
+ * \param trajHeader Output data struct, to be used by host
+ * \param trajDataBuffer Received trajectory data buffer
+ * \param bufferLength Length of trajDataBuffer
+ * \param debug Flag for enabling debugging
+ * \return Number of bytes printed, or -1 in case of error with the following errnos:
+ *		EINVAL		if one of the input parameters are invalid
+ *		ENOBUFS		if supplied buffer is too small to hold header
+ *		EMSGSIZE	if trajectory name is too long
+ */
+ssize_t decodeTRAJMessageHeader(
+		TrajectoryHeaderType* trajHeader,
+		const char* trajDataBuffer,
+		const size_t bufferLength,
+		const char debug) {
+
+	TRAJHeaderType TRAJHeaderData;
+	const char *p = trajDataBuffer;
+	ssize_t retval = MESSAGE_OK;
+	uint16_t valueID = 0;
+	uint16_t contentLength = 0;
+	ssize_t expectedContentLength = 0;
+
+	if (trajDataBuffer == NULL || trajHeader == NULL) {
+		errno = EINVAL;
+		fprintf(stderr, "Input pointers to TRAJ header parsing function cannot be null\n");
+		return ISO_FUNCTION_ERROR;
+	}
+
+	memset(&TRAJHeaderData, 0, sizeof (TRAJHeaderData));
+	memset(trajHeader, 0, sizeof (*trajHeader));
+
+	// Decode ISO header
+	if ((retval = decodeISOHeader(p, bufferLength, &TRAJHeaderData.header, debug)) != MESSAGE_OK) {
+		return retval;
+	}
+	p += sizeof (TRAJHeaderData.header);
+
+	// If message is not a  message, generate an error
+	if (TRAJHeaderData.header.MessageIdU16 != MESSAGE_ID_TRAJ) {
+		fprintf(stderr, "Attempted to pass non-TRAJ message into TRAJ header parsing function\n");
+		return MESSAGE_TYPE_ERROR;
+	}
+
+
+	while (p - trajDataBuffer < sizeof (TRAJHeaderType)) {
+		memcpy(&valueID, p, sizeof (valueID));
+		p += sizeof (valueID);
+		memcpy(&contentLength, p, sizeof (contentLength));
+		p += sizeof (contentLength);
+		valueID = le16toh(valueID);
+		contentLength = le16toh(contentLength);
+
+		switch (valueID) {
+		case VALUE_ID_TRAJ_TRAJECTORY_IDENTIFIER:
+			TRAJHeaderData.trajectoryIDValueID = valueID;
+			TRAJHeaderData.trajectoryIDContentLength = contentLength;
+			memcpy(&TRAJHeaderData.trajectoryID, p, sizeof (TRAJHeaderData.trajectoryID));
+			expectedContentLength = sizeof (TRAJHeaderData.trajectoryID);
+			break;
+		case VALUE_ID_TRAJ_TRAJECTORY_NAME:
+			TRAJHeaderData.trajectoryNameValueID = valueID;
+			TRAJHeaderData.trajectoryNameContentLength = contentLength;
+			memcpy(&TRAJHeaderData.trajectoryName, p, contentLength);
+			expectedContentLength = TRAJ_NAME_STRING_MAX_LENGTH;
+			break;
+		case VALUE_ID_TRAJ_TRAJECTORY_VERSION:
+			TRAJHeaderData.trajectoryVersionValueID = valueID;
+			TRAJHeaderData.trajectoryVersionContentLength = contentLength;
+			memcpy(&TRAJHeaderData.trajectoryVersion, p, sizeof (TRAJHeaderData.trajectoryVersion));
+			expectedContentLength = sizeof (TRAJHeaderData.trajectoryVersion);
+			break;
+
+		default:
+			fprintf(stderr, "Value ID 0x%x does not match any known TRAJ header value IDs", valueID);
+			return MESSAGE_VALUE_ID_ERROR;
+		}
+
+		p += contentLength;
+		if (contentLength != expectedContentLength) {
+			fprintf(stderr, "Content length %u for value ID 0x%x does not match the expected %ld",
+					contentLength, valueID, expectedContentLength);
+			return MESSAGE_LENGTH_ERROR;
+		}
+	}
+
+	if (debug) {
+		printf("TRAJ header data:\n");
+		printf("\tTrajectory ID: 0x%x\n", TRAJHeaderData.trajectoryID);
+		printf("\tTrajectory name: %s\n", TRAJHeaderData.trajectoryName);
+		printf("\tTrajectory version: %u\n", TRAJHeaderData.trajectoryVersion);
+		printf("\tTRAJ length: %u bytes\n", TRAJHeaderData.header.MessageLengthU32 - sizeof(TRAJHeaderType) + sizeof(HeaderType));
+	}
+
+	// Fill output struct with parsed data
+	convertTRAJHeaderToHostRepresentation(&TRAJHeaderData, TRAJHeaderData.header.MessageLengthU32, trajHeader);
+	return retval < 0 ? retval : p - trajDataBuffer;
+}
+
+/*!
+ * \brief convertTRAJHeaderToHostRepresentation Converts a TRAJ header message to be used by host
+ * \param TRAJHeaderData Data struct containing ISO formatted data
+ * \param trajectoryHeaderData Output data struct, to be used by host
+ * \return Value according to ::ISOMessageReturnValue
+ */
+ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJHeaderData,
+				uint32_t trajectoryLength,	TrajectoryHeaderType* trajectoryHeaderData) {
+	if (TRAJHeaderData == NULL || trajectoryHeaderData == NULL) {
+		errno = EINVAL;
+		fprintf(stderr, "TRAJ header input pointer error");
+		return ISO_FUNCTION_ERROR;
+	}
+
+	trajectoryHeaderData->trajectoryID = TRAJHeaderData->trajectoryID;
+	memcpy(trajectoryHeaderData->trajectoryName, TRAJHeaderData->trajectoryName, strlen(TRAJHeaderData->trajectoryName));
+	trajectoryHeaderData->trajectoryVersion = TRAJHeaderData->trajectoryVersion;
+	trajectoryHeaderData->trajectoryLength = trajectoryLength - sizeof(TRAJHeaderType) + sizeof(HeaderType);
+	trajectoryHeaderData->nWayPoints = trajectoryHeaderData->trajectoryLength/sizeof(TRAJPointType);
+
+	return MESSAGE_OK;
+}
 
 /*!
  * \brief encodeTRAJMessagePoint Creates a TRAJ message point based on supplied values and updates an internal
@@ -1648,6 +1779,178 @@ ssize_t encodeTRAJMessageFooter(char *trajDataBuffer, const size_t remainingBuff
 	}
 
 	return sizeof (TRAJFooterType);
+}
+
+
+/*!
+ * \brief decodeTRAJMessagePoint
+ * \param trajHeader Output data struct, to be used by host
+ * \param trajDataBuffer Received trajectory data buffer
+ * \param bufferLength Length of trajDataBuffer
+ * \param debug Flag for enabling debugging
+ * \return Number of bytes printed, or -1 in case of error with the following errnos:
+ *		EINVAL		if one of the input parameters are invalid
+ *		ENOBUFS		if supplied buffer is too small to hold header
+ *		EMSGSIZE	if trajectory name is too long
+ */
+ssize_t decodeTRAJMessagePoint(
+		TrajectoryWaypointType* wayPoint,
+		const char* trajDataBuffer,
+		const char debug) {
+
+	TRAJPointType TRAJPointData;
+	const char *p = trajDataBuffer;
+	ssize_t retval = MESSAGE_OK;
+	uint16_t valueID = 0;
+	uint16_t contentLength = 0;
+	ssize_t expectedContentLength = 0;
+
+	if (trajDataBuffer == NULL || wayPoint == NULL) {
+		errno = EINVAL;
+		fprintf(stderr, "Input pointers to TRAJ points parsing function cannot be null\n");
+		return ISO_FUNCTION_ERROR;
+	}
+
+	memset(&TRAJPointData, 0, sizeof (TRAJPointData));
+	memset(wayPoint, 0, sizeof (*wayPoint));
+
+	while (p - trajDataBuffer < sizeof (TRAJPointData)) {
+		memcpy(&valueID, p, sizeof (valueID));
+		p += sizeof (valueID);
+		memcpy(&contentLength, p, sizeof (contentLength));
+		p += sizeof (contentLength);
+		valueID = le16toh(valueID);
+		contentLength = le16toh(contentLength);
+
+		switch (valueID) {
+		case VALUE_ID_TRAJ_RELATIVE_TIME:
+			TRAJPointData.relativeTimeValueID = valueID;
+			TRAJPointData.relativeTimeContentLength = contentLength;
+			memcpy(&TRAJPointData.relativeTime, p, sizeof (TRAJPointData.relativeTime));
+			expectedContentLength = sizeof (TRAJPointData.relativeTime);
+			break;
+		case VALUE_ID_TRAJ_X_POSITION:
+			TRAJPointData.xPositionValueID = valueID;
+			TRAJPointData.xPositionContentLength = contentLength;
+			memcpy(&TRAJPointData.xPosition, p, sizeof (TRAJPointData.xPosition));
+			expectedContentLength = sizeof(TRAJPointData.xPosition);
+			break;
+		case VALUE_ID_TRAJ_Y_POSITION:
+			TRAJPointData.yPositionValueID = valueID;
+			TRAJPointData.yPositionContentLength = contentLength;
+			memcpy(&TRAJPointData.yPosition, p, sizeof (TRAJPointData.yPosition));
+			expectedContentLength = sizeof(TRAJPointData.yPosition);
+			break;
+		case VALUE_ID_TRAJ_Z_POSITION:
+			TRAJPointData.zPositionValueID = valueID;
+			TRAJPointData.zPositionContentLength = contentLength;
+			memcpy(&TRAJPointData.zPosition, p, sizeof (TRAJPointData.zPosition));
+			expectedContentLength = sizeof(TRAJPointData.zPosition);
+			break;
+		case VALUE_ID_TRAJ_HEADING:
+			TRAJPointData.headingValueID = valueID;
+			TRAJPointData.headingContentLength = contentLength;
+			memcpy(&TRAJPointData.heading, p, sizeof (TRAJPointData.heading));
+			expectedContentLength = sizeof(TRAJPointData.heading);
+			break;
+		case VALUE_ID_TRAJ_LONGITUDINAL_SPEED:
+			TRAJPointData.longitudinalSpeedValueID = valueID;
+			TRAJPointData.longitudinalSpeedContentLength = contentLength;
+			memcpy(&TRAJPointData.longitudinalSpeed, p, sizeof (TRAJPointData.longitudinalSpeed));
+			expectedContentLength = sizeof(TRAJPointData.longitudinalSpeed);
+			break;
+		case VALUE_ID_TRAJ_LATERAL_SPEED:
+			TRAJPointData.lateralSpeedValueID = valueID;
+			TRAJPointData.lateralSpeedContentLength = contentLength;
+			memcpy(&TRAJPointData.lateralSpeed, p, sizeof (TRAJPointData.lateralSpeed));
+			expectedContentLength = sizeof(TRAJPointData.lateralSpeed);
+			break;
+		case VALUE_ID_TRAJ_LONGITUDINAL_ACCELERATION:
+			TRAJPointData.longitudinalAccelerationValueID = valueID;
+			TRAJPointData.longitudinalAccelerationContentLength = contentLength;
+			memcpy(&TRAJPointData.longitudinalAcceleration, p, sizeof (TRAJPointData.longitudinalAcceleration));
+			expectedContentLength = sizeof(TRAJPointData.longitudinalAcceleration);
+			break;
+		case VALUE_ID_TRAJ_LATERAL_ACCELERATION:
+			TRAJPointData.lateralAccelerationValueID = valueID;
+			TRAJPointData.lateralAccelerationContentLength = contentLength;
+			memcpy(&TRAJPointData.lateralAcceleration, p, sizeof (TRAJPointData.lateralAcceleration));
+			expectedContentLength = sizeof(TRAJPointData.lateralAcceleration);
+			break;
+		case VALUE_ID_TRAJ_CURVATURE:
+			TRAJPointData.curvatureValueID = valueID;
+			TRAJPointData.curvatureContentLength = contentLength;
+			memcpy(&TRAJPointData.curvature, p, sizeof (TRAJPointData.curvature));
+			expectedContentLength = sizeof(TRAJPointData.curvature);
+			break;
+
+		default:
+			fprintf(stderr, "Value ID 0x%x does not match any known TRAJ point value IDs\n", valueID);
+			return MESSAGE_VALUE_ID_ERROR;
+		}
+
+		p += contentLength;
+		if (contentLength != expectedContentLength) {
+			fprintf(stderr, "Content length %u for value ID 0x%x does not match the expected %ld\n",
+					contentLength, valueID, expectedContentLength);
+			return MESSAGE_LENGTH_ERROR;
+		}
+	}
+
+	if (debug) {
+		printf("TRAJ point data:\n");
+		printf("\tTRAJPointData.relativeTimeValueID: %x\n", TRAJPointData.relativeTimeValueID);
+		printf("\tTRAJPointData.relativeTimeContentLength : %d\n", TRAJPointData.relativeTimeContentLength);
+		printf("\tTRAJPointData Time: %d\n", TRAJPointData.relativeTime);
+		printf("\tTRAJPointData X: %d\n", TRAJPointData.xPosition);
+		printf("\tTRAJPointData Y: %d\n", TRAJPointData.yPosition);
+		printf("\tTRAJPointData Z: %d\n", TRAJPointData.zPosition);
+		printf("\tTRAJPointData Heading: %d\n", TRAJPointData.heading);
+		printf("\tTRAJPointData Longitudinal speed: %d\n", TRAJPointData.longitudinalSpeed);
+		printf("\tTRAJPointData Lateral speed: %d\n", TRAJPointData.lateralSpeed);
+		printf("\tTRAJPointData Longitudinal acceleration: %d\n", TRAJPointData.longitudinalAcceleration);
+		printf("\tTRAJPointData Lateral acceleration: %d\n", TRAJPointData.lateralAcceleration);
+		printf("\tTRAJPointData Curvature: %3.3f\n", TRAJPointData.curvature);
+		printf("\tRaw data: ");
+		for(int i = 0; i<sizeof(TRAJPointType); i ++) printf("%x-", (unsigned char*)trajDataBuffer[i]);
+		printf("\n");
+	}
+
+	// Fill output struct with parsed data
+	convertTRAJPointToHostRepresentation(&TRAJPointData, wayPoint);
+	return retval < 0 ? retval : p - trajDataBuffer;
+}
+
+
+
+/*!
+ * \brief convertTRAJPointToHostRepresentation Converts a TRAJ header message to be used by host
+ * \param TRAJPointData Data struct containing ISO formatted data
+ * \param wayPoint Output data struct, to be used by host
+ * \return Value according to ::ISOMessageReturnValue
+ */
+ISOMessageReturnValue convertTRAJPointToHostRepresentation(TRAJPointType* TRAJPointData,
+														TrajectoryWaypointType* wayPoint) {
+	
+	if (TRAJPointData == NULL || wayPoint == NULL) {
+		errno = EINVAL;
+		fprintf(stderr, "TRAJ point input pointer error");
+		return ISO_FUNCTION_ERROR;
+	}
+
+	//Need to check data available and endians here ....
+	wayPoint->relativeTime = TRAJPointData->relativeTime;
+	wayPoint->xPosition = TRAJPointData->xPosition;
+	wayPoint->yPosition = TRAJPointData->yPosition;
+	wayPoint->zPosition = TRAJPointData->zPosition;
+	wayPoint->heading = TRAJPointData->heading;
+	wayPoint->longitudinalSpeed = TRAJPointData->longitudinalSpeed;
+	wayPoint->lateralSpeed = TRAJPointData->lateralSpeed;
+	wayPoint->longitudinalAcceleration = TRAJPointData->longitudinalAcceleration;
+	wayPoint->lateralAcceleration = TRAJPointData->lateralAcceleration;
+	wayPoint->curvature = TRAJPointData->curvature;
+	
+	return MESSAGE_OK;
 }
 
 
