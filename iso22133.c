@@ -1883,7 +1883,7 @@ ssize_t decodeTRAJMessagePoint(
 			break;
 
 		default:
-			fprintf(stderr, "Value ID 0x%x does not match any known TRAJ point value IDs", valueID);
+			fprintf(stderr, "Value ID 0x%x does not match any known TRAJ point value IDs\n", valueID);
 			return MESSAGE_VALUE_ID_ERROR;
 		}
 
