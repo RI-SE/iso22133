@@ -894,6 +894,8 @@ static uint16_t crc16(const uint8_t * data, size_t dataLen);
 static int encodeContent(uint16_t valueID, const void* src, char** dest, const size_t contentSize, size_t* bufferSpace, DebugStrings_t *debugStruct, const char debug);
 
 static void printContent(const uint16_t valueID, const uint16_t contentLength, const void* value, DebugStrings_t* deb);
+static ISOMessageReturnValue convertSTRTToHostRepresentation(const STRTType * STRTData, const struct timeval* currentTime,
+		StartMessageType * startdata);
 
 // Time functions
 static int8_t setToGPStime(struct timeval *time, const uint16_t GPSweek, const uint32_t GPSqmsOfWeek);
@@ -2583,7 +2585,7 @@ ssize_t decodeOSTMMessage(
  * \param debug Flag for enabling debugging
  * \return number of bytes written to the data buffer, or -1 if an error occurred
  */
-ssize_t encodeSTRTMessage(const struct timeval *timeOfStart, char *strtDataBuffer,
+ssize_t encodeSTRTMessage(const StartMessageType* startData, char *strtDataBuffer,
 						  const size_t bufferLength, const char debug) {
 
 	STRTType STRTData;
@@ -2601,15 +2603,16 @@ ssize_t encodeSTRTMessage(const struct timeval *timeOfStart, char *strtDataBuffe
 	// Fill contents
 	STRTData.StartTimeValueIdU16 = VALUE_ID_STRT_GPS_QMS_OF_WEEK;
 	STRTData.StartTimeContentLengthU16 = sizeof (STRTData.StartTimeU32);
-	int64_t startTime = getAsGPSQuarterMillisecondOfWeek(timeOfStart);
+	int64_t startTime = getAsGPSQuarterMillisecondOfWeek(&startData->startTime);
 
-	STRTData.StartTimeU32 = timeOfStart == NULL || startTime < 0 ?
+	STRTData.StartTimeU32 = startData == NULL || startTime < 0 || !startData->isTimestampValid ?
 		GPS_SECOND_OF_WEEK_UNAVAILABLE_VALUE : (uint32_t) startTime;
 	STRTData.GPSWeekValueID = VALUE_ID_STRT_GPS_WEEK;
 	STRTData.GPSWeekContentLength = sizeof (STRTData.GPSWeek);
-	int32_t GPSWeek = getAsGPSWeek(timeOfStart);
+	int32_t GPSWeek = getAsGPSWeek(&startData->startTime);
 
-	STRTData.GPSWeek = timeOfStart == NULL || GPSWeek < 0 ? GPS_WEEK_UNAVAILABLE_VALUE : (uint16_t) GPSWeek;
+	STRTData.GPSWeek = startData == NULL || GPSWeek < 0 || !startData->isTimestampValid ?
+				GPS_WEEK_UNAVAILABLE_VALUE : (uint16_t) GPSWeek;
 
 	if (debug) {
 		printf("STRT message:\n\tGPS second of week value ID: 0x%x\n\t"
@@ -2634,6 +2637,185 @@ ssize_t encodeSTRTMessage(const struct timeval *timeOfStart, char *strtDataBuffe
 	memcpy(strtDataBuffer, &STRTData, sizeof (STRTType));
 
 	return sizeof (STRTType);
+}
+
+/*!
+ * \brief decodeSTRTMessage Fills a start message struct from a buffer of raw data
+ * \param strtDataBuffer Raw data to be decoded
+ * \param bufferLength Number of bytes in buffer of raw data to be decoded
+ * \param currentTime Current system time, for determining current GPS week
+ * \param startData Struct to be filled
+ * \param debug Flag for enabling of debugging
+ * \return Number of bytes decoded, or negative value according to ::ISOMessageReturnValue
+ */
+ssize_t decodeSTRTMessage(
+		const char *strtDataBuffer,
+		const size_t bufferLength,
+		const struct timeval* currentTime,
+		StartMessageType * startData,
+		const char debug) {
+
+	STRTType STRTData; 
+	const char *p = strtDataBuffer;
+	const uint16_t ExpectedSTRTStructSize = (uint16_t) (sizeof (STRTData) - sizeof (STRTData.header)
+														- sizeof (STRTData.footer.Crc));
+	ssize_t retval = MESSAGE_OK;
+
+	if (startData == NULL || strtDataBuffer == NULL) {
+		errno = EINVAL;
+		fprintf(stderr, "Input pointers to STRT parsing function cannot be null\n");
+		return ISO_FUNCTION_ERROR;
+	}								
+
+	// Init struct with zeros 
+	memset(startData, 0, sizeof (*startData));
+
+	// Decode ISO header
+	if ((retval = decodeISOHeader(p, bufferLength, &STRTData.header, debug)) != MESSAGE_OK) {
+		memset(startData, 0, sizeof (*startData));
+		return retval;
+	}
+	p += sizeof (STRTData.header);
+
+	// If message is not a STRT message, generate an error
+	if (STRTData.header.MessageIdU16 != MESSAGE_ID_STRT) {
+		fprintf(stderr, "Attempted to pass non-STRT message into STRT parsing function\n");
+		return MESSAGE_TYPE_ERROR;
+	}
+
+	if (STRTData.header.MessageLengthU32 > sizeof (STRTType) - sizeof (HeaderType) - sizeof (FooterType)) {
+		fprintf(stderr, "STRT message exceeds expected message length\n");
+		return MESSAGE_LENGTH_ERROR;
+	}
+	
+	// Decode content
+	memcpy(&STRTData.StartTimeValueIdU16, p, sizeof (STRTData.StartTimeValueIdU16));
+	p += sizeof (STRTData.StartTimeValueIdU16);
+	STRTData.StartTimeValueIdU16 = le16toh(STRTData.StartTimeValueIdU16);
+
+	if (STRTData.StartTimeValueIdU16 != VALUE_ID_STRT_GPS_QMS_OF_WEEK) {
+		fprintf(stderr, "StartTime Value Id differs from expected\n");
+		return MESSAGE_VALUE_ID_ERROR;
+	}
+
+	memcpy(&STRTData.StartTimeContentLengthU16, p, sizeof (STRTData.StartTimeContentLengthU16));
+	p += sizeof (STRTData.StartTimeContentLengthU16);
+	STRTData.StartTimeContentLengthU16 = le16toh(STRTData.StartTimeContentLengthU16);
+
+	if (STRTData.StartTimeContentLengthU16 != sizeof(STRTData.StartTimeU32)) {
+		fprintf(stderr, "StartTime Content Length %u differs from the expected length %lu\n",
+		STRTData.StartTimeContentLengthU16, sizeof(STRTData.StartTimeU32));
+		return MESSAGE_CONTENT_OUT_OF_RANGE;
+	}
+
+	memcpy(&STRTData.StartTimeU32, p, sizeof (STRTData.StartTimeU32));
+	p += sizeof (STRTData.StartTimeU32);
+	STRTData.StartTimeU32 = le32toh(STRTData.StartTimeU32);
+
+	memcpy(&STRTData.GPSWeekValueID, p, sizeof (STRTData.GPSWeekValueID));
+	p += sizeof (STRTData.GPSWeekValueID);
+	STRTData.GPSWeekValueID = le16toh(STRTData.GPSWeekValueID);
+
+	if (STRTData.GPSWeekValueID != VALUE_ID_STRT_GPS_WEEK) {
+		fprintf(stderr, "GPSWeek Value Id differs from expected\n");
+		return MESSAGE_VALUE_ID_ERROR;
+	}
+
+	memcpy(&STRTData.GPSWeekContentLength, p, sizeof (STRTData.GPSWeekContentLength));
+	p += sizeof (STRTData.GPSWeekContentLength);
+	STRTData.GPSWeekContentLength = le16toh(STRTData.GPSWeekContentLength);
+
+	if (STRTData.GPSWeekContentLength != sizeof(STRTData.GPSWeek)) {
+		fprintf(stderr, "GPSWeek Content Length %u differs from the expected length %lu\n",
+		STRTData.GPSWeekContentLength, sizeof(STRTData.GPSWeek));
+		return MESSAGE_CONTENT_OUT_OF_RANGE;
+	}
+
+	memcpy(&STRTData.GPSWeek, p, sizeof (STRTData.GPSWeek));
+	p += sizeof (STRTData.GPSWeek);
+	STRTData.GPSWeek = le16toh(STRTData.GPSWeek);
+
+	// Decode footer
+	if ((retval =
+		 decodeISOFooter(p, bufferLength - (size_t) (p - strtDataBuffer), &STRTData.footer,
+						 debug)) != MESSAGE_OK) {
+		fprintf(stderr, "Error decoding STRT footer\n");
+		return retval;
+	}
+	p += sizeof (STRTData.footer);
+
+	if ((retval = verifyChecksum(&STRTData, sizeof (STRTData) - sizeof (STRTData.footer),
+								 STRTData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
+		fprintf(stderr, "STRT checksum error\n");
+		return retval;
+	}
+
+	if (debug) {
+		printf("STRT:\n");
+		printf("SyncWord = %x\n", STRTData.header.SyncWordU16);
+		printf("TransmitterId = %d\n", STRTData.header.TransmitterIdU8);
+		printf("PackageCounter = %d\n", STRTData.header.MessageCounterU8);
+		printf("AckReq = %d\n", STRTData.header.AckReqProtVerU8);
+		printf("MessageId = %d\n", STRTData.header.MessageIdU16);
+		printf("MessageLength = %d\n", STRTData.header.MessageLengthU32);
+		printf("StartTime value ID: 0x%x\n", STRTData.StartTimeValueIdU16);
+		printf("StartTime content length: %u\n", STRTData.StartTimeContentLengthU16);
+ 		printf("StartTime value: %u\n", STRTData.StartTimeU32);
+		printf("GPSWeek value ID: 0x%x\n", STRTData.GPSWeekValueID);
+		printf("GPSWeek content length: %u\n", STRTData.GPSWeekContentLength);
+		printf("GPSWeek value: %u\n", STRTData.GPSWeek);
+	}
+
+
+	// Fill output struct with parsed data
+	convertSTRTToHostRepresentation(&STRTData,currentTime,startData);
+
+	return retval < 0 ? retval : p - strtDataBuffer;
+
+}
+
+/*!
+ * \brief convertSTRTToHostRepresentation Converts a STRT message to the internal representation for
+ * start data
+ * \param STRTData STRT message to be converted
+ * \param startData Struct in which result is to be placed
+ */
+
+ISOMessageReturnValue convertSTRTToHostRepresentation(
+		const STRTType * STRTData,
+		const struct timeval* currentTime,
+		StartMessageType * startData) {
+	uint16_t gpsWeek = 0;
+	if (currentTime) {
+		gpsWeek = (uint16_t)getAsGPSWeek(currentTime);
+	}
+
+	if (!STRTData || !startData) {
+		errno = EINVAL;
+		fprintf(stderr, "STRT input pointer error");
+		return ISO_FUNCTION_ERROR;
+	}
+
+	if (STRTData->StartTimeU32 == GPS_SECOND_OF_WEEK_UNAVAILABLE_VALUE) {
+		startData->isTimestampValid = 0;
+		return MESSAGE_OK;
+	}
+	else if (STRTData->GPSWeek == GPS_WEEK_UNAVAILABLE_VALUE) {
+		if (!currentTime) {
+			startData->isTimestampValid = 0;
+			return MESSAGE_OK;
+		}
+		setToGPStime(&startData->startTime, gpsWeek, STRTData->StartTimeU32);
+	}
+	else {
+		if (currentTime && STRTData->GPSWeek != gpsWeek) {
+			fprintf(stderr, "Parsed STRT message with non-matching GPS week");
+			startData->isTimestampValid = 0;
+			return MESSAGE_OK;
+		}
+		setToGPStime(&startData->startTime, STRTData->GPSWeek, STRTData->StartTimeU32);
+	}
+	return MESSAGE_OK;
 }
 
 
@@ -4569,6 +4751,7 @@ ssize_t decodeOPROMessage(
 		fprintf(stderr, "Error decoding OPRO footer\n");
 		return retval;
 	}
+	p += sizeof (OPROData.footer);
 
 	if ((retval = verifyChecksum(oproDataBuffer, OPROData.header.MessageLengthU32 + sizeof (OPROData.header),
 								 OPROData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
@@ -4612,7 +4795,7 @@ ssize_t decodeOPROMessage(
 
 	// Fill output struct with parsed data
 	retval = convertOPROToHostRepresentation(&OPROData, objectPropertiesData);
-	return retval;
+	return retval < 0 ? retval : p - oproDataBuffer;
 }
 
 /*!
