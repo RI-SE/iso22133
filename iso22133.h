@@ -54,7 +54,7 @@ typedef struct {
 	uint16_t trajectoryVersion;
 	uint32_t trajectoryLength;
 	uint32_t wayPoints;
-} TrajectorHeaderType;
+} TrajectoryHeaderType;
 
 /*! Trajectory WayPoint */
 typedef struct {
