@@ -1889,7 +1889,7 @@ ssize_t decodeTRAJMessagePoint(
 
 		p += contentLength;
 		if (contentLength != expectedContentLength) {
-			fprintf(stderr, "Content length %u for value ID 0x%x does not match the expected %ld",
+			fprintf(stderr, "Content length %u for value ID 0x%x does not match the expected %ld\n",
 					contentLength, valueID, expectedContentLength);
 			return MESSAGE_LENGTH_ERROR;
 		}
