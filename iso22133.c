@@ -886,9 +886,9 @@ static ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCMMData
 ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
 		GeneralResponseMessageType* gremData);
 static ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJHeaderData,
-				uint32_t trajectoryLength,	TrajectorHeaderType* trajectoryHeaderData);
+				uint32_t trajectoryLength,	TrajectoryHeaderType* trajectoryHeaderData);
 static ISOMessageReturnValue convertTRAJPointToHostRepresentation(TRAJPointType* TRAJPointData,
-														TrajectorWaypointType* wayPoint);
+														TrajectoryWaypointType* wayPoint);
 static uint16_t crcByte(const uint16_t crc, const uint8_t byte);
 static uint16_t crc16(const uint8_t * data, size_t dataLen);
 static int encodeContent(uint16_t valueID, const void* src, char** dest, const size_t contentSize, size_t* bufferSpace, DebugStrings_t *debugStruct, const char debug);
@@ -1442,7 +1442,7 @@ ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const uint16_t traj
  *		EMSGSIZE	if trajectory name is too long
  */
 ssize_t decodeTRAJMessageHeader(
-		TrajectorHeaderType* trajHeader,
+		TrajectoryHeaderType* trajHeader,
 		const char* trajDataBuffer,
 		const size_t bufferLength,
 		const char debug) {
@@ -1537,7 +1537,7 @@ ssize_t decodeTRAJMessageHeader(
  * \return Value according to ::ISOMessageReturnValue
  */
 ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJHeaderData,
-				uint32_t trajectoryLength,	TrajectorHeaderType* trajectoryHeaderData) {
+				uint32_t trajectoryLength,	TrajectoryHeaderType* trajectoryHeaderData) {
 	if (TRAJHeaderData == NULL || trajectoryHeaderData == NULL) {
 		errno = EINVAL;
 		fprintf(stderr, "TRAJ header input pointer error");
@@ -1548,7 +1548,7 @@ ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJ
 	memcpy(trajectoryHeaderData->trajectoryName, TRAJHeaderData->trajectoryName, strlen(TRAJHeaderData->trajectoryName));
 	trajectoryHeaderData->trajectoryVersion = TRAJHeaderData->trajectoryVersion;
 	trajectoryHeaderData->trajectoryLength = trajectoryLength - sizeof(TRAJHeaderType) + sizeof(HeaderType);
-	trajectoryHeaderData->wayPoints = trajectoryHeaderData->trajectoryLength/sizeof(TRAJPointType);
+	trajectoryHeaderData->nWayPoints = trajectoryHeaderData->trajectoryLength/sizeof(TRAJPointType);
 
 	return MESSAGE_OK;
 }
@@ -1792,7 +1792,7 @@ ssize_t encodeTRAJMessageFooter(char *trajDataBuffer, const size_t remainingBuff
  *		EMSGSIZE	if trajectory name is too long
  */
 ssize_t decodeTRAJMessagePoint(
-		TrajectorWaypointType* wayPoint,
+		TrajectoryWaypointType* wayPoint,
 		const char* trajDataBuffer,
 		const char debug) {
 
@@ -1928,7 +1928,7 @@ ssize_t decodeTRAJMessagePoint(
  * \return Value according to ::ISOMessageReturnValue
  */
 ISOMessageReturnValue convertTRAJPointToHostRepresentation(TRAJPointType* TRAJPointData,
-														TrajectorWaypointType* wayPoint) {
+														TrajectoryWaypointType* wayPoint) {
 	
 	if (TRAJPointData == NULL || wayPoint == NULL) {
 		errno = EINVAL;
