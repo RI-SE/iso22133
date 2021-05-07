@@ -2758,9 +2758,9 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	MONRData.gpsQmsOfWeek =
 		GPSQmsOfWeek >= 0 ? (uint32_t) GPSQmsOfWeek : GPS_SECOND_OF_WEEK_UNAVAILABLE_VALUE;
 	if (position.isPositionValid) {
-		position.isXcoordValid ? MONRData.xPosition = (int32_t) (position.xCoord_m * POSITION_ONE_METER_VALUE) : POSITION_UNAVAILABLE_VALUE;
-		position.isYcoordValid ? MONRData.yPosition = (int32_t) (position.yCoord_m * POSITION_ONE_METER_VALUE) : POSITION_UNAVAILABLE_VALUE;
-		position.isZcoordValid ? MONRData.zPosition = (int32_t) (position.zCoord_m * POSITION_ONE_METER_VALUE) : POSITION_UNAVAILABLE_VALUE;
+		position.isXcoordValid ? MONRData.xPosition = (int32_t) (position.xCoord_m * POSITION_ONE_METER_VALUE) : MONRData.xPosition = POSITION_UNAVAILABLE_VALUE;
+		position.isYcoordValid ? MONRData.yPosition = (int32_t) (position.yCoord_m * POSITION_ONE_METER_VALUE) : MONRData.xPosition = POSITION_UNAVAILABLE_VALUE;
+		position.isZcoordValid ? MONRData.zPosition = (int32_t) (position.zCoord_m * POSITION_ONE_METER_VALUE) : MONRData.xPosition = POSITION_UNAVAILABLE_VALUE;
 	}
 	else {
 		errno = EINVAL;
