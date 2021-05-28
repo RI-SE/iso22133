@@ -58,15 +58,10 @@ typedef struct {
 
 /*! Trajectory WayPoint */
 typedef struct {
-	uint32_t relativeTime;
-	int32_t xPosition;
-	int32_t yPosition;
-	int32_t zPosition;
-	uint16_t heading;
-	int16_t longitudinalSpeed;
-	int16_t lateralSpeed;
-	int16_t longitudinalAcceleration;
-	int16_t lateralAcceleration;
+	struct timeval relativeTime;
+	CartesianPosition pos;
+	SpeedType spd;
+	AccelerationType acc;
 	float_t curvature;
 } TrajectoryWaypointType;
 
