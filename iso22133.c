@@ -1904,6 +1904,17 @@ ssize_t decodeTRAJMessagePoint(
 		}
 	}
 
+	TRAJPointData.relativeTime = le32toh(TRAJPointData.relativeTime);
+	TRAJPointData.xPosition = (int32_t)le32toh(TRAJPointData.xPosition);
+	TRAJPointData.yPosition = (int32_t)le32toh(TRAJPointData.yPosition);
+	TRAJPointData.zPosition = (int32_t)le32toh(TRAJPointData.zPosition);
+	TRAJPointData.heading = le16toh(TRAJPointData.heading);
+	TRAJPointData.longitudinalSpeed = (int16_t)le16toh(TRAJPointData.longitudinalSpeed);
+	TRAJPointData.lateralSpeed = (int16_t)le16toh(TRAJPointData.lateralSpeed);
+	TRAJPointData.longitudinalAcceleration = (int16_t)le16toh(TRAJPointData.longitudinalAcceleration);
+	TRAJPointData.lateralAcceleration = (int16_t)le16toh(TRAJPointData.lateralAcceleration);
+	// curvature is floating point, let's not mess with endianness?
+
 	if (debug) {
 		printf("TRAJ point data:\n");
 		printf("\tTRAJPointData.relativeTimeValueID: %x\n", TRAJPointData.relativeTimeValueID);
@@ -1936,8 +1947,9 @@ ssize_t decodeTRAJMessagePoint(
  * \param wayPoint Output data struct, to be used by host
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue convertTRAJPointToHostRepresentation(TRAJPointType* TRAJPointData,
-														TrajectoryWaypointType* wayPoint) {
+ISOMessageReturnValue convertTRAJPointToHostRepresentation(
+		TRAJPointType* TRAJPointData,
+		TrajectoryWaypointType* wayPoint) {
 	
 	if (TRAJPointData == NULL || wayPoint == NULL) {
 		errno = EINVAL;
@@ -1946,15 +1958,28 @@ ISOMessageReturnValue convertTRAJPointToHostRepresentation(TRAJPointType* TRAJPo
 	}
 
 	//Need to check data available and endians here ....
-	wayPoint->relativeTime = TRAJPointData->relativeTime;
-	wayPoint->xPosition = TRAJPointData->xPosition;
-	wayPoint->yPosition = TRAJPointData->yPosition;
-	wayPoint->zPosition = TRAJPointData->zPosition;
-	wayPoint->heading = TRAJPointData->heading;
-	wayPoint->longitudinalSpeed = TRAJPointData->longitudinalSpeed;
-	wayPoint->lateralSpeed = TRAJPointData->lateralSpeed;
-	wayPoint->longitudinalAcceleration = TRAJPointData->longitudinalAcceleration;
-	wayPoint->lateralAcceleration = TRAJPointData->lateralAcceleration;
+	wayPoint->relativeTime.tv_sec = (long) (TRAJPointData->relativeTime / RELATIVE_TIME_ONE_SECOND_VALUE);
+	wayPoint->relativeTime.tv_usec = (long) ((TRAJPointData->relativeTime
+			- wayPoint->relativeTime.tv_sec * RELATIVE_TIME_ONE_SECOND_VALUE) / RELATIVE_TIME_ONE_SECOND_VALUE
+			* 1000000.0);
+	wayPoint->pos.xCoord_m = TRAJPointData->xPosition / POSITION_ONE_METER_VALUE;
+	wayPoint->pos.yCoord_m = TRAJPointData->yPosition / POSITION_ONE_METER_VALUE;
+	wayPoint->pos.zCoord_m = TRAJPointData->zPosition / POSITION_ONE_METER_VALUE;
+	wayPoint->pos.isPositionValid = TRAJPointData->xPositionValueID != 0
+			&& TRAJPointData->yPositionValueID  != 0 && TRAJPointData->zPositionValueID != 0;
+	wayPoint->pos.heading_rad = TRAJPointData->heading / HEADING_ONE_DEGREE_VALUE * M_PI / 180.0;
+	wayPoint->pos.heading_rad = mapISOHeadingToHostHeading(wayPoint->pos.heading_rad);
+	wayPoint->pos.isHeadingValid = TRAJPointData->headingValueID != 0;
+	wayPoint->spd.longitudinal_m_s = TRAJPointData->longitudinalSpeed / SPEED_ONE_METER_PER_SECOND_VALUE;
+	wayPoint->spd.isLongitudinalValid = TRAJPointData->longitudinalSpeedValueID != 0;
+	wayPoint->spd.lateral_m_s = TRAJPointData->lateralSpeed / SPEED_ONE_METER_PER_SECOND_VALUE;
+	wayPoint->spd.isLateralValid = TRAJPointData->lateralSpeedValueID != 0;
+	wayPoint->acc.longitudinal_m_s2 = TRAJPointData->longitudinalAcceleration
+			/ ACCELERATION_ONE_METER_PER_SECOND_SQUARED_VALUE;
+	wayPoint->acc.isLongitudinalValid = TRAJPointData->longitudinalAccelerationValueID != 0;
+	wayPoint->acc.lateral_m_s2 = TRAJPointData->lateralAcceleration
+			/ ACCELERATION_ONE_METER_PER_SECOND_SQUARED_VALUE;
+	wayPoint->acc.isLateralValid = TRAJPointData->lateralAccelerationValueID != 0;
 	wayPoint->curvature = TRAJPointData->curvature;
 	
 	return MESSAGE_OK;
