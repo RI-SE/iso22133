@@ -324,11 +324,6 @@ typedef struct {
 	ControlCenterStatusType controlCenterStatus;
 } HeabMessageDataType;
 
-/*! RDCI message contents */
-typedef struct {
-	uint16_t messageID; //Just to fill the struct with something //TODO change this
-} RdciMessageDataType;
-
 /*! DCTI message contents */
 typedef struct {
 	uint16_t totalCount;
@@ -453,8 +448,6 @@ ssize_t decodeRCMMMessage( const char *rcmmDataBuffer, const size_t bufferLength
 ssize_t encodeINSUPMessage(const SupervisorCommandType, char * insupDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData, char *dctiDataBuffer, const size_t bufferLength, const char debug);
 ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer, const size_t bufferLength, DctiMessageDataType* dctiData, const char debug);
-ssize_t encodeRDCIMessage(char *rdciDataBuffer, const size_t bufferLength, const char debug);
-ISOMessageReturnValue decodeRDCIMessage(const char *rdciDataBuffer, const size_t bufferLength,RdciMessageDataType* rdciData, const char debug);
 ISOMessageID getISOMessageType(const char * messageData, const size_t length, const char debug);
 void setISOCRCVerification(const int8_t enabled);
 void setTransmitterID(const uint8_t transmitterID);
