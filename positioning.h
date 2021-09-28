@@ -65,8 +65,10 @@ typedef enum {
 	OBJECT_STATE_RUNNING,
 	OBJECT_STATE_POSTRUN,
 	OBJECT_STATE_ABORTING,
-	OBJECT_STATE_REMOTE_CONTROL
-} ObjectStateType;
+    OBJECT_STATE_REMOTE_CONTROL,
+    OBJECT_STATE_PRE_ARMING,
+    OBJECT_STATE_PRE_RUNNING
+} ObjectStateType; // TODO give numbers
 
 /*! Enumeration of ready to arm statuses of an object */
 typedef enum {
