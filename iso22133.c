@@ -2475,7 +2475,8 @@ ssize_t encodeOSTMMessage(const ObjectCommandType command, char *ostmDataBuffer,
 	// Check vs allowed commands
 	if (!
 		(command == OBJECT_COMMAND_ARM || command == OBJECT_COMMAND_DISARM
-		 || command == OBJECT_COMMAND_REMOTE_CONTROL)) {
+		 || command == OBJECT_COMMAND_REMOTE_CONTROL
+		 || command == OBJECT_COMMAND_ALL_CLEAR)) {
 		fprintf(stderr, "OSTM does not support command %u\n", (uint8_t) command);
 		return -1;
 	}
