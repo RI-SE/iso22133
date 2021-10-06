@@ -69,7 +69,8 @@ typedef struct {
 typedef enum {
 	OBJECT_COMMAND_ARM = 0x02,				//!< Request to arm the target object
 	OBJECT_COMMAND_DISARM = 0x03,			//!< Request to disarm the target object
-	OBJECT_COMMAND_REMOTE_CONTROL = 0x06	//!< Request for remote control of the target object
+    OBJECT_COMMAND_REMOTE_CONTROL = 0x06,	//!< Request for remote control of the target object
+    OBJECT_COMMAND_ALL_CLEAR = 0x0A         //!< Signal that abort no longer necessary
 } ObjectCommandType;
 
 
@@ -81,7 +82,7 @@ typedef enum {
 	CONTROL_CENTER_STATUS_ABORT = 0x02,			//!<
 	CONTROL_CENTER_STATUS_RUNNING = 0x03,		//!<
 	CONTROL_CENTER_STATUS_TEST_DONE = 0x04,		//!<
-	CONTROL_CENTER_STATUS_NORMAL_STOP = 0x05	//!<
+    CONTROL_CENTER_STATUS_NORMAL_STOP = 0x05	//!<
 } ControlCenterStatusType;
 
 #define MONR_EXPECTED_FREQUENCY_HZ 100
