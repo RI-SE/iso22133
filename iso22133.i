@@ -6,6 +6,7 @@
 #include "positioning.h"
 #define SWIG_PYTHON_STRICT_BYTE_CHAR
 %}
+%javaconst(1);
 typedef double double_t;
 typedef long int ssize_t;
 
@@ -19,4 +20,3 @@ long int tv_usec;
 %include "iso22133.h"
 %include "positioning.h"
 %pointer_functions(uint32_t, uint32ptr);
-
