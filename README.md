@@ -59,7 +59,12 @@
     ```
     gcc -shared positioning.o iso22133_wrap.o iso22133.o -o libiso22133.so
     ```
-6. You should now be able to use this to create and compile a simple java test program such as this:
+7. Copy your .so file to your other JNI libs or add the current folder to the path using:
+    ```
+    export LD_LIBRARY_PATH=. #ksh
+
+    ```
+9. You should now be able to use this to create and compile a simple java test program such as this:
 
     ```
     public class isotest {
