@@ -46,7 +46,7 @@
     python setup.py install
     ```
 ### Java 
-2. Make sure the iso22133.i file includes the line %javaconstants(1)
+2. Make sure the iso22133.i file includes the line %javaconst(1)
 3. Run the following command which will create all the necessary java files.  
     ```
     swig -java iso22133.i
