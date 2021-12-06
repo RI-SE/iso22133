@@ -46,6 +46,7 @@
     python setup.py install
     ```
 ### Java 
+1. Make sure you have Java JDK is installed. 
 2. Make sure the iso22133.i file includes the line %javaconst(1)
 3. Run the following command which will create all the necessary java files.  
     ```
