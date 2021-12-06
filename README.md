@@ -33,6 +33,7 @@
     ```
     sudo apt install swig
     ```
+### Python
 2. Start your python virtual environment or use your base environment at your own risk.
 3. Start terminal and move to iso22133 folder to the setup.py file folder.
 4. Run the following command (it will build the python extension): 
@@ -44,3 +45,40 @@
     ```
     python setup.py install
     ```
+### Java 
+1. Make sure you have Java JDK is installed. 
+2. Make sure the iso22133.i file includes the line %javaconst(1)
+3. Run the following command which will create all the necessary java files.  
+    ```
+    swig -java iso22133.i
+    ```
+4. Compile using. ((Pick jdk applicaple to your machine))
+    ```
+    gcc -fPIC -Wall -c positioning.c iso22133.c iso22133_wrap.c -I/usr/lib/jvm/jdk-15.0.2/include/ -I/usr/lib/jvm/jdk-15.0.2/include/linux/ 
+    ```
+5. Create .so file
+    ```
+    gcc -shared positioning.o iso22133_wrap.o iso22133.o -o libiso22133.so
+    ```
+7. Copy your .so file to your other JNI libs or add the current folder to the path using:
+    ```
+    export LD_LIBRARY_PATH=. #ksh
+
+    ```
+9. You should now be able to use this to create and compile a simple java test program such as this:
+
+    ```
+    public class isotest {
+        static {
+                    System.loadLibrary("iso22133");
+        }
+
+        public static void main(String argv[]) {
+            timeval heabTime = new timeval();
+            System.out.println(ControlCenterStatusType.CONTROL_CENTER_STATUS_ABORT);
+
+            iso22133 iso = new iso22133();
+            iso.encodeHEABMessage(heabTime, ControlCenterStatusType.CONTROL_CENTER_STATUS_RUNNING, "datatadatadata", 22, '1');
+            }
+    }
+      ```
