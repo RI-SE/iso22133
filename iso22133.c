@@ -843,65 +843,65 @@ static DebugStrings_t DCTITransmitterIdDescription = {"TransmitterID",	"",		&pri
 #define MS_TIME_DIFF_UTC_GPS ((uint64_t)(315964800000))
 
 // ************************** static function declarations ********************************************************
-static ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t length,
+static enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t length,
 											 HeaderType * HeaderData, const char debug);
-static ISOMessageReturnValue decodeISOFooter(const char *MessageBuffer, const size_t length,
+static enum ISOMessageReturnValue decodeISOFooter(const char *MessageBuffer, const size_t length,
 											 FooterType * HeaderData, const char debug);
-static HeaderType buildISOHeader(ISOMessageID id, uint32_t messageLength, const char debug);
+static HeaderType buildISOHeader(enum ISOMessageID id, uint32_t messageLength, const char debug);
 static FooterType buildISOFooter(const void *message, const size_t sizeExclFooter, const char debug);
 static char isValidMessageID(const uint16_t id);
 static double_t mapISOHeadingToHostHeading(const double_t isoHeading_rad);
 static double_t mapHostHeadingToISOHeading(const double_t hostHeading_rad);
 
-static ISOMessageReturnValue convertHEABToHostRepresentation(
+static enum ISOMessageReturnValue convertHEABToHostRepresentation(
 		HEABType* HEABData,
 		const struct timeval *currentTime,
 		const uint8_t TransmitterId,
 		HeabMessageDataType* heabData);
-static ISOMessageReturnValue convertGDRMToHostRepresentation(
+static enum ISOMessageReturnValue convertGDRMToHostRepresentation(
 		GDRMType* GDRMData,
 		GdrmMessageDataType* gdrmData);
-static ISOMessageReturnValue convertDCTIToHostRepresentation(DCTIType* DCTIData,
+static enum ISOMessageReturnValue convertDCTIToHostRepresentation(DCTIType* DCTIData,
 		DctiMessageDataType* dctiData);
 static void convertMONRToHostRepresentation(
 		const MONRType * MONRData,
 		const struct timeval *currentTime,
 		ObjectMonitorType * monitorData);
-static ISOMessageReturnValue convertRDCAToHostRepresentation(
+static enum ISOMessageReturnValue convertRDCAToHostRepresentation(
 		RDCAType* RDCAData,const struct timeval* currentTime,
 		RequestControlActionType* rdcaData);
 static void convertOSEMToHostRepresentation(
 		const OSEMType * OSEMData,
 		ObjectSettingsType * ObjectSettingsData);
-static ISOMessageReturnValue convertPODIToHostRepresentation(
+static enum ISOMessageReturnValue convertPODIToHostRepresentation(
 		PODIType* PODIData,
 		const struct timeval* currentTime,
 		PeerObjectInjectionType* peerData);
-static ISOMessageReturnValue convertOPROToHostRepresentation(
+static enum ISOMessageReturnValue convertOPROToHostRepresentation(
 		const OPROType* OPROData,
 		ObjectPropertiesType* objectProperties);
-static ISOMessageReturnValue convertFOPRToHostRepresentation(
+static enum ISOMessageReturnValue convertFOPRToHostRepresentation(
 		const FOPRType* FOPRData,
 		ForeignObjectPropertiesType* foreignObjectProperties);
-static ISOMessageReturnValue verifyChecksum(
+static enum ISOMessageReturnValue verifyChecksum(
 		const void *data,
 		const size_t dataLen,
 		const uint16_t crc,
 		const char debug);
-static ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCMMData, 
+static enum ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCMMData, 
 		RemoteControlManoeuvreMessageType* rcmmData);
-ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
+enum ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
 		GeneralResponseMessageType* gremData);
-static ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJHeaderData,
+static enum ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJHeaderData,
 				uint32_t trajectoryLength,	TrajectoryHeaderType* trajectoryHeaderData);
-static ISOMessageReturnValue convertTRAJPointToHostRepresentation(TRAJPointType* TRAJPointData,
+static enum ISOMessageReturnValue convertTRAJPointToHostRepresentation(TRAJPointType* TRAJPointData,
 														TrajectoryWaypointType* wayPoint);
 static uint16_t crcByte(const uint16_t crc, const uint8_t byte);
 static uint16_t crc16(const uint8_t * data, size_t dataLen);
 static int encodeContent(uint16_t valueID, const void* src, char** dest, const size_t contentSize, size_t* bufferSpace, DebugStrings_t *debugStruct, const char debug);
 
 static void printContent(const uint16_t valueID, const uint16_t contentLength, const void* value, DebugStrings_t* deb);
-static ISOMessageReturnValue convertSTRTToHostRepresentation(const STRTType * STRTData, const struct timeval* currentTime,
+static enum ISOMessageReturnValue convertSTRTToHostRepresentation(const STRTType * STRTData, const struct timeval* currentTime,
 		StartMessageType * startdata);
 
 // Time functions
@@ -1029,11 +1029,11 @@ uint8_t getTransmitterID() {
  * \param debug Flag for enabling debugging of this function
  * \return value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t length, HeaderType * HeaderData,
+enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t length, HeaderType * HeaderData,
 									  const char debug) {
 
 	const char *p = MessageBuffer;
-	ISOMessageReturnValue retval = MESSAGE_OK;
+	enum ISOMessageReturnValue retval = MESSAGE_OK;
 	const char ProtocolVersionBitmask = 0x7F;
 	char messageProtocolVersion = 0;
 	char isProtocolVersionSupported = 0;
@@ -1111,7 +1111,7 @@ ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t le
  * \param debug Flag for enabling debugging of this function
  * \return value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue decodeISOFooter(const char *MessageBuffer, const size_t length, FooterType * FooterData,
+enum ISOMessageReturnValue decodeISOFooter(const char *MessageBuffer, const size_t length, FooterType * FooterData,
 									  const char debug) {
 
 	// If too little data, generate error
@@ -1137,7 +1137,7 @@ ISOMessageReturnValue decodeISOFooter(const char *MessageBuffer, const size_t le
  * \param debug Flag for enabling debugging
  * \return A struct containing ISO header data
  */
-HeaderType buildISOHeader(ISOMessageID id, uint32_t messageLength, const char debug) {
+HeaderType buildISOHeader(enum ISOMessageID id, uint32_t messageLength, const char debug) {
 	HeaderType header;
 
 	header.SyncWordU16 = ISO_SYNC_WORD;
@@ -1214,7 +1214,7 @@ char isValidMessageID(const uint16_t id) {
  * \param debug Flag for enabling debugging information
  * \return Value according to ::ISOMessageID
  */
-ISOMessageID getISOMessageType(const char *messageData, const size_t length, const char debug) {
+enum ISOMessageID getISOMessageType(const char *messageData, const size_t length, const char debug) {
 	HeaderType header;
 
 	// Decode header
@@ -1225,7 +1225,7 @@ ISOMessageID getISOMessageType(const char *messageData, const size_t length, con
 
 	// Check if header contains valid message ID, if so return it
 	if (isValidMessageID(header.MessageIdU16))
-		return (ISOMessageID) header.MessageIdU16;
+		return (enum ISOMessageID) header.MessageIdU16;
 	else {
 		printf("Message ID %u does not match any known ISO message\n", header.MessageIdU16);
 		return MESSAGE_ID_INVALID;
@@ -1305,7 +1305,7 @@ uint16_t crc16(const uint8_t * data, size_t dataLen) {
  * \param CRC Received CRC value for the data
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue verifyChecksum(const void *data, const size_t dataLen, const uint16_t CRC,
+enum ISOMessageReturnValue verifyChecksum(const void *data, const size_t dataLen, const uint16_t CRC,
 									 const char debug) {
 	if (!isCRCVerificationEnabled || CRC == 0) {
 		return MESSAGE_OK;
@@ -1545,7 +1545,7 @@ ssize_t decodeTRAJMessageHeader(
  * \param trajectoryHeaderData Output data struct, to be used by host
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJHeaderData,
+enum ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJHeaderData,
 				uint32_t trajectoryLength,	TrajectoryHeaderType* trajectoryHeaderData) {
 	if (TRAJHeaderData == NULL || trajectoryHeaderData == NULL) {
 		errno = EINVAL;
@@ -1947,7 +1947,7 @@ ssize_t decodeTRAJMessagePoint(
  * \param wayPoint Output data struct, to be used by host
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue convertTRAJPointToHostRepresentation(
+enum ISOMessageReturnValue convertTRAJPointToHostRepresentation(
 		TRAJPointType* TRAJPointData,
 		TrajectoryWaypointType* wayPoint) {
 	
@@ -2459,7 +2459,7 @@ void convertOSEMToHostRepresentation(const OSEMType * OSEMData, ObjectSettingsTy
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeOSTMMessage(const ObjectCommandType command, char *ostmDataBuffer, const size_t bufferLength,
+ssize_t encodeOSTMMessage(const enum ObjectCommandType command, char *ostmDataBuffer, const size_t bufferLength,
 						  const char debug) {
 
 	OSTMType OSTMData;
@@ -2519,7 +2519,7 @@ ssize_t encodeOSTMMessage(const ObjectCommandType command, char *ostmDataBuffer,
 ssize_t decodeOSTMMessage(
 		const char* ostmDataBuffer,
 		const size_t bufferLength,
-		ObjectCommandType* command,
+		enum ObjectCommandType* command,
 		const char debug) {
 
 	OSTMType OSTMData;
@@ -2814,7 +2814,7 @@ ssize_t decodeSTRTMessage(
  * \param startData Struct in which result is to be placed
  */
 
-ISOMessageReturnValue convertSTRTToHostRepresentation(
+enum ISOMessageReturnValue convertSTRTToHostRepresentation(
 		const STRTType * STRTData,
 		const struct timeval* currentTime,
 		StartMessageType * startData) {
@@ -2862,7 +2862,7 @@ ISOMessageReturnValue convertSTRTToHostRepresentation(
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeHEABMessage(const struct timeval *heabTime, const ControlCenterStatusType status,
+ssize_t encodeHEABMessage(const struct timeval *heabTime, const enum ControlCenterStatusType status,
 						  char *heabDataBuffer, const size_t bufferLength, const char debug) {
 
 	HEABType HEABData;
@@ -2935,7 +2935,7 @@ ssize_t decodeHEABMessage(const char *heabDataBuffer,
 
 	HEABType HEABData;
 	const char *p = heabDataBuffer;
-	ISOMessageReturnValue retval = MESSAGE_OK;
+	enum ISOMessageReturnValue retval = MESSAGE_OK;
 	uint16_t valueID = 0;
 	uint16_t contentLength = 0;
 	ssize_t expectedContentLength = 0;
@@ -3020,7 +3020,7 @@ ssize_t decodeHEABMessage(const char *heabDataBuffer,
  * \param heabData Output data struct, to be used by host
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue convertHEABToHostRepresentation(HEABType* HEABData,
+enum ISOMessageReturnValue convertHEABToHostRepresentation(HEABType* HEABData,
 		const struct timeval *currentTime,
 		const uint8_t transmitterId,
 		HeabMessageDataType* heabData) {
@@ -3349,7 +3349,7 @@ ssize_t decodeRCMMMessage(
  * @param rcmmData Output data struct
  * @return ISOMessageReturnValue 
  */
-ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCMMData, 
+enum ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCMMData, 
 		RemoteControlManoeuvreMessageType* rcmmData) {
 	
 	if (RCMMData == NULL ||  rcmmData == NULL) {
@@ -3946,9 +3946,9 @@ ssize_t encodeMTSPMessage(const struct timeval *estSyncPointTime, char *mtspData
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeTRCMMessage(const uint16_t * triggerID, const TriggerType_t * triggerType,
-						  const TriggerTypeParameter_t * param1, const TriggerTypeParameter_t * param2,
-						  const TriggerTypeParameter_t * param3, char *trcmDataBuffer,
+ssize_t encodeTRCMMessage(const uint16_t * triggerID, const enum TriggerType_t * triggerType,
+						  const enum TriggerTypeParameter_t * param1, const enum TriggerTypeParameter_t * param2,
+						  const enum TriggerTypeParameter_t * param3, char *trcmDataBuffer,
 						  const size_t bufferLength, const char debug) {
 
 	TRCMType TRCMData;
@@ -4049,9 +4049,9 @@ ssize_t encodeTRCMMessage(const uint16_t * triggerID, const TriggerType_t * trig
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeACCMMessage(const uint16_t * actionID, const ActionType_t * actionType,
-						  const ActionTypeParameter_t * param1, const ActionTypeParameter_t * param2,
-						  const ActionTypeParameter_t * param3, char *accmDataBuffer,
+ssize_t encodeACCMMessage(const uint16_t * actionID, const enum ActionType_t * actionType,
+						  const enum ActionTypeParameter_t * param1, const enum ActionTypeParameter_t * param2,
+						  const enum ActionTypeParameter_t * param3, char *accmDataBuffer,
 						  const size_t bufferLength, const char debug) {
 
 	ACCMType ACCMData;
@@ -4205,7 +4205,7 @@ ssize_t encodeEXACMessage(const uint16_t * actionID, const struct timeval *execu
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeINSUPMessage(const SupervisorCommandType command, char *insupDataBuffer,
+ssize_t encodeINSUPMessage(const enum SupervisorCommandType command, char *insupDataBuffer,
 						   const size_t bufferLength, const char debug) {
 	INSUPType INSUPData;
 
@@ -4572,7 +4572,7 @@ ssize_t decodePODIMessage(
  * \param peerData Output data struct, for SI representation data
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue convertPODIToHostRepresentation(PODIType* PODIData,
+enum ISOMessageReturnValue convertPODIToHostRepresentation(PODIType* PODIData,
 		const struct timeval* currentTime,
 		PeerObjectInjectionType* peerData) {
 
@@ -5039,7 +5039,7 @@ ssize_t encodeFOPRMessage(
  * \param peerData Output data struct, for SI representation data
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue convertOPROToHostRepresentation(const OPROType* OPROData,
+enum ISOMessageReturnValue convertOPROToHostRepresentation(const OPROType* OPROData,
 		ObjectPropertiesType* objectProperties) {
 
 	if (OPROData == NULL || objectProperties == NULL) {
@@ -5087,7 +5087,7 @@ ISOMessageReturnValue convertOPROToHostRepresentation(const OPROType* OPROData,
  * \param peerData Output data struct, for SI representation data
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue convertFOPRToHostRepresentation(const FOPRType* FOPRData,
+enum ISOMessageReturnValue convertFOPRToHostRepresentation(const FOPRType* FOPRData,
 		ForeignObjectPropertiesType* foreignObjectProperties) {
 
 	if (FOPRData == NULL || foreignObjectProperties == NULL) {
@@ -5404,13 +5404,13 @@ ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuf
   * \param debug Flag for enabling of debugging
   * \return value according to ::ISOMessageReturnValue
   */
- ISOMessageReturnValue decodeGDRMMessage(const char *gdrmDataBuffer,										const size_t bufferLength,
+ enum ISOMessageReturnValue decodeGDRMMessage(const char *gdrmDataBuffer,										const size_t bufferLength,
 										 GdrmMessageDataType* gdrmData,
 										 const char debug) {
 
 	 GDRMType GDRMData;
 	 const char *p = gdrmDataBuffer;
-	 ISOMessageReturnValue retval = MESSAGE_OK;
+	 enum ISOMessageReturnValue retval = MESSAGE_OK;
 	 uint16_t valueID = 0;
 	 uint16_t contentLength = 0;
 	 ssize_t expectedContentLength = 0;
@@ -5471,7 +5471,7 @@ ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuf
   * \param gdrmData Output data struct, to be used by host
   * \return Value according to ::ISOMessageReturnValue
   */
- ISOMessageReturnValue convertGDRMToHostRepresentation(GDRMType* GDRMData,
+ enum ISOMessageReturnValue convertGDRMToHostRepresentation(GDRMType* GDRMData,
 		 GdrmMessageDataType* gdrmData) {
 
 
@@ -5573,7 +5573,7 @@ ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData,
  * \param debug Flag for enabling of debugging
  * \return value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer,
+enum ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer,
 										const size_t bufferLength,
 										DctiMessageDataType* dctiData,
 										const char debug) {
@@ -5689,7 +5689,7 @@ ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer,
  * \param dctiData Output data struct
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue convertDCTIToHostRepresentation(DCTIType* DCTIData,
+enum ISOMessageReturnValue convertDCTIToHostRepresentation(DCTIType* DCTIData,
 		DctiMessageDataType* dctiData) {
 
 	if (DCTIData == NULL || dctiData == NULL) {
@@ -5993,7 +5993,7 @@ ssize_t decodeRDCAMessage(
  * \param rdcaData Output data struct
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue convertRDCAToHostRepresentation(RDCAType* RDCAData,
+enum ISOMessageReturnValue convertRDCAToHostRepresentation(RDCAType* RDCAData,
 			const struct timeval* currentTime, RequestControlActionType* rdcaData) {
 
 	if (RDCAData == NULL ||  rdcaData == NULL || currentTime == NULL) {
@@ -6179,7 +6179,7 @@ ssize_t decodeGREMMessage(
  * \param peerData Output data struct, for SI representation data
  * \return Value according to ::ISOMessageReturnValue
  */
-ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
+enum ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
 		GeneralResponseMessageType* gremData) {
 
 	if (GREMdata == NULL || gremData == NULL) {
