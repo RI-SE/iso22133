@@ -119,12 +119,12 @@ typedef struct {
 #define DEFAULT_CRC_INIT_VALUE 0x0000
 #define DEFAULT_CRC_CHECK_ENABLED 1
 
-typedef enum {
+enum DriveDirectionValues {
 	ISO_DRIVE_DIRECTION_FORWARD = 0,
 	ISO_DRIVE_DIRECTION_BACKWARD = 1,
 	ISO_DRIVE_DIRECTION_UNAVAILABLE = 255
-} DriveDirectionValues;
-typedef enum {
+};
+enum ObjectStateValues {
 	ISO_OBJECT_STATE_OFF = 0,
 	ISO_OBJECT_STATE_INIT = 1,
 	ISO_OBJECT_STATE_ARMED = 2,
@@ -136,12 +136,12 @@ typedef enum {
 	ISO_OBJECT_STATE_PRE_ARMING = 8,
 	ISO_OBJECT_STATE_PRE_RUNNING = 9,
 	ISO_OBJECT_STATE_UNAVALIABLE = 255
-} ObjectStateValues;
-typedef enum {
+};
+enum ArmReadinessValues {
 	ISO_NOT_READY_TO_ARM = 0,
 	ISO_READY_TO_ARM = 1,
 	ISO_READY_TO_ARM_UNAVAILABLE = 255
-} ArmReadinessValues;
+};
 
 #define BITMASK_ERROR_ABORT_REQUEST				0x80
 #define BITMASK_ERROR_OUTSIDE_GEOFENCE			0x40

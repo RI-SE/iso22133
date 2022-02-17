@@ -42,10 +42,10 @@ typedef struct {
 } ObjectSettingsType;
 
 /*! ISO message constants */
-typedef enum {
+enum ISOConstantsType {
 	ISO_TRAJ_HEADER_SIZE = 91,
 	ISO_TRAJ_WAYPOINT_SIZE = 70
-} ISOConstantsType;
+};
 
 /*! Trajectory header */
 typedef struct {
@@ -66,33 +66,33 @@ typedef struct {
 } TrajectoryWaypointType;
 
 /*! OSTM commands */
-typedef enum {
+enum ObjectCommandType {
 	OBJECT_COMMAND_ARM = 0x02,				//!< Request to arm the target object
 	OBJECT_COMMAND_DISARM = 0x03,			//!< Request to disarm the target object
     OBJECT_COMMAND_REMOTE_CONTROL = 0x06,	//!< Request for remote control of the target object
     OBJECT_COMMAND_ALL_CLEAR = 0x0A         //!< Signal that abort no longer necessary
-} ObjectCommandType;
+};
 
 
 #define HEAB_FREQUENCY_HZ 100
 /*! HEAB control center statuses */
-typedef enum {
+enum ControlCenterStatusType {
 	CONTROL_CENTER_STATUS_INIT = 0x00,			//!<
 	CONTROL_CENTER_STATUS_READY = 0x01,			//!<
 	CONTROL_CENTER_STATUS_ABORT = 0x02,			//!<
 	CONTROL_CENTER_STATUS_RUNNING = 0x03,		//!<
 	CONTROL_CENTER_STATUS_TEST_DONE = 0x04,		//!<
     CONTROL_CENTER_STATUS_NORMAL_STOP = 0x05	//!<
-} ControlCenterStatusType;
+};
 
 #define MONR_EXPECTED_FREQUENCY_HZ 100
 
 /*! GDRM dataCodes */
-typedef enum {
+enum GeneralDataRequestDataCodeType{
 	DIRECT_CONTROL_TRANSMITTER_ID_REQUEST = 0x01			//!<
-} GeneralDataRequestDataCodeType;
+} ;
 
-typedef enum {
+enum TriggerType_t {
 	TRIGGER_UNDEFINED               = 0x0000,
 	TRIGGER_TYPE_1                  = 0x0001,
 	TRIGGER_SPEED                   = 0x0010,
@@ -115,9 +115,9 @@ typedef enum {
 	TRIGGER_TIMER_EVENT_OCCURRED    = 0x0100,
 	TRIGGER_MODE_CHANGED            = 0x0110,
 	TRIGGER_UNAVAILABLE             = 0xFFFF
-} TriggerType_t;
+};
 
-typedef enum {
+enum TriggerTypeParameter_t {
 	TRIGGER_PARAMETER_FALSE                     = 0x00000000,
 	TRIGGER_PARAMETER_TRUE                      = 0x00000001,
 	TRIGGER_PARAMETER_RELEASED                  = 0x00000010,
@@ -146,10 +146,10 @@ typedef enum {
 	TRIGGER_PARAMETER_DATE                      = 0x00000081,
 	TRIGGER_PARAMETER_RULE                      = 0x000000A0,
 	TRIGGER_PARAMETER_UNAVAILABLE               = 0xFFFFFFFF
-} TriggerTypeParameter_t;
+};
 
 
-typedef enum {
+enum ActionType_t {
 	ACTION_NONE                     = 0x0000,
 	ACTION_TYPE_1                   = 0x0001,
 	ACTION_TYPE_2                   = 0x0002,
@@ -171,9 +171,9 @@ typedef enum {
 	ACTION_START_TIMER              = 0x0100,
 	ACTION_MODE_CHANGE              = 0x0110,
 	ACTION_UNAVAILABLE              = 0xFFFF
-} ActionType_t;
+};
 
-typedef enum {
+enum ActionTypeParameter_t {
 	ACTION_PARAMETER_SET_FALSE          = 0x00000000,
 	ACTION_PARAMETER_SET_TRUE           = 0x00000001,
 	ACTION_PARAMETER_RELEASE            = 0x00000010,
@@ -187,10 +187,10 @@ typedef enum {
 	ACTION_PARAMETER_VS_BRAKE_WARNING   = 0xA0000000,
 	ACTION_PARAMETER_VS_SEND_START		= 0xA0000100,
 	ACTION_PARAMETER_UNAVAILABLE        = 0xFFFFFFFF
-} ActionTypeParameter_t;
+};
 
 
-typedef enum {
+enum ISOMessageReturnValue {
 	MESSAGE_OK, // TODO delete
 	MESSAGE_LENGTH_ERROR = -1,
 	MESSAGE_TYPE_ERROR = -2,
@@ -200,10 +200,10 @@ typedef enum {
 	MESSAGE_SYNC_WORD_ERROR = -6,
 	MESSAGE_CONTENT_OUT_OF_RANGE = -7,
 	ISO_FUNCTION_ERROR = -8
-} ISOMessageReturnValue;
+};
 
 /*! Valid ISO message identifiers */
-typedef enum {
+enum ISOMessageID {
 	MESSAGE_ID_INVALID = 0x0000,
 	MESSAGE_ID_TRAJ = 0x0001,
 	MESSAGE_ID_OSEM = 0x0002,
@@ -242,60 +242,60 @@ typedef enum {
 	MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_RDCA = 0xA122,
 	MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_GREM = 0xA123,
 	MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCMM = 0xA124
-} ISOMessageID;
+};
 
 /*! Supervisor command */
-typedef enum {
+enum SupervisorCommandType{
 	SUPERVISOR_COMMAND_NORMAL = 1,	//!< Place supervisor in normal mode
 	SUPERVISOR_COMMAND_DEBUG = 2	//!< Place supervisor in debug mode
-} SupervisorCommandType;
+};
 
 /*! OPRO object type */
-typedef enum {
+enum ObjectCategoryType {
 	OBJECT_CATEGORY_UNKNOWN = 0,
 	OBJECT_CATEGORY_CAR = 1,
 	OBJECT_CATEGORY_BICYCLE = 2,
 	OBJECT_CATEGORY_PEDESTRIAN = 30
-} ObjectCategoryType;
+};
 
 /*! OPRO actor type */
-typedef enum {
+enum ActorType {
 	ACTOR_TYPE_UNKNOWN = 0,
 	ACTOR_TYPE_VIRTUAL_OBJECT = 1,
 	ACTOR_TYPE_REAL_OBJECT = 2
-} ActorType;
+};
 
 /*! OPRO operation mode */
-typedef enum {
+enum OperationMode {
 	OPERATION_MODE_UNKNOWN = 0,
 	OPERATION_MODE_STATIC = 1,
 	OPERATION_MODE_PREDEFINED_TRAJECTORY = 2,
 	OPERATION_MODE_DYNAMIC_TRAJECTORY = 3,
 	OPERATION_MODE_AUTONOMOUS_VUT = 4
-} OperationMode;
+};
 
 
-typedef enum {
+enum ISOUnitType {
 	ISO_UNIT_TYPE_STEERING_DEGREES = 0,
 	ISO_UNIT_TYPE_STEERING_PERCENTAGE = 1,
 	ISO_UNIT_TYPE_SPEED_METER_SECOND = 2,
 	ISO_UNIT_TYPE_SPEED_PERCENTAGE = 3
-} ISOUnitType;
+};
 
 /*! GREM status */
-typedef enum {
+enum GeneralResponseStatus {
 	GREM_STATUS_OK = 1,
 	GREM_DATA_MISSING = 2,
 	GREM_STATE_ERROR = 3,
 	GREM_TIME_SLIPPAGE = 4,
 	GREM_WRONG_ID = 5,
 	GREM_OUT_OF_RANGE = 6
-} GeneralResponseStatus;
+};
 
-typedef enum {
+enum RemoteControlManoeuvreCommandType {
 	MANOEUVRE_NONE = 0,
 	MANOEUVRE_BACK_TO_START = 3
-} RemoteControlManoeuvreCommandType;
+};
 
 /**
  * @brief struct for RCMM
