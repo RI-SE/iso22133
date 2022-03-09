@@ -279,7 +279,9 @@ enum ISOUnitType {
 	ISO_UNIT_TYPE_STEERING_DEGREES = 0,
 	ISO_UNIT_TYPE_STEERING_PERCENTAGE = 1,
 	ISO_UNIT_TYPE_SPEED_METER_SECOND = 2,
-	ISO_UNIT_TYPE_SPEED_PERCENTAGE = 3
+	ISO_UNIT_TYPE_SPEED_PERCENTAGE = 3,
+	ISO_UNIT_TYPE_THROTTLE_PERCENTAGE = 5,
+	ISO_UNIT_TYPE_BRAKE_PERCENTAGE = 7
 };
 
 /*! GREM status */
@@ -311,11 +313,21 @@ typedef struct{
 		double_t pct;
 		double_t m_s;
 	} speedManoeuvre;
+	union throttleMan{
+		double_t pct;
+	} throttleManoeuvre;
+	union brakeMan{
+		double_t pct;
+	} brakeManoeuvre;
 	enum RemoteControlManoeuvreCommandType command;
 	enum ISOUnitType steeringUnit;
 	enum ISOUnitType speedUnit;
+	enum ISOUnitType throttleUnit;
+	enum ISOUnitType brakeUnit;
 	bool isSteeringManoeuvreValid;
 	bool isSpeedManoeuvreValid;
+	bool isThrottleManoeuvreValid;
+	bool isBrakeManoeuvreValid;
 } RemoteControlManoeuvreMessageType;
 
 /*! HEAB message contents */

@@ -717,6 +717,12 @@ typedef struct {
 	uint16_t steeringValueID;
 	uint16_t steeringContentLength;
 	int16_t steering;
+	uint16_t throttleValueID;
+	uint16_t throttleContentLength;
+	int16_t throttle;
+	uint16_t brakeValueID;
+	uint16_t brakeContentLength;
+	int16_t brake;
 	uint16_t commandValueID;
 	uint16_t commandContentLength;
 	uint8_t command;
@@ -729,11 +735,15 @@ typedef struct {
 #define VALUE_ID_RCMM_STEERING_ANGLE			0x0012
 #define VALUE_ID_RCMM_STEERING_PERCENTAGE		0x0031
 #define VALUE_ID_RCMM_SPEED_PERCENTAGE			0x0032
+#define VALUE_ID_RCMM_THROTTLE_PERCENTAGE		0x0033
+#define VALUE_ID_RCMM_BRAKE_PERCENTAGE			0x0034
 #define VALUE_ID_RCMM_CONTROL					0xA201
 
 static DebugStrings_t RCMMControlStatusDescription = {"Control Status",	"",	&printU8};
 static DebugStrings_t RCMMSpeedDescription_m_s = {"Speed",	"[m/s]",	&printI16};
 static DebugStrings_t RCMMSpeedDescriptionPct = {"Speed",	"[%%]",	&printI16};
+static DebugStrings_t RCMMThrottleDescriptionPct = {"Throttle",	"[%%]",	&printI16};
+static DebugStrings_t RCMMBrakeDescriptionPct = {"Brake",	"[%%]",	&printI16};
 static DebugStrings_t RCMMSteeringDescriptionDeg = {"Steering",	"[deg]",	&printI16};
 static DebugStrings_t RCMMSteeringDescriptionPct = {"Steering",	"[%%]",	&printI16};
 static DebugStrings_t RCMMCommandDescription = {"Command (AstaZero)",	"",	&printU8};
@@ -3507,6 +3517,38 @@ ssize_t encodeRCMMMessage(const RemoteControlManoeuvreMessageType* rcmmData,
 			fprintf(stderr, "Speed value is out of bounds for percentage\n");
 			return MESSAGE_CONTENT_OUT_OF_RANGE;
 		}
+	}
+
+	if (rcmmData->isThrottleManoeuvreValid && rcmmData->throttleUnit == ISO_UNIT_TYPE_THROTTLE_PERCENTAGE) {
+		if (rcmmData->throttleManoeuvre.pct <= MAX_VALUE_PERCENTAGE && rcmmData->throttleManoeuvre.pct >= MIN_VALUE_PERCENTAGE) {
+			RCMMData.throttle = (int16_t) (rcmmData->throttleManoeuvre.pct);
+			retval |= encodeContent(VALUE_ID_RCMM_THROTTLE_PERCENTAGE, &RCMMData.throttle, &p,
+			sizeof(RCMMData.throttle), &remainingBytes, &RCMMThrottleDescriptionPct, debug);
+		}
+		else {
+			fprintf(stderr, "Throttle value is out of bounds for percentage\n");
+			return MESSAGE_CONTENT_OUT_OF_RANGE;
+		}
+	}
+	else {
+		fprintf(stderr, "Throttle unit is not valid\n");
+		return MESSAGE_VALUE_ID_ERROR;
+	}
+
+	if (rcmmData->isBrakeManoeuvreValid && rcmmData->brakeUnit == ISO_UNIT_TYPE_BRAKE_PERCENTAGE) {
+		if (rcmmData->brakeManoeuvre.pct <= MAX_VALUE_PERCENTAGE && rcmmData->brakeManoeuvre.pct >= MIN_VALUE_PERCENTAGE) {
+			RCMMData.brake = (int16_t) (rcmmData->brakeManoeuvre.pct);
+			retval |= encodeContent(VALUE_ID_RCMM_BRAKE_PERCENTAGE, &RCMMData.brake, &p,
+			sizeof(RCMMData.brake), &remainingBytes, &RCMMBrakeDescriptionPct, debug);
+		}
+		else {
+			fprintf(stderr, "Brake value is out of bounds for percentage\n");
+			return MESSAGE_CONTENT_OUT_OF_RANGE;
+		}
+	}
+	else {
+		fprintf(stderr, "Brake unit is not valid\n");
+		return MESSAGE_VALUE_ID_ERROR;
 	}
 	
 	if (retval != 0 || remainingBytes < sizeof (FooterType)) {
