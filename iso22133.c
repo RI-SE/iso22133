@@ -1,42 +1,13 @@
 #include "iso22133.h"
+#include "header.h"
+#include "footer.h"
+#include "defines.h"
+
 #include <string.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <math.h>
 #include <time.h>
-
-// Temporary fix since HAVE_BYTESWAP_H does not appear to work for linux
-// TODO: remove once several systems start using this library
-// Windows mostly runs on little endian architectures
-// TODO: Future-proof - make below endian conversion host independent on Windows
-#if defined _WIN32 || defined __APPLE__
-#	define htole16(value) (value)
-#	define htole32(value) (value)
-#	define htole64(value) (value)
-
-#	define le16toh(value) (value)
-#	define le32toh(value) (value)
-
-#	if defined __GNUC__
-#		define htobe16(value) __builtin_bswap16(value)
-
-#	elif defined (_MSC_VER)
-#		include <stdlib.h>
-#		define htobe16(x) _byteswap_ushort(x)
-#   endif
-
-#elif __linux__
-#	include <byteswap.h>
-#	include <endian.h>
-#endif
-
-
-
-// ************************* Global ISO protocol settings ********************************************************
-static const uint8_t SupportedProtocolVersions[] = { 2 };
-
-#define ISO_PROTOCOL_VERSION 2	//!< ISO protocol version of messages sent
-#define ACK_REQ 0
 
 
 // ************************* Debug printout helper data **********************************************************
@@ -58,119 +29,7 @@ typedef struct {
 	DebugPrinter_t printer;
 } DebugStrings_t;
 
-// ************************* Type definitions according ISO protocol specification *******************************
-//! Predefined integer values with special meaning
-#define ISO_SYNC_WORD 0x7E7F
-#define TRANSMITTER_ID_UNAVAILABLE_VALUE UINT32_MAX
-#define CONTROL_CENTER_STATUS_UNAVAILABLE 255
-#define LATITUDE_UNAVAILABLE_VALUE (-140737488355328)
-#define LATITUDE_ONE_DEGREE_VALUE 10000000000.0
-#define LONGITUDE_UNAVAILABLE_VALUE (-140737488355328)
-#define LONGITUDE_ONE_DEGREE_VALUE 10000000000.0
-#define ALTITUDE_UNAVAILABLE_VALUE (-2147483648)
-#define ALTITUDE_ONE_METER_VALUE 100.0
-#define DATE_UNAVAILABLE_VALUE 4294967295
-#define GPS_WEEK_UNAVAILABLE_VALUE 65535
-#define GPS_SECOND_OF_WEEK_UNAVAILABLE_VALUE 4294967295
-#define MAX_WAY_DEVIATION_UNAVAILABLE_VALUE 65535
-#define MAX_WAY_DEVIATION_ONE_METER_VALUE 1000.0
-#define MAX_LATERAL_DEVIATION_UNAVAILABLE_VALUE 65535
-#define MAX_LATERAL_DEVIATION_ONE_METER_VALUE 1000.0
-#define MIN_POSITIONING_ACCURACY_NOT_REQUIRED_VALUE 0
-#define MIN_POSITIONING_ACCURACY_ONE_METER_VALUE 1000.0	// ISO specification unclear on this value
-#define TRIGGER_ID_UNAVAILABLE 65535
-#define TRIGGER_TYPE_UNAVAILABLE 65535
-#define TRIGGER_TYPE_PARAMETER_UNAVAILABLE 4294967295
-#define TRIGGER_TIMESTAMP_UNAVAILABLE 4294967295
-#define ACTION_ID_UNAVAILABLE 65535
-#define ACTION_TYPE_UNAVAILABLE 65535
-#define ACTION_TYPE_PARAMETER_UNAVAILABLE 4294967295
-#define ACTION_EXECUTE_TIME_UNAVAILABLE 4294967295
-#define POSITION_ONE_METER_VALUE 1000.0
-#define POSITION_UNAVAILABLE_VALUE (-32768) //(-2147483648) <-- if changed to int32 everywhere
-#define LENGTH_ONE_METER_VALUE 1000.0
-#define LENGTH_UNAVAILABLE_VALUE UINT32_MAX
-#define MASS_ONE_KILOGRAM_VALUE 1000.0
-#define MASS_UNAVAILABLE_VALUE UINT32_MAX
-#define STEERING_UNAVAILABLE_VALUE (-32768)
-#define HEADING_UNAVAILABLE_VALUE 65535
-#define HEADING_ONE_DEGREE_VALUE 100.0
-#define PITCH_UNAVAILABLE_VALUE -32768
-#define PITCH_ONE_DEGREE_VALUE 100.0
-#define ROLL_UNAVAILABLE_VALUE -32768
-#define ROLL_ONE_DEGREE_VALUE 100.0
-#define SPEED_UNAVAILABLE_VALUE (-32768)
-#define SPEED_ONE_METER_PER_SECOND_VALUE 100.0
-#define ACCELERATION_UNAVAILABLE_VALUE (-32768)
-#define ACCELERATION_ONE_METER_PER_SECOND_SQUARED_VALUE 1000.0
-#define RELATIVE_TIME_ONE_SECOND_VALUE 1000.0
-#define STEERING_ANGLE_ONE_DEGREE_VALUE 100.0
-#define STEERING_ANGLE_MAX_VALUE_DEG 18000
-#define STEERING_ANGLE_MIN_VALUE_DEG (-18000)
-#define STEERING_ANGLE_MAX_VALUE_RAD M_PI
-#define STEERING_ANGLE_MIN_VALUE_RAD (-M_PI)
-#define STEERING_ANGLE_UNAVAILABLE_VALUE 65535
-#define ESTIMATED_SYNC_POINT_TIME_UNAVAILABLE_VALUE 4294967295
-#define MAX_VALUE_PERCENTAGE 100
-#define MIN_VALUE_PERCENTAGE (-100)
-
-
-
-#define DEFAULT_CRC_INIT_VALUE 0x0000
-#define DEFAULT_CRC_CHECK_ENABLED 1
-
-enum DriveDirectionValues {
-	ISO_DRIVE_DIRECTION_FORWARD = 0,
-	ISO_DRIVE_DIRECTION_BACKWARD = 1,
-	ISO_DRIVE_DIRECTION_UNAVAILABLE = 255
-};
-enum ObjectStateValues {
-	ISO_OBJECT_STATE_OFF = 0,
-	ISO_OBJECT_STATE_INIT = 1,
-	ISO_OBJECT_STATE_ARMED = 2,
-	ISO_OBJECT_STATE_DISARMED = 3,
-	ISO_OBJECT_STATE_RUNNING = 4,
-	ISO_OBJECT_STATE_POSTRUN = 5,
-	ISO_OBJECT_STATE_REMOTE_CONTROLLED = 6,
-	ISO_OBJECT_STATE_ABORTING = 7,
-	ISO_OBJECT_STATE_PRE_ARMING = 8,
-	ISO_OBJECT_STATE_PRE_RUNNING = 9,
-	ISO_OBJECT_STATE_UNAVALIABLE = 255
-};
-enum ArmReadinessValues {
-	ISO_NOT_READY_TO_ARM = 0,
-	ISO_READY_TO_ARM = 1,
-	ISO_READY_TO_ARM_UNAVAILABLE = 255
-};
-
-#define BITMASK_ERROR_ABORT_REQUEST				0x80
-#define BITMASK_ERROR_OUTSIDE_GEOFENCE			0x40
-#define BITMASK_ERROR_BAD_POSITIONING_ACCURACY	0x20
-#define BITMASK_ERROR_ENGINE_FAULT				0x10
-#define BITMASK_ERROR_BATTERY_FAULT				0x08
-#define BITMASK_ERROR_OTHER						0x04
-#define BITMASK_ERROR_SYNC_POINT_ENDED			0x02
-#define BITMASK_ERROR_VENDOR_SPECIFIC			0x01
-
-
-
 #pragma pack(push,1)			// Ensure sizeof() is useable for (most) network byte lengths
-/*! ISO message header */
-typedef struct {
-	uint16_t syncWord;
-	uint32_t messageLength;
-	uint8_t ackReqProtVer;
-	uint32_t transmitterID;
-	uint32_t receiverID;
-	uint8_t messageCounter;
-	uint16_t messageID;
-} HeaderType;
-
-/*! ISO message footer */
-typedef struct {
-	uint16_t Crc;
-} FooterType;
-
 
 /*! TRAJ message */
 #define TRAJ_NAME_STRING_MAX_LENGTH 64
@@ -854,12 +713,7 @@ static DebugStrings_t DCTITransmitterIdDescription = {"TransmitterID",	"",		&pri
 #define MS_TIME_DIFF_UTC_GPS ((uint64_t)(315964800000))
 
 // ************************** static function declarations ********************************************************
-static enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t length,
-											 HeaderType * HeaderData, const char debug);
-static enum ISOMessageReturnValue decodeISOFooter(const char *MessageBuffer, const size_t length,
-											 FooterType * HeaderData, const char debug);
-static HeaderType buildISOHeader(enum ISOMessageID id, uint32_t messageLength, const char debug);
-static FooterType buildISOFooter(const void *message, const size_t sizeExclFooter, const char debug);
+
 static char isValidMessageID(const uint16_t id);
 static double_t mapISOHeadingToHostHeading(const double_t isoHeading_rad);
 static double_t mapHostHeadingToISOHeading(const double_t hostHeading_rad);
@@ -894,11 +748,6 @@ static enum ISOMessageReturnValue convertOPROToHostRepresentation(
 static enum ISOMessageReturnValue convertFOPRToHostRepresentation(
 		const FOPRType* FOPRData,
 		ForeignObjectPropertiesType* foreignObjectProperties);
-static enum ISOMessageReturnValue verifyChecksum(
-		const void *data,
-		const size_t dataLen,
-		const uint16_t crc,
-		const char debug);
 static enum ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCMMData, 
 		RemoteControlManoeuvreMessageType* rcmmData);
 enum ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
@@ -907,8 +756,6 @@ static enum ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHead
 				uint32_t trajectoryLength,	TrajectoryHeaderType* trajectoryHeaderData);
 static enum ISOMessageReturnValue convertTRAJPointToHostRepresentation(TRAJPointType* TRAJPointData,
 														TrajectoryWaypointType* wayPoint);
-static uint16_t crcByte(const uint16_t crc, const uint8_t byte);
-static uint16_t crc16(const uint8_t * data, size_t dataLen);
 static int encodeContent(uint16_t valueID, const void* src, char** dest, const size_t contentSize, size_t* bufferSpace, DebugStrings_t *debugStruct, const char debug);
 
 static void printContent(const uint16_t valueID, const uint16_t contentLength, const void* value, DebugStrings_t* deb);
@@ -923,7 +770,6 @@ static uint64_t getAsGPSms(const struct timeval *time);
 
 // ************************** static variables ********************************************************************
 static uint16_t trajectoryMessageCrc = 0;
-static int8_t isCRCVerificationEnabled = DEFAULT_CRC_CHECK_ENABLED;
 static uint8_t transmitterID = 0xFF;
 
 // ************************** function definitions ****************************************************************
@@ -1032,184 +878,6 @@ uint8_t getTransmitterID() {
 	return transmitterID;
 }
 
-/*!
- * \brief decodeISOHeader Convert data in a buffer to an ISO heade
- * \param MessageBuffer Buffer containing raw data to be converted
- * \param length Length of buffer
- * \param HeaderData Struct in which to store resulting data
- * \param debug Flag for enabling debugging of this function
- * \return value according to ::ISOMessageReturnValue
- */
-enum ISOMessageReturnValue decodeISOHeader(
-	const char *MessageBuffer,
-	const size_t length,
-	HeaderType * HeaderData,
-	const char debug) {
-
-	const char *p = MessageBuffer;
-	enum ISOMessageReturnValue retval = MESSAGE_OK;
-	const char ProtocolVersionBitmask = 0x7F;
-	char messageProtocolVersion = 0;
-	char isProtocolVersionSupported = 0;
-
-	// If not enough data to fill header, generate error
-	if (length < sizeof (HeaderData)) {
-		fprintf(stderr, "Too little raw data to fill ISO header\n");
-		memset(HeaderData, 0, sizeof (*HeaderData));
-		return MESSAGE_LENGTH_ERROR;
-	}
-
-	// Decode ISO header
-	memcpy(&HeaderData->syncWord, p, sizeof (HeaderData->syncWord));
-	HeaderData->syncWord = le16toh(HeaderData->syncWord);
-	p += sizeof (HeaderData->syncWord);
-
-	// If sync word is not correct, generate error
-	if (HeaderData->syncWord != ISO_SYNC_WORD) {
-		fprintf(stderr, "Sync word error when decoding ISO header\n");
-		memset(HeaderData, 0, sizeof (*HeaderData));
-		return MESSAGE_SYNC_WORD_ERROR;
-	}
-
-	memcpy(&HeaderData->messageLength, p, sizeof (HeaderData->messageLength));
-	p += sizeof (HeaderData->messageLength);
-	HeaderData->messageLength = le32toh(HeaderData->messageLength);
-
-	memcpy(&HeaderData->ackReqProtVer, p, sizeof (HeaderData->ackReqProtVer));
-	p += sizeof (HeaderData->ackReqProtVer);
-
-	// Loop over permitted protocol versions to see if current version is among them
-	messageProtocolVersion = HeaderData->ackReqProtVer & ProtocolVersionBitmask;
-	for (size_t i = 0; i < sizeof (SupportedProtocolVersions) / sizeof (SupportedProtocolVersions[0]); ++i) {
-		if (SupportedProtocolVersions[i] == messageProtocolVersion) {
-			isProtocolVersionSupported = 1;
-			break;
-		}
-	}
-
-	// Generate error if protocol version not supported
-	if (!isProtocolVersionSupported) {
-		fprintf(stderr, "Protocol version %u not supported\n", messageProtocolVersion);
-		retval = MESSAGE_VERSION_ERROR;
-		memset(HeaderData, 0, sizeof (*HeaderData));
-		return retval;
-	}
-
-	memcpy(&HeaderData->transmitterID, p, sizeof (HeaderData->transmitterID));
-	p += sizeof (HeaderData->transmitterID);
-	HeaderData->transmitterID = le32toh(HeaderData->transmitterID);
-
-	memcpy(&HeaderData->receiverID, p, sizeof (HeaderData->receiverID));
-	p += sizeof (HeaderData->receiverID);
-	HeaderData->receiverID = le32toh(HeaderData->receiverID);
-
-	memcpy(&HeaderData->messageCounter, p, sizeof (HeaderData->messageCounter));
-	p += sizeof (HeaderData->messageCounter);
-
-	memcpy(&HeaderData->messageID, p, sizeof (HeaderData->messageID));
-	p += sizeof (HeaderData->messageID);
-	HeaderData->messageID = le16toh(HeaderData->messageID);
-
-	if (debug) {
-		printf("syncWord = 0x%x\n", HeaderData->syncWord);
-		printf("messageLength = 0x%x\n", HeaderData->messageLength);
-		printf("ackReqProtVer = 0x%x\n", HeaderData->ackReqProtVer);
-		printf("transmitterID = 0x%x\n", HeaderData->transmitterID);
-		printf("receiverID = 0x%x\n", HeaderData->receiverID);
-		printf("messageCounter = 0x%x\n", HeaderData->messageCounter);
-		printf("messageID = 0x%x\n", HeaderData->messageID);
-	}
-
-	return retval;
-}
-
-/*!
- * \brief decodeISOFooter Convert data in a buffer to an ISO footer
- * \param MessageBuffer Buffer containing raw data to be converted
- * \param length Length of buffer
- * \param HeaderData Struct in which to store resulting data
- * \param debug Flag for enabling debugging of this function
- * \return value according to ::ISOMessageReturnValue
- */
-enum ISOMessageReturnValue decodeISOFooter(const char *MessageBuffer, const size_t length, FooterType * FooterData,
-									  const char debug) {
-
-	// If too little data, generate error
-	if (length < sizeof (FooterData->Crc)) {
-		fprintf(stderr, "Too little raw data to fill ISO footer\n");
-		memset(FooterData, 0, sizeof (*FooterData));
-		return MESSAGE_LENGTH_ERROR;
-	}
-	memcpy(&FooterData->Crc, MessageBuffer, sizeof (FooterData->Crc));
-	FooterData->Crc = le16toh(FooterData->Crc);
-
-	if (debug) {
-		printf("Decoded ISO footer:\n\tCRC: 0x%x\n", FooterData->Crc);
-	}
-
-	return MESSAGE_OK;
-}
-
-/*!
- * \brief buildISOHeader Constructs an ISO header based on the supplied message ID and content length
- * \param id Message ID of the message for which the header is to be used
- * \param messageLength Length of the message including header and footer
- * \param debug Flag for enabling debugging
- * \return A struct containing ISO header data
- */
-HeaderType buildISOHeader(enum ISOMessageID id, uint32_t messageLength, const char debug) {
-	HeaderType header;
-
-	header.syncWord = ISO_SYNC_WORD;
-	header.transmitterID = transmitterID;
-	header.messageCounter = 0;
-	header.ackReqProtVer = ACK_REQ | ISO_PROTOCOL_VERSION;
-	if (messageLength >= sizeof (HeaderType) + sizeof (FooterType)) {
-		header.messageID = (uint16_t) id;
-		header.messageLength = messageLength - sizeof (HeaderType) - sizeof (FooterType);
-	}
-	else {
-		fprintf(stderr, "Supplied message length too small to hold header and footer\n");
-		header.messageID = (uint16_t) MESSAGE_ID_INVALID;
-		header.messageLength = 0;
-	}
-
-	if (debug) {
-		printf("Encoded ISO header:\n\tSync word: 0x%x\n\tTransmitter ID: %u\n\tMessage counter: %u\n\t"
-			   "Ack request | Protocol version: 0x%x\n\tMessage ID: 0x%x\n\tMessage length: %u\n",
-			   header.syncWord, header.transmitterID, header.messageCounter, header.ackReqProtVer,
-			   header.messageID, header.messageLength);
-	}
-
-	// Convert from host endianness to little endian
-	header.syncWord = htole16(header.syncWord);
-	header.messageID = htole16(header.messageID);
-	header.messageLength = htole32(header.messageLength);
-
-	return header;
-}
-
-/*!
- * \brief buildISOFooter Constructs a footer for an ISO message
- * \param message Pointer to start of message header
- * \param messageSize Size of the entire message including header and footer
- * \param debug Flag for enabling debugging
- * \return A struct containing ISO footer data
- */
-FooterType buildISOFooter(const void *message, const size_t messageSize, const char debug) {
-	FooterType footer;
-
-	// Calculate CRC - remembering that message begins with header and messageSize will include header and footer
-	footer.Crc = crc16(message, messageSize - sizeof (FooterType));
-
-	if (debug) {
-		printf("Encoded ISO footer:\n\tCRC: 0x%x\n", footer.Crc);
-	}
-
-	footer.Crc = htole16(footer.Crc);
-
-	return footer;
-}
 
 /*!
  * \brief isValidMessageID Determines if specified id is a valid ISO message ID. The reserved range is deemed
@@ -1250,103 +918,6 @@ enum ISOMessageID getISOMessageType(const char *messageData, const size_t length
 		printf("Message ID %u does not match any known ISO message\n", header.messageID);
 		return MESSAGE_ID_INVALID;
 	}
-}
-
-
-/*!
- * \brief crcByte Updates the given CRC based on an input byte from data
- * \param crc CRC from previous byte
- * \param byte New data byte
- * \return New CRC value
- */
-uint16_t crcByte(const uint16_t crc, const uint8_t byte) {
-	static const uint16_t crcTable[256] = {
-		0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
-		0x8108, 0x9129, 0xA14A, 0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF,
-		0x1231, 0x0210, 0x3273, 0x2252, 0x52B5, 0x4294, 0x72F7, 0x62D6,
-		0x9339, 0x8318, 0xB37B, 0xA35A, 0xD3BD, 0xC39C, 0xF3FF, 0xE3DE,
-		0x2462, 0x3443, 0x0420, 0x1401, 0x64E6, 0x74C7, 0x44A4, 0x5485,
-		0xA56A, 0xB54B, 0x8528, 0x9509, 0xE5EE, 0xF5CF, 0xC5AC, 0xD58D,
-		0x3653, 0x2672, 0x1611, 0x0630, 0x76D7, 0x66F6, 0x5695, 0x46B4,
-		0xB75B, 0xA77A, 0x9719, 0x8738, 0xF7DF, 0xE7FE, 0xD79D, 0xC7BC,
-		0x48C4, 0x58E5, 0x6886, 0x78A7, 0x0840, 0x1861, 0x2802, 0x3823,
-		0xC9CC, 0xD9ED, 0xE98E, 0xF9AF, 0x8948, 0x9969, 0xA90A, 0xB92B,
-		0x5AF5, 0x4AD4, 0x7AB7, 0x6A96, 0x1A71, 0x0A50, 0x3A33, 0x2A12,
-		0xDBFD, 0xCBDC, 0xFBBF, 0xEB9E, 0x9B79, 0x8B58, 0xBB3B, 0xAB1A,
-		0x6CA6, 0x7C87, 0x4CE4, 0x5CC5, 0x2C22, 0x3C03, 0x0C60, 0x1C41,
-		0xEDAE, 0xFD8F, 0xCDEC, 0xDDCD, 0xAD2A, 0xBD0B, 0x8D68, 0x9D49,
-		0x7E97, 0x6EB6, 0x5ED5, 0x4EF4, 0x3E13, 0x2E32, 0x1E51, 0x0E70,
-		0xFF9F, 0xEFBE, 0xDFDD, 0xCFFC, 0xBF1B, 0xAF3A, 0x9F59, 0x8F78,
-		0x9188, 0x81A9, 0xB1CA, 0xA1EB, 0xD10C, 0xC12D, 0xF14E, 0xE16F,
-		0x1080, 0x00A1, 0x30C2, 0x20E3, 0x5004, 0x4025, 0x7046, 0x6067,
-		0x83B9, 0x9398, 0xA3FB, 0xB3DA, 0xC33D, 0xD31C, 0xE37F, 0xF35E,
-		0x02B1, 0x1290, 0x22F3, 0x32D2, 0x4235, 0x5214, 0x6277, 0x7256,
-		0xB5EA, 0xA5CB, 0x95A8, 0x8589, 0xF56E, 0xE54F, 0xD52C, 0xC50D,
-		0x34E2, 0x24C3, 0x14A0, 0x0481, 0x7466, 0x6447, 0x5424, 0x4405,
-		0xA7DB, 0xB7FA, 0x8799, 0x97B8, 0xE75F, 0xF77E, 0xC71D, 0xD73C,
-		0x26D3, 0x36F2, 0x0691, 0x16B0, 0x6657, 0x7676, 0x4615, 0x5634,
-		0xD94C, 0xC96D, 0xF90E, 0xE92F, 0x99C8, 0x89E9, 0xB98A, 0xA9AB,
-		0x5844, 0x4865, 0x7806, 0x6827, 0x18C0, 0x08E1, 0x3882, 0x28A3,
-		0xCB7D, 0xDB5C, 0xEB3F, 0xFB1E, 0x8BF9, 0x9BD8, 0xABBB, 0xBB9A,
-		0x4A75, 0x5A54, 0x6A37, 0x7A16, 0x0AF1, 0x1AD0, 0x2AB3, 0x3A92,
-		0xFD2E, 0xED0F, 0xDD6C, 0xCD4D, 0xBDAA, 0xAD8B, 0x9DE8, 0x8DC9,
-		0x7C26, 0x6C07, 0x5C64, 0x4C45, 0x3CA2, 0x2C83, 0x1CE0, 0x0CC1,
-		0xEF1F, 0xFF3E, 0xCF5D, 0xDF7C, 0xAF9B, 0xBFBA, 0x8FD9, 0x9FF8,
-		0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
-	};
-
-	return (uint16_t) ((crc << 8) ^ crcTable[(crc >> 8) ^ byte]);
-}
-
-
-/*!
- * \brief crc16 Calculates the 16 bit CCITT checksum value for the polynomial
- *				x^16 + x^12 + x^5 + 1
- * \param data Block of data for which CRC is to be calculated
- * \param dataLen Length of the block of data
- * \return CRC checksum
- */
-uint16_t crc16(const uint8_t * data, size_t dataLen) {
-	uint16_t crc = DEFAULT_CRC_INIT_VALUE;
-
-	while (dataLen-- > 0) {
-		crc = crcByte(crc, *data++);
-	}
-	return crc;
-}
-
-
-/*!
- * \brief verifyChecksum Generates a checksum for specified data and checks if it matches against
- *			the specified CRC. If the specified CRC is 0, the message does not contain a CRC value
- *			and the message is assumed uncorrupted.
- * \param data Data for which checksum is to be verified
- * \param dataLen Length of the data
- * \param CRC Received CRC value for the data
- * \return Value according to ::ISOMessageReturnValue
- */
-enum ISOMessageReturnValue verifyChecksum(const void *data, const size_t dataLen, const uint16_t CRC,
-									 const char debug) {
-	if (!isCRCVerificationEnabled || CRC == 0) {
-		return MESSAGE_OK;
-	}
-
-	const uint16_t dataCRC = crc16(data, dataLen);
-
-	if (debug) {
-		printf("CRC given: %u, CRC calculated: %u\n", CRC, dataCRC);
-	}
-	return dataCRC == CRC ? MESSAGE_OK : MESSAGE_CRC_ERROR;
-}
-
-/*!
- * \brief setISOCRCVerification Enables or disables checksum verification on received messages (default
- *			is to enable checksum verification)
- * \param enabled Boolean for enabling or disabling the checksum verification
- */
-void setISOCRCVerification(const int8_t enabled) {
-	isCRCVerificationEnabled = enabled ? 1 : 0;
-	return;
 }
 
 
