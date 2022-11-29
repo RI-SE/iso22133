@@ -770,7 +770,7 @@ static uint64_t getAsGPSms(const struct timeval *time);
 
 // ************************** static variables ********************************************************************
 static uint16_t trajectoryMessageCrc = 0;
-static uint8_t transmitterID = 0xFF;
+static uint32_t transmitterID = 0xFF;
 
 // ************************** function definitions ****************************************************************
 void printContent(
@@ -866,7 +866,7 @@ int encodeContent(uint16_t valueID,
  * \brief setTransmitterID Sets the transmitter ID for subsequent constructed ISO messages
  * \param newTransmitterID Transmitter ID to be set
  */
-void setTransmitterID(const uint8_t newTransmitterID) {
+void setTransmitterID(const uint32_t newTransmitterID) {
 	transmitterID = newTransmitterID;
 }
 
@@ -874,7 +874,7 @@ void setTransmitterID(const uint8_t newTransmitterID) {
  * \brief getTransmitterID Get the configured transmitter ID
  * \return Transmitter ID
  */
-uint8_t getTransmitterID() {
+uint32_t getTransmitterID() {
 	return transmitterID;
 }
 

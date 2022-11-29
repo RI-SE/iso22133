@@ -463,8 +463,8 @@ ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData, char *dctiDataBuf
 enum ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer, const size_t bufferLength, DctiMessageDataType* dctiData, const char debug);
 enum ISOMessageID getISOMessageType(const char * messageData, const size_t length, const char debug);
 void setISOCRCVerification(const int8_t enabled);
-void setTransmitterID(const uint8_t transmitterID);
-uint8_t getTransmitterID();
+void setTransmitterID(const uint32_t transmitterID);
+uint32_t getTransmitterID();
 
 /* AstaZero vendor specific messages - TODO move to a separate repository */
 ssize_t encodePODIMessage(const PeerObjectInjectionType* peerObjectData, char* podiDataBuffer, const size_t bufferLength, const char debug);
