@@ -14,7 +14,6 @@ protected:
 		*reinterpret_cast<uint32_t*>(message + 11) = htole32(0x3456789A);	// Receiver ID
 		*reinterpret_cast<uint8_t*>(message + 15) = 0xBC;					// Message counter
 		*reinterpret_cast<uint16_t*>(message + 16) = htole16(0xDEF0);		// Message ID
-
 	}
 	void SetUp() override {
 		auto ret = decodeISOHeader(message, 18, &header, false);
@@ -52,4 +51,46 @@ TEST_F(HeaderDecode, MessageCounter) {
 
 TEST_F(HeaderDecode, MessageID) {
 	EXPECT_EQ(0xDEF0, header.messageID);
+}
+
+
+class HeaderEncode : public ::testing::Test
+{
+protected:
+	HeaderEncode() {}
+	virtual ~HeaderEncode();
+	void SetUp() override {
+		setTransmitterID(0xBEEF);
+		header = buildISOHeader(MESSAGE_ID_TRAJ, 123, false);
+	}
+	HeaderType header;
+};
+HeaderEncode::~HeaderEncode() {}
+
+TEST_F(HeaderEncode, SyncWord) {
+	EXPECT_EQ(0x7E7F, le16toh(header.syncWord));
+}
+
+TEST_F(HeaderEncode, MessageLength) {
+	EXPECT_EQ(103, le32toh(header.messageLength));	// Message length excludes header and footer
+}
+
+TEST_F(HeaderEncode, AckReqProtVer) {
+	EXPECT_EQ(0x02, header.ackReqProtVer);
+}
+
+TEST_F(HeaderEncode, TransmitterID) {
+	EXPECT_EQ(0xBEEF, le32toh(header.transmitterID));
+}
+
+TEST_F(HeaderEncode, ReceiverID) {
+	EXPECT_EQ(0, le32toh(header.receiverID));
+}
+
+TEST_F(HeaderEncode, MessageCounter) {
+	EXPECT_EQ(0, header.messageCounter);
+}
+
+TEST_F(HeaderEncode, MessageID) {
+	EXPECT_EQ(MESSAGE_ID_TRAJ, le16toh(header.messageID));
 }
