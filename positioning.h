@@ -19,6 +19,9 @@ typedef struct {
 	double yCoord_m;
 	double zCoord_m;
 	double heading_rad;
+	bool isXcoordValid;
+	bool isYcoordValid;
+	bool isZcoordValid;
 	bool isPositionValid;
 	bool isHeadingValid;
 } CartesianPosition; // TODO: rename

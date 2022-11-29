@@ -2074,7 +2074,7 @@ ssize_t encodeOSEMMessage(
 	OSEMData.date = objectSettings->isTimestampValid ?
 				(uint32_t) ((printableTime->tm_year + 1900) * 10000 + (printableTime->tm_mon + 1) * 100 +
 						   (printableTime->tm_mday))
-			  : DATE_UNAVAILABLE_VALUE;
+			  : DATE_UNAVAILABLE_VALUE; //Should OSEM be able to be sent without Date?
 
 	OSEMData.GPSWeekValueID = VALUE_ID_OSEM_GPS_WEEK;
 	OSEMData.GPSWeekContentLength = sizeof (OSEMData.GPSWeek);
@@ -3099,9 +3099,9 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	MONRData.gpsQmsOfWeek =
 		GPSQmsOfWeek >= 0 ? (uint32_t) GPSQmsOfWeek : GPS_SECOND_OF_WEEK_UNAVAILABLE_VALUE;
 	if (position.isPositionValid) {
-		MONRData.xPosition = (int32_t) (position.xCoord_m * POSITION_ONE_METER_VALUE);
-		MONRData.yPosition = (int32_t) (position.yCoord_m * POSITION_ONE_METER_VALUE);
-		MONRData.zPosition = (int32_t) (position.zCoord_m * POSITION_ONE_METER_VALUE);
+		MONRData.xPosition = position.isXcoordValid ? (int32_t) (position.xCoord_m * POSITION_ONE_METER_VALUE) : POSITION_UNAVAILABLE_VALUE;
+		MONRData.yPosition = position.isYcoordValid ?  (int32_t) (position.yCoord_m * POSITION_ONE_METER_VALUE) : POSITION_UNAVAILABLE_VALUE;
+		MONRData.zPosition = position.isZcoordValid ? (int32_t) (position.zCoord_m * POSITION_ONE_METER_VALUE) : POSITION_UNAVAILABLE_VALUE;
 	}
 	else {
 		errno = EINVAL;
@@ -3951,7 +3951,7 @@ ssize_t encodeMTSPMessage(const struct timeval *estSyncPointTime, char *mtspData
 	int64_t syncPtTime = getAsGPSQuarterMillisecondOfWeek(estSyncPointTime);
 
 	MTSPData.estSyncPointTime = estSyncPointTime == NULL || syncPtTime < 0 ?
-		GPS_SECOND_OF_WEEK_UNAVAILABLE_VALUE : (uint32_t) syncPtTime;
+		ESTIMATED_SYNC_POINT_TIME_UNAVAILABLE_VALUE : (uint32_t) syncPtTime;
 
 	if (debug) {
 		printf("MTSP message:\n\t"
