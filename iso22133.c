@@ -157,12 +157,12 @@ enum ArmReadinessValues {
 #pragma pack(push,1)			// Ensure sizeof() is useable for (most) network byte lengths
 /*! ISO message header */
 typedef struct {
-	uint16_t SyncWordU16;
-	uint8_t TransmitterIdU8;
-	uint8_t MessageCounterU8;
-	uint8_t AckReqProtVerU8;
-	uint16_t MessageIdU16;
-	uint32_t MessageLengthU32;
+	uint16_t syncWord;
+	uint8_t transmitterID;
+	uint8_t messageCounter;
+	uint8_t ackReqProtVer;
+	uint16_t messageID;
+	uint32_t messageLength;
 } HeaderType;
 
 /*! ISO message footer */
