@@ -19,6 +19,7 @@ HeaderType buildISOHeader(enum ISOMessageID id, uint32_t messageLength, const ch
 
 	header.syncWord = ISO_SYNC_WORD;
 	header.transmitterID = getTransmitterID();
+	header.receiverID = 0; // TODO: Set receiver ID
 	header.messageCounter = 0;
 	header.ackReqProtVer = ACK_REQ | ISO_PROTOCOL_VERSION;
 	if (messageLength >= sizeof (HeaderType) + sizeof (FooterType)) {
@@ -32,15 +33,17 @@ HeaderType buildISOHeader(enum ISOMessageID id, uint32_t messageLength, const ch
 	}
 
 	if (debug) {
-		printf("Encoded ISO header:\n\tSync word: 0x%x\n\tTransmitter ID: %u\n\tMessage counter: %u\n\t"
+		printf("Encoded ISO header:\n\tSync word: 0x%x\n\tTransmitter ID: %u\n\tTransmitter ID: %u\n\tMessage counter: %u\n\t"
 			   "Ack request | Protocol version: 0x%x\n\tMessage ID: 0x%x\n\tMessage length: %u\n",
-			   header.syncWord, header.transmitterID, header.messageCounter, header.ackReqProtVer,
+			   header.syncWord, header.transmitterID, header.receiverID, header.messageCounter, header.ackReqProtVer,
 			   header.messageID, header.messageLength);
 	}
 
 	// Convert from host endianness to little endian
 	header.syncWord = htole16(header.syncWord);
 	header.messageID = htole16(header.messageID);
+	header.transmitterID = htole32(header.transmitterID);
+	header.receiverID = htole32(header.receiverID);
 	header.messageLength = htole32(header.messageLength);
 
 	return header;
