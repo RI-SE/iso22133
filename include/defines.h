@@ -127,3 +127,26 @@ static const uint8_t SupportedProtocolVersions[] = { 2 };
 #	include <endian.h>
 #endif
 
+// ************************* Non-ISO type definitions and defines ************************************************
+// Byte swapper definitions for 6 byte values and floats
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+#define le48toh(x) (x)
+#define htole48(x) (x)
+#define htolef(x) (x)
+#else
+#define le48toh(x) (le64toh(x) >> 16)
+#define htole48(x) (htole64(x) >> 16)
+#define htolef_a(x) \
+	htole32((union { uint32_t i; float f; }){ .f = (x) }.i)
+#define htolef(x) \
+  ((union { uint32_t i; float f; }){ .i = htolef_a(x) }.f)
+#endif
+
+// Time constants
+// Leap seconds between UTC and GPS
+#define MS_LEAP_SEC_DIFF_UTC_GPS (18000)
+// Length of a week
+#define WEEK_TIME_QMS 2419200000
+#define WEEK_TIME_MS 604800000
+// Time between 1970-01-01 and 1980-01-06
+#define MS_TIME_DIFF_UTC_GPS ((uint64_t)(315964800000))
