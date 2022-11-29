@@ -60,7 +60,7 @@ typedef struct {
 
 // ************************* Type definitions according ISO protocol specification *******************************
 //! Predefined integer values with special meaning
-#define ISO_SYNC_WORD 0x7E7E
+#define ISO_SYNC_WORD 0x7E7F
 #define TRANSMITTER_ID_UNAVAILABLE_VALUE UINT32_MAX
 #define CONTROL_CENTER_STATUS_UNAVAILABLE 255
 #define LATITUDE_UNAVAILABLE_VALUE (-140737488355328)
