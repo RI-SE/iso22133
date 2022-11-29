@@ -60,7 +60,7 @@ typedef struct {
 
 // ************************* Type definitions according ISO protocol specification *******************************
 //! Predefined integer values with special meaning
-#define ISO_SYNC_WORD 0x7E7E
+#define ISO_SYNC_WORD 0x7E7F
 #define TRANSMITTER_ID_UNAVAILABLE_VALUE UINT32_MAX
 #define CONTROL_CENTER_STATUS_UNAVAILABLE 255
 #define LATITUDE_UNAVAILABLE_VALUE (-140737488355328)
@@ -157,12 +157,13 @@ enum ArmReadinessValues {
 #pragma pack(push,1)			// Ensure sizeof() is useable for (most) network byte lengths
 /*! ISO message header */
 typedef struct {
-	uint16_t SyncWordU16;
-	uint8_t TransmitterIdU8;
-	uint8_t MessageCounterU8;
-	uint8_t AckReqProtVerU8;
-	uint16_t MessageIdU16;
-	uint32_t MessageLengthU32;
+	uint16_t syncWord;
+	uint32_t messageLength;
+	uint8_t ackReqProtVer;
+	uint32_t transmitterID;
+	uint32_t receiverID;
+	uint8_t messageCounter;
+	uint16_t messageID;
 } HeaderType;
 
 /*! ISO message footer */
@@ -1039,8 +1040,11 @@ uint8_t getTransmitterID() {
  * \param debug Flag for enabling debugging of this function
  * \return value according to ::ISOMessageReturnValue
  */
-enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t length, HeaderType * HeaderData,
-									  const char debug) {
+enum ISOMessageReturnValue decodeISOHeader(
+	const char *MessageBuffer,
+	const size_t length,
+	HeaderType * HeaderData,
+	const char debug) {
 
 	const char *p = MessageBuffer;
 	enum ISOMessageReturnValue retval = MESSAGE_OK;
@@ -1056,28 +1060,26 @@ enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size
 	}
 
 	// Decode ISO header
-	memcpy(&HeaderData->SyncWordU16, p, sizeof (HeaderData->SyncWordU16));
-	HeaderData->SyncWordU16 = le16toh(HeaderData->SyncWordU16);
-	p += sizeof (HeaderData->SyncWordU16);
+	memcpy(&HeaderData->syncWord, p, sizeof (HeaderData->syncWord));
+	HeaderData->syncWord = le16toh(HeaderData->syncWord);
+	p += sizeof (HeaderData->syncWord);
 
 	// If sync word is not correct, generate error
-	if (HeaderData->SyncWordU16 != ISO_SYNC_WORD) {
+	if (HeaderData->syncWord != ISO_SYNC_WORD) {
 		fprintf(stderr, "Sync word error when decoding ISO header\n");
 		memset(HeaderData, 0, sizeof (*HeaderData));
 		return MESSAGE_SYNC_WORD_ERROR;
 	}
 
-	memcpy(&HeaderData->TransmitterIdU8, p, sizeof (HeaderData->TransmitterIdU8));
-	p += sizeof (HeaderData->TransmitterIdU8);
+	memcpy(&HeaderData->messageLength, p, sizeof (HeaderData->messageLength));
+	p += sizeof (HeaderData->messageLength);
+	HeaderData->messageLength = le32toh(HeaderData->messageLength);
 
-	memcpy(&HeaderData->MessageCounterU8, p, sizeof (HeaderData->MessageCounterU8));
-	p += sizeof (HeaderData->MessageCounterU8);
-
-	memcpy(&HeaderData->AckReqProtVerU8, p, sizeof (HeaderData->AckReqProtVerU8));
-	p += sizeof (HeaderData->AckReqProtVerU8);
+	memcpy(&HeaderData->ackReqProtVer, p, sizeof (HeaderData->ackReqProtVer));
+	p += sizeof (HeaderData->ackReqProtVer);
 
 	// Loop over permitted protocol versions to see if current version is among them
-	messageProtocolVersion = HeaderData->AckReqProtVerU8 & ProtocolVersionBitmask;
+	messageProtocolVersion = HeaderData->ackReqProtVer & ProtocolVersionBitmask;
 	for (size_t i = 0; i < sizeof (SupportedProtocolVersions) / sizeof (SupportedProtocolVersions[0]); ++i) {
 		if (SupportedProtocolVersions[i] == messageProtocolVersion) {
 			isProtocolVersionSupported = 1;
@@ -1093,21 +1095,29 @@ enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size
 		return retval;
 	}
 
-	memcpy(&HeaderData->MessageIdU16, p, sizeof (HeaderData->MessageIdU16));
-	p += sizeof (HeaderData->MessageIdU16);
-	HeaderData->MessageIdU16 = le16toh(HeaderData->MessageIdU16);
+	memcpy(&HeaderData->transmitterID, p, sizeof (HeaderData->transmitterID));
+	p += sizeof (HeaderData->transmitterID);
+	HeaderData->transmitterID = le32toh(HeaderData->transmitterID);
 
-	memcpy(&HeaderData->MessageLengthU32, p, sizeof (HeaderData->MessageLengthU32));
-	p += sizeof (HeaderData->MessageLengthU32);
-	HeaderData->MessageLengthU32 = le32toh(HeaderData->MessageLengthU32);
+	memcpy(&HeaderData->receiverID, p, sizeof (HeaderData->receiverID));
+	p += sizeof (HeaderData->receiverID);
+	HeaderData->receiverID = le32toh(HeaderData->receiverID);
+
+	memcpy(&HeaderData->messageCounter, p, sizeof (HeaderData->messageCounter));
+	p += sizeof (HeaderData->messageCounter);
+
+	memcpy(&HeaderData->messageID, p, sizeof (HeaderData->messageID));
+	p += sizeof (HeaderData->messageID);
+	HeaderData->messageID = le16toh(HeaderData->messageID);
 
 	if (debug) {
-		printf("SyncWordU16 = 0x%x\n", HeaderData->SyncWordU16);
-		printf("TransmitterIdU8 = 0x%x\n", HeaderData->TransmitterIdU8);
-		printf("MessageCounterU8 = 0x%x\n", HeaderData->MessageCounterU8);
-		printf("AckReqProtVerU8 = 0x%x\n", HeaderData->AckReqProtVerU8);
-		printf("MessageIdU16 = 0x%x\n", HeaderData->MessageIdU16);
-		printf("MessageLengthU32 = 0x%x\n", HeaderData->MessageLengthU32);
+		printf("syncWord = 0x%x\n", HeaderData->syncWord);
+		printf("messageLength = 0x%x\n", HeaderData->messageLength);
+		printf("ackReqProtVer = 0x%x\n", HeaderData->ackReqProtVer);
+		printf("transmitterID = 0x%x\n", HeaderData->transmitterID);
+		printf("receiverID = 0x%x\n", HeaderData->receiverID);
+		printf("messageCounter = 0x%x\n", HeaderData->messageCounter);
+		printf("messageID = 0x%x\n", HeaderData->messageID);
 	}
 
 	return retval;
@@ -1150,31 +1160,31 @@ enum ISOMessageReturnValue decodeISOFooter(const char *MessageBuffer, const size
 HeaderType buildISOHeader(enum ISOMessageID id, uint32_t messageLength, const char debug) {
 	HeaderType header;
 
-	header.SyncWordU16 = ISO_SYNC_WORD;
-	header.TransmitterIdU8 = transmitterID;
-	header.MessageCounterU8 = 0;
-	header.AckReqProtVerU8 = ACK_REQ | ISO_PROTOCOL_VERSION;
+	header.syncWord = ISO_SYNC_WORD;
+	header.transmitterID = transmitterID;
+	header.messageCounter = 0;
+	header.ackReqProtVer = ACK_REQ | ISO_PROTOCOL_VERSION;
 	if (messageLength >= sizeof (HeaderType) + sizeof (FooterType)) {
-		header.MessageIdU16 = (uint16_t) id;
-		header.MessageLengthU32 = messageLength - sizeof (HeaderType) - sizeof (FooterType);
+		header.messageID = (uint16_t) id;
+		header.messageLength = messageLength - sizeof (HeaderType) - sizeof (FooterType);
 	}
 	else {
 		fprintf(stderr, "Supplied message length too small to hold header and footer\n");
-		header.MessageIdU16 = (uint16_t) MESSAGE_ID_INVALID;
-		header.MessageLengthU32 = 0;
+		header.messageID = (uint16_t) MESSAGE_ID_INVALID;
+		header.messageLength = 0;
 	}
 
 	if (debug) {
 		printf("Encoded ISO header:\n\tSync word: 0x%x\n\tTransmitter ID: %u\n\tMessage counter: %u\n\t"
 			   "Ack request | Protocol version: 0x%x\n\tMessage ID: 0x%x\n\tMessage length: %u\n",
-			   header.SyncWordU16, header.TransmitterIdU8, header.MessageCounterU8, header.AckReqProtVerU8,
-			   header.MessageIdU16, header.MessageLengthU32);
+			   header.syncWord, header.transmitterID, header.messageCounter, header.ackReqProtVer,
+			   header.messageID, header.messageLength);
 	}
 
 	// Convert from host endianness to little endian
-	header.SyncWordU16 = htole16(header.SyncWordU16);
-	header.MessageIdU16 = htole16(header.MessageIdU16);
-	header.MessageLengthU32 = htole32(header.MessageLengthU32);
+	header.syncWord = htole16(header.syncWord);
+	header.messageID = htole16(header.messageID);
+	header.messageLength = htole32(header.messageLength);
 
 	return header;
 }
@@ -1234,10 +1244,10 @@ enum ISOMessageID getISOMessageType(const char *messageData, const size_t length
 	}
 
 	// Check if header contains valid message ID, if so return it
-	if (isValidMessageID(header.MessageIdU16))
-		return (enum ISOMessageID) header.MessageIdU16;
+	if (isValidMessageID(header.messageID))
+		return (enum ISOMessageID) header.messageID;
 	else {
-		printf("Message ID %u does not match any known ISO message\n", header.MessageIdU16);
+		printf("Message ID %u does not match any known ISO message\n", header.messageID);
 		return MESSAGE_ID_INVALID;
 	}
 }
@@ -1489,7 +1499,7 @@ ssize_t decodeTRAJMessageHeader(
 	p += sizeof (TRAJHeaderData.header);
 
 	// If message is not a  message, generate an error
-	if (TRAJHeaderData.header.MessageIdU16 != MESSAGE_ID_TRAJ) {
+	if (TRAJHeaderData.header.messageID != MESSAGE_ID_TRAJ) {
 		fprintf(stderr, "Attempted to pass non-TRAJ message into TRAJ header parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
@@ -1541,11 +1551,11 @@ ssize_t decodeTRAJMessageHeader(
 		printf("\tTrajectory ID: 0x%x\n", TRAJHeaderData.trajectoryID);
 		printf("\tTrajectory name: %s\n", TRAJHeaderData.trajectoryName);
 		printf("\tTrajectory version: %u\n", TRAJHeaderData.trajectoryVersion);
-		printf("\tTRAJ length: %u bytes\n", TRAJHeaderData.header.MessageLengthU32 - sizeof(TRAJHeaderType) + sizeof(HeaderType));
+		printf("\tTRAJ length: %u bytes\n", TRAJHeaderData.header.messageLength - sizeof(TRAJHeaderType) + sizeof(HeaderType));
 	}
 
 	// Fill output struct with parsed data
-	convertTRAJHeaderToHostRepresentation(&TRAJHeaderData, TRAJHeaderData.header.MessageLengthU32, trajHeader);
+	convertTRAJHeaderToHostRepresentation(&TRAJHeaderData, TRAJHeaderData.header.messageLength, trajHeader);
 	return retval < 0 ? retval : p - trajDataBuffer;
 }
 
@@ -2242,17 +2252,17 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
 	}
 	p += sizeof (OSEMData.header);
 	if (senderID != NULL) {
-		*senderID = OSEMData.header.TransmitterIdU8;
+		*senderID = OSEMData.header.transmitterID;
 	}
 
 	// If message is not a OSEM message, generate an error
-	if (OSEMData.header.MessageIdU16 != MESSAGE_ID_OSEM) {
+	if (OSEMData.header.messageID != MESSAGE_ID_OSEM) {
 		fprintf(stderr, "Attempted to pass non-OSEM message into OSEM parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
 	// Decode contents
-	while ((size_t) (p - osemDataBuffer) < OSEMData.header.MessageLengthU32 + sizeof (OSEMData.header)) {
+	while ((size_t) (p - osemDataBuffer) < OSEMData.header.messageLength + sizeof (OSEMData.header)) {
 		// Decode value ID and length
 		memset(&valueID, 0, sizeof (valueID));
 		memcpy(&valueID, p, sizeof (valueID));
@@ -2349,7 +2359,7 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
 	}
 	p += sizeof (OSEMData.footer);
 
-	if ((retval = verifyChecksum(osemDataBuffer, OSEMData.header.MessageLengthU32 + sizeof (OSEMData.header),
+	if ((retval = verifyChecksum(osemDataBuffer, OSEMData.header.messageLength + sizeof (OSEMData.header),
 								 OSEMData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
 		fprintf(stderr, "OSEM checksum error\n");
 		return retval;
@@ -2555,17 +2565,17 @@ ssize_t decodeOSTMMessage(
 	p += sizeof (OSTMData.header);
 
 	// If message is not a PODI message, generate an error
-	if (OSTMData.header.MessageIdU16 != MESSAGE_ID_OSTM) {
+	if (OSTMData.header.messageID != MESSAGE_ID_OSTM) {
 		fprintf(stderr, "Attempted to pass non-OSTM message into OSTM parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
-	if (OSTMData.header.MessageLengthU32 > sizeof (OSTMType) - sizeof (HeaderType) - sizeof (FooterType)) {
+	if (OSTMData.header.messageLength > sizeof (OSTMType) - sizeof (HeaderType) - sizeof (FooterType)) {
 		fprintf(stderr, "OSTM message exceeds expected message length\n");
 		return MESSAGE_LENGTH_ERROR;
 	}
 
-	while (p - ostmDataBuffer < OSTMData.header.MessageLengthU32 + sizeof (HeaderType)) {
+	while (p - ostmDataBuffer < OSTMData.header.messageLength + sizeof (HeaderType)) {
 		memcpy(&valueID, p, sizeof (valueID));
 		p += sizeof (valueID);
 		memcpy(&contentLength, p, sizeof (contentLength));
@@ -2602,7 +2612,7 @@ ssize_t decodeOSTMMessage(
 	}
 	p += sizeof (OSTMData.footer);
 
-	if ((retval = verifyChecksum(ostmDataBuffer, OSTMData.header.MessageLengthU32 + sizeof (HeaderType),
+	if ((retval = verifyChecksum(ostmDataBuffer, OSTMData.header.messageLength + sizeof (HeaderType),
 								 OSTMData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
 		fprintf(stderr, "OSTM checksum error\n");
 		return retval;
@@ -2721,12 +2731,12 @@ ssize_t decodeSTRTMessage(
 	p += sizeof (STRTData.header);
 
 	// If message is not a STRT message, generate an error
-	if (STRTData.header.MessageIdU16 != MESSAGE_ID_STRT) {
+	if (STRTData.header.messageID != MESSAGE_ID_STRT) {
 		fprintf(stderr, "Attempted to pass non-STRT message into STRT parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
-	if (STRTData.header.MessageLengthU32 > sizeof (STRTType) - sizeof (HeaderType) - sizeof (FooterType)) {
+	if (STRTData.header.messageLength > sizeof (STRTType) - sizeof (HeaderType) - sizeof (FooterType)) {
 		fprintf(stderr, "STRT message exceeds expected message length\n");
 		return MESSAGE_LENGTH_ERROR;
 	}
@@ -2795,12 +2805,12 @@ ssize_t decodeSTRTMessage(
 
 	if (debug) {
 		printf("STRT:\n");
-		printf("SyncWord = %x\n", STRTData.header.SyncWordU16);
-		printf("TransmitterId = %d\n", STRTData.header.TransmitterIdU8);
-		printf("PackageCounter = %d\n", STRTData.header.MessageCounterU8);
-		printf("AckReq = %d\n", STRTData.header.AckReqProtVerU8);
-		printf("MessageId = %d\n", STRTData.header.MessageIdU16);
-		printf("MessageLength = %d\n", STRTData.header.MessageLengthU32);
+		printf("SyncWord = %x\n", STRTData.header.syncWord);
+		printf("TransmitterId = %d\n", STRTData.header.transmitterID);
+		printf("PackageCounter = %d\n", STRTData.header.messageCounter);
+		printf("AckReq = %d\n", STRTData.header.ackReqProtVer);
+		printf("MessageId = %d\n", STRTData.header.messageID);
+		printf("MessageLength = %d\n", STRTData.header.messageLength);
 		printf("StartTime value ID: 0x%x\n", STRTData.StartTimeValueIdU16);
 		printf("StartTime content length: %u\n", STRTData.StartTimeContentLengthU16);
  		printf("StartTime value: %u\n", STRTData.StartTimeU32);
@@ -2966,13 +2976,13 @@ ssize_t decodeHEABMessage(const char *heabDataBuffer,
 	p += sizeof (HEABData.header);
 
 	// If message is not a HEAB message, generate an error
-	if (HEABData.header.MessageIdU16 != MESSAGE_ID_HEAB) {
+	if (HEABData.header.messageID != MESSAGE_ID_HEAB) {
 		fprintf(stderr, "Attempted to pass non-HEAB message into HEAB parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
 	
-	if (HEABData.header.MessageLengthU32 > sizeof (HEABType) - sizeof (HeaderType) - sizeof (FooterType)) {
+	if (HEABData.header.messageLength > sizeof (HEABType) - sizeof (HeaderType) - sizeof (FooterType)) {
 		fprintf(stderr, "HEAB message exceeds expected message length\n");
 		return MESSAGE_LENGTH_ERROR;
 	}
@@ -3015,7 +3025,7 @@ ssize_t decodeHEABMessage(const char *heabDataBuffer,
 		printf("\tControlCenterStatus: %u\n", HEABData.controlCenterStatus);
 	}
 
-	retval = convertHEABToHostRepresentation(&HEABData, &currentTime, HEABData.header.TransmitterIdU8, heabData);
+	retval = convertHEABToHostRepresentation(&HEABData, &currentTime, HEABData.header.transmitterID, heabData);
 
 	return retval < 0 ? retval : p - heabDataBuffer;
 }
@@ -3244,17 +3254,17 @@ ssize_t decodeRCMMMessage(
 	p += sizeof (RCMMData.header);
 
 	// If message is not a RCMM message, generate an error
-	if (RCMMData.header.MessageIdU16 != MESSAGE_ID_RCMM) {
+	if (RCMMData.header.messageID != MESSAGE_ID_RCMM) {
 		fprintf(stderr, "Attempted to pass non-RCMM message into RCMM parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
-	if (RCMMData.header.MessageLengthU32 > sizeof (RCMMType) - sizeof (HeaderType) - sizeof (FooterType)) {
+	if (RCMMData.header.messageLength > sizeof (RCMMType) - sizeof (HeaderType) - sizeof (FooterType)) {
 		fprintf(stderr, "RCMM message exceeds expected message length\n");
 		return MESSAGE_LENGTH_ERROR;
 	}
 
-	while (p - rcmmDataBuffer < RCMMData.header.MessageLengthU32 + sizeof (HeaderType)) {
+	while (p - rcmmDataBuffer < RCMMData.header.messageLength + sizeof (HeaderType)) {
 		memcpy(&valueID, p, sizeof (valueID));
 		p += sizeof (valueID);
 		memcpy(&contentLength, p, sizeof (contentLength));
@@ -3324,7 +3334,7 @@ ssize_t decodeRCMMMessage(
 	}
 
 	p += sizeof (RCMMData.footer);
-	if ((retval = verifyChecksum(rcmmDataBuffer, RCMMData.header.MessageLengthU32 + sizeof (HeaderType),
+	if ((retval = verifyChecksum(rcmmDataBuffer, RCMMData.header.messageLength + sizeof (HeaderType),
 								 RCMMData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
 		fprintf(stderr, "RCMM checksum error\n");
 		return retval;
@@ -3613,10 +3623,10 @@ ssize_t decodeMONRMessage(const char *monrDataBuffer,
 		return retval;
 	}
 	p += sizeof (MONRData.header);
-	*objectID = MONRData.header.TransmitterIdU8;
+	*objectID = MONRData.header.transmitterID;
 
 	// If message is not a MONR message, generate an error
-	if (MONRData.header.MessageIdU16 != MESSAGE_ID_MONR) {
+	if (MONRData.header.messageID != MESSAGE_ID_MONR) {
 		fprintf(stderr, "Attempted to pass non-MONR message into MONR parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
@@ -3708,12 +3718,12 @@ ssize_t decodeMONRMessage(const char *monrDataBuffer,
 
 	if (debug) {
 		printf("MONR:\n");
-		printf("SyncWord = %x\n", MONRData.header.SyncWordU16);
-		printf("TransmitterId = %d\n", MONRData.header.TransmitterIdU8);
-		printf("PackageCounter = %d\n", MONRData.header.MessageCounterU8);
-		printf("AckReq = %d\n", MONRData.header.AckReqProtVerU8);
-		printf("MessageId = %d\n", MONRData.header.MessageIdU16);
-		printf("MessageLength = %d\n", MONRData.header.MessageLengthU32);
+		printf("SyncWord = %x\n", MONRData.header.syncWord);
+		printf("TransmitterId = %d\n", MONRData.header.transmitterID);
+		printf("PackageCounter = %d\n", MONRData.header.messageCounter);
+		printf("AckReq = %d\n", MONRData.header.ackReqProtVer);
+		printf("MessageId = %d\n", MONRData.header.messageID);
+		printf("MessageLength = %d\n", MONRData.header.messageLength);
 		printf("ValueId = %d\n", MONRData.monrStructValueID);
 		printf("ContentLength = %d\n", MONRData.monrStructContentLength);
 		printf("GPSSOW = %d\n", MONRData.gpsQmsOfWeek);
@@ -4443,17 +4453,17 @@ ssize_t decodePODIMessage(
 	p += sizeof (PODIData.header);
 
 	// If message is not a PODI message, generate an error
-	if (PODIData.header.MessageIdU16 != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_PODI) {
+	if (PODIData.header.messageID != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_PODI) {
 		fprintf(stderr, "Attempted to pass non-PODI message into PODI parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
-	if (PODIData.header.MessageLengthU32 > sizeof (PODIType) - sizeof (HeaderType) - sizeof (FooterType)) {
+	if (PODIData.header.messageLength > sizeof (PODIType) - sizeof (HeaderType) - sizeof (FooterType)) {
 		fprintf(stderr, "PODI message exceeds expected message length\n");
 		return MESSAGE_LENGTH_ERROR;
 	}
 
-	while (p - podiDataBuffer < PODIData.header.MessageLengthU32 + sizeof (HeaderType)) {
+	while (p - podiDataBuffer < PODIData.header.messageLength + sizeof (HeaderType)) {
 		memcpy(&valueID, p, sizeof (valueID));
 		p += sizeof (valueID);
 		memcpy(&contentLength, p, sizeof (contentLength));
@@ -4559,7 +4569,7 @@ ssize_t decodePODIMessage(
 	}
 	p += sizeof (PODIData.footer);
 
-	/*if ((retval = verifyChecksum(podiDataBuffer, PODIData.header.MessageLengthU32 + sizeof (HeaderType),
+	/*if ((retval = verifyChecksum(podiDataBuffer, PODIData.header.messageLength + sizeof (HeaderType),
 								 PODIData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
 		fprintf(stderr, "PODI checksum error\n");
 		return retval;
@@ -4722,14 +4732,14 @@ ssize_t decodeOPROMessage(
 	p += sizeof (OPROData.header);
 
 	// If message is not a OPRO message, generate an error
-	if (OPROData.header.MessageIdU16 != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_OPRO) {
+	if (OPROData.header.messageID != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_OPRO) {
 		fprintf(stderr, "Attempted to pass non-OPRO message into OPRO parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
 
 	// Decode contents
-	while ((size_t) (p - oproDataBuffer) < OPROData.header.MessageLengthU32 + sizeof (OPROData.header)) {
+	while ((size_t) (p - oproDataBuffer) < OPROData.header.messageLength + sizeof (OPROData.header)) {
 		// Decode value ID and length
 		memcpy(&valueID, p, sizeof (valueID));
 		p += sizeof (valueID);
@@ -4828,7 +4838,7 @@ ssize_t decodeOPROMessage(
 	}
 	p += sizeof (OPROData.footer);
 
-	if ((retval = verifyChecksum(oproDataBuffer, OPROData.header.MessageLengthU32 + sizeof (OPROData.header),
+	if ((retval = verifyChecksum(oproDataBuffer, OPROData.header.messageLength + sizeof (OPROData.header),
 								 OPROData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
 		fprintf(stderr, "OPRO checksum error\n");
 		return retval;
@@ -5098,7 +5108,7 @@ enum ISOMessageReturnValue convertOPROToHostRepresentation(const OPROType* OPROD
 	objectProperties->isObjectYDisplacementValid = OPROData->objectLengthYValueID && OPROData->positionDisplacementY != POSITION_UNAVAILABLE_VALUE;
 	objectProperties->isObjectZDisplacementValid = OPROData->objectLengthZValueID && OPROData->positionDisplacementZ != POSITION_UNAVAILABLE_VALUE;
 
-	objectProperties->objectID = OPROData->header.TransmitterIdU8;
+	objectProperties->objectID = OPROData->header.transmitterID;
 
 	objectProperties->objectType = OPROData->objectTypeValueID ? OPROData->objectType : OBJECT_CATEGORY_UNKNOWN;
 	objectProperties->actorType = OPROData->actorTypeValueID ? OPROData->actorType : ACTOR_TYPE_UNKNOWN;
@@ -5146,7 +5156,7 @@ enum ISOMessageReturnValue convertFOPRToHostRepresentation(const FOPRType* FOPRD
 	foreignObjectProperties->isObjectYDisplacementValid = FOPRData->objectLengthYValueID && FOPRData->positionDisplacementY != POSITION_UNAVAILABLE_VALUE;
 	foreignObjectProperties->isObjectZDisplacementValid = FOPRData->objectLengthZValueID && FOPRData->positionDisplacementZ != POSITION_UNAVAILABLE_VALUE;
 
-	foreignObjectProperties->foreignTransmitterID = FOPRData->header.TransmitterIdU8;
+	foreignObjectProperties->foreignTransmitterID = FOPRData->header.transmitterID;
 
 	foreignObjectProperties->objectType = FOPRData->objectTypeValueID ? FOPRData->objectType : OBJECT_CATEGORY_UNKNOWN;
 	foreignObjectProperties->actorType = FOPRData->actorTypeValueID ? FOPRData->actorType : ACTOR_TYPE_UNKNOWN;
@@ -5212,14 +5222,14 @@ ssize_t decodeFOPRMessage(
 	p += sizeof (FOPRData.header);
 
 	// If message is not a FOPR message, generate an error
-	if (FOPRData.header.MessageIdU16 != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_FOPR) {
+	if (FOPRData.header.messageID != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_FOPR) {
 		fprintf(stderr, "Attempted to pass non-FOPR message into FOPR parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
 
 	// Decode contents
-	while ((size_t) (p - foprDataBuffer) < FOPRData.header.MessageLengthU32 + sizeof (FOPRData.header)) {
+	while ((size_t) (p - foprDataBuffer) < FOPRData.header.messageLength + sizeof (FOPRData.header)) {
 		// Decode value ID and length
 		memcpy(&valueID, p, sizeof (valueID));
 		p += sizeof (valueID);
@@ -5323,7 +5333,7 @@ ssize_t decodeFOPRMessage(
 		return retval;
 	}
 
-	if ((retval = verifyChecksum(foprDataBuffer, FOPRData.header.MessageLengthU32 + sizeof (FOPRData.header),
+	if ((retval = verifyChecksum(foprDataBuffer, FOPRData.header.messageLength + sizeof (FOPRData.header),
 								 FOPRData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
 		fprintf(stderr, "FOPR checksum error\n");
 		return retval;
@@ -5473,13 +5483,13 @@ ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuf
 	 p += sizeof (GDRMData.header);
 
 	 // If message is not a GDRM message, generate an error
-	 if (GDRMData.header.MessageIdU16 != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_GDRM) {
+	 if (GDRMData.header.messageID != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_GDRM) {
 		 fprintf(stderr, "Attempted to pass non-GDRM message into GDRM parsing function\n");
 		 return MESSAGE_TYPE_ERROR;
 	 }
 
 
-	 if (GDRMData.header.MessageLengthU32 > sizeof (GDRMType) - sizeof (HeaderType) - sizeof (FooterType)) {
+	 if (GDRMData.header.messageLength > sizeof (GDRMType) - sizeof (HeaderType) - sizeof (FooterType)) {
 		 fprintf(stderr, "GDRM message exceeds expected message length\n");
 		 return MESSAGE_LENGTH_ERROR;
 	 }
@@ -5497,7 +5507,7 @@ ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuf
 
 	 if (debug) {
 		 printf("GDRM message:\n");
-		 printf("\tMessage id: 0x%x\n", GDRMData.header.MessageIdU16);
+		 printf("\tMessage id: 0x%x\n", GDRMData.header.messageID);
 	 }
 
 	 retval = convertGDRMToHostRepresentation(&GDRMData, gdrmData);
@@ -5641,17 +5651,17 @@ enum ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer,
 	p += sizeof (DCTIData.header);
 
 	// If message is not a PODI message, generate an error
-	if (DCTIData.header.MessageIdU16 != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCTI) {
+	if (DCTIData.header.messageID != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCTI) {
 		fprintf(stderr, "Attempted to pass non-DCTI message into DCTI parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
-	if (DCTIData.header.MessageLengthU32 > sizeof (DCTIType) - sizeof (HeaderType) - sizeof (FooterType)) {
+	if (DCTIData.header.messageLength > sizeof (DCTIType) - sizeof (HeaderType) - sizeof (FooterType)) {
 		fprintf(stderr, "PODI message exceeds expected message length\n");
 		return MESSAGE_LENGTH_ERROR;
 	}
 
-	while (p - dctiDataBuffer < DCTIData.header.MessageLengthU32 + sizeof (HeaderType)) {
+	while (p - dctiDataBuffer < DCTIData.header.messageLength + sizeof (HeaderType)) {
 		memcpy(&valueID, p, sizeof (valueID));
 		p += sizeof (valueID);
 		memcpy(&contentLength, p, sizeof (contentLength));
@@ -5700,7 +5710,7 @@ enum ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer,
 	}
 	p += sizeof (DCTIData.footer);
 
-	/*if ((retval = verifyChecksum(dctiDataBuffer, DCTIData.header.MessageLengthU32 + sizeof (HeaderType),
+	/*if ((retval = verifyChecksum(dctiDataBuffer, DCTIData.header.messageLength + sizeof (HeaderType),
 								 DCTIData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
 		fprintf(stderr, "DCTI checksum error\n");
 		return retval;
@@ -5914,17 +5924,17 @@ ssize_t decodeRDCAMessage(
 	p += sizeof (RDCAData.header);
 
 	// If message is not a RDCA message, generate an error
-	if (RDCAData.header.MessageIdU16 != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_RDCA) {
+	if (RDCAData.header.messageID != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_RDCA) {
 		fprintf(stderr, "Attempted to pass non-RDCA message into RDA parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
-	if (RDCAData.header.MessageLengthU32 > sizeof (RDCAType) - sizeof (HeaderType) - sizeof (FooterType)) {
+	if (RDCAData.header.messageLength > sizeof (RDCAType) - sizeof (HeaderType) - sizeof (FooterType)) {
 		fprintf(stderr, "RDCA message exceeds expected message length\n");
 		return MESSAGE_LENGTH_ERROR;
 	}
 
-	while (p - rdcaDataBuffer < RDCAData.header.MessageLengthU32 + sizeof (HeaderType)) {
+	while (p - rdcaDataBuffer < RDCAData.header.messageLength + sizeof (HeaderType)) {
 		memcpy(&valueID, p, sizeof (valueID));
 		p += sizeof (valueID);
 		memcpy(&contentLength, p, sizeof (contentLength));
@@ -5997,7 +6007,7 @@ ssize_t decodeRDCAMessage(
 	}
 	p += sizeof (RDCAData.footer);
 
-	/*if ((retval = verifyChecksum(rdcaDataBuffer, RDCAData.header.MessageLengthU32 + sizeof (HeaderType),
+	/*if ((retval = verifyChecksum(rdcaDataBuffer, RDCAData.header.messageLength + sizeof (HeaderType),
 								 RDCAData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
 		fprintf(stderr, "RDCA checksum error\n");
 		return retval;
@@ -6156,17 +6166,17 @@ ssize_t decodeGREMMessage(
 	p += sizeof (GREMdata.header);
 
 	// If message is not a GREM message, generate an error
-	if (GREMdata.header.MessageIdU16 != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_GREM) {
+	if (GREMdata.header.messageID != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_GREM) {
 		fprintf(stderr, "Attempted to pass non-GREM message into GREM parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
-	if (GREMdata.header.MessageLengthU32 > sizeof (GREMType) - sizeof (HeaderType) - sizeof (FooterType)) {
+	if (GREMdata.header.messageLength > sizeof (GREMType) - sizeof (HeaderType) - sizeof (FooterType)) {
 		fprintf(stderr, "GREM message exceeds expected message length\n");
 		return MESSAGE_LENGTH_ERROR;
 	}
 
-	while (p - gremDataBuffer < GREMdata.header.MessageLengthU32 + sizeof (HeaderType)) {
+	while (p - gremDataBuffer < GREMdata.header.messageLength + sizeof (HeaderType)) {
 		memcpy(&valueID, p, sizeof (valueID));
 		p += sizeof (valueID);
 		memcpy(&contentLength, p, sizeof (contentLength));
@@ -6494,17 +6504,17 @@ ssize_t decodeDCMMMessage(const char * dcmmDataBuffer,
 	p += sizeof (DCMMData.header);
 
 	// If message is not a RCMM message, generate an error
-	if (DCMMData.header.MessageIdU16 != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCMM) {
+	if (DCMMData.header.messageID != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCMM) {
 		fprintf(stderr, "Attempted to pass non-DCMM message into DCMM parsing function\n");
 		return MESSAGE_TYPE_ERROR;
 	}
 
-	if (DCMMData.header.MessageLengthU32 > sizeof (RCMMType) - sizeof (HeaderType) - sizeof (FooterType)) {
+	if (DCMMData.header.messageLength > sizeof (RCMMType) - sizeof (HeaderType) - sizeof (FooterType)) {
 		fprintf(stderr, "DCMM message exceeds expected message length\n");
 		return MESSAGE_LENGTH_ERROR;
 	}
 
-	while (p - dcmmDataBuffer < DCMMData.header.MessageLengthU32 + sizeof (HeaderType)) {
+	while (p - dcmmDataBuffer < DCMMData.header.messageLength + sizeof (HeaderType)) {
 		memcpy(&valueID, p, sizeof (valueID));
 		p += sizeof (valueID);
 		memcpy(&contentLength, p, sizeof (contentLength));
@@ -6574,7 +6584,7 @@ ssize_t decodeDCMMMessage(const char * dcmmDataBuffer,
 	}
 
 	p += sizeof (DCMMData.footer);
-	if ((retval = verifyChecksum(dcmmDataBuffer, DCMMData.header.MessageLengthU32 + sizeof (HeaderType),
+	if ((retval = verifyChecksum(dcmmDataBuffer, DCMMData.header.messageLength + sizeof (HeaderType),
 								 DCMMData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
 		fprintf(stderr, "DCMM checksum error\n");
 		return retval;
