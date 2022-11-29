@@ -158,11 +158,12 @@ enum ArmReadinessValues {
 /*! ISO message header */
 typedef struct {
 	uint16_t syncWord;
-	uint8_t transmitterID;
-	uint8_t messageCounter;
-	uint8_t ackReqProtVer;
-	uint16_t messageID;
 	uint32_t messageLength;
+	uint8_t ackReqProtVer;
+	uint32_t transmitterID;
+	uint32_t receiverID;
+	uint8_t messageCounter;
+	uint16_t messageID;
 } HeaderType;
 
 /*! ISO message footer */
@@ -1039,8 +1040,11 @@ uint8_t getTransmitterID() {
  * \param debug Flag for enabling debugging of this function
  * \return value according to ::ISOMessageReturnValue
  */
-enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t length, HeaderType * HeaderData,
-									  const char debug) {
+enum ISOMessageReturnValue decodeISOHeader(
+	const char *MessageBuffer,
+	const size_t length,
+	HeaderType * HeaderData,
+	const char debug) {
 
 	const char *p = MessageBuffer;
 	enum ISOMessageReturnValue retval = MESSAGE_OK;
@@ -1067,11 +1071,9 @@ enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size
 		return MESSAGE_SYNC_WORD_ERROR;
 	}
 
-	memcpy(&HeaderData->transmitterID, p, sizeof (HeaderData->transmitterID));
-	p += sizeof (HeaderData->transmitterID);
-
-	memcpy(&HeaderData->messageCounter, p, sizeof (HeaderData->messageCounter));
-	p += sizeof (HeaderData->messageCounter);
+	memcpy(&HeaderData->messageLength, p, sizeof (HeaderData->messageLength));
+	p += sizeof (HeaderData->messageLength);
+	HeaderData->messageLength = le32toh(HeaderData->messageLength);
 
 	memcpy(&HeaderData->ackReqProtVer, p, sizeof (HeaderData->ackReqProtVer));
 	p += sizeof (HeaderData->ackReqProtVer);
@@ -1093,21 +1095,29 @@ enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size
 		return retval;
 	}
 
+	memcpy(&HeaderData->transmitterID, p, sizeof (HeaderData->transmitterID));
+	p += sizeof (HeaderData->transmitterID);
+	HeaderData->transmitterID = le32toh(HeaderData->transmitterID);
+
+	memcpy(&HeaderData->receiverID, p, sizeof (HeaderData->receiverID));
+	p += sizeof (HeaderData->receiverID);
+	HeaderData->receiverID = le32toh(HeaderData->receiverID);
+
+	memcpy(&HeaderData->messageCounter, p, sizeof (HeaderData->messageCounter));
+	p += sizeof (HeaderData->messageCounter);
+
 	memcpy(&HeaderData->messageID, p, sizeof (HeaderData->messageID));
 	p += sizeof (HeaderData->messageID);
 	HeaderData->messageID = le16toh(HeaderData->messageID);
 
-	memcpy(&HeaderData->messageLength, p, sizeof (HeaderData->messageLength));
-	p += sizeof (HeaderData->messageLength);
-	HeaderData->messageLength = le32toh(HeaderData->messageLength);
-
 	if (debug) {
 		printf("syncWord = 0x%x\n", HeaderData->syncWord);
-		printf("transmitterID = 0x%x\n", HeaderData->transmitterID);
-		printf("messageCounter = 0x%x\n", HeaderData->messageCounter);
-		printf("ackReqProtVer = 0x%x\n", HeaderData->ackReqProtVer);
-		printf("messageID = 0x%x\n", HeaderData->messageID);
 		printf("messageLength = 0x%x\n", HeaderData->messageLength);
+		printf("ackReqProtVer = 0x%x\n", HeaderData->ackReqProtVer);
+		printf("transmitterID = 0x%x\n", HeaderData->transmitterID);
+		printf("receiverID = 0x%x\n", HeaderData->receiverID);
+		printf("messageCounter = 0x%x\n", HeaderData->messageCounter);
+		printf("messageID = 0x%x\n", HeaderData->messageID);
 	}
 
 	return retval;
