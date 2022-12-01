@@ -318,7 +318,9 @@ typedef struct {
 	int32_t xPosition;
 	int32_t yPosition;
 	int32_t zPosition;
-	uint16_t heading;
+	uint16_t yaw;
+	int16_t pitch;
+	int16_t roll;
 	int16_t longitudinalSpeed;
 	int16_t lateralSpeed;
 	int16_t longitudinalAcc;
@@ -327,6 +329,7 @@ typedef struct {
 	uint8_t state;
 	uint8_t readyToArm;
 	uint8_t errorStatus;
+	uint16_t errorCode;
 	FooterType footer;
 } MONRType;
 
@@ -715,8 +718,8 @@ static DebugStrings_t DCTITransmitterIdDescription = {"TransmitterID",	"",		&pri
 // ************************** static function declarations ********************************************************
 
 static char isValidMessageID(const uint16_t id);
-static double_t mapISOHeadingToHostHeading(const double_t isoHeading_rad);
-static double_t mapHostHeadingToISOHeading(const double_t hostHeading_rad);
+static double_t mapISOYawToHostHeading(const double_t isoHeading_rad);
+static double_t mapHostYawToISOHeading(const double_t hostHeading_rad);
 
 static enum ISOMessageReturnValue convertHEABToHostRepresentation(
 		HEABType* HEABData,
@@ -2648,7 +2651,7 @@ enum ISOMessageReturnValue convertHEABToHostRepresentation(HEABType* HEABData,
  * \param debug Flag for enabling of debugging
  * \return Value according to ::ISOMessageReturnValue
  */
-ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosition position,
+ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosition position, const OrientationType orientation,
 						  const SpeedType speed, const AccelerationType acceleration,
 						  const unsigned char driveDirection, const unsigned char objectState,
 						  const unsigned char readyToArm, const unsigned char objectErrorState,
@@ -2690,12 +2693,28 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 		return -1;
 	}
 
-	if (position.isHeadingValid) {
-		MONRData.heading = (uint16_t) (mapHostHeadingToISOHeading(position.heading_rad)
-									   * 180.0 / M_PI * HEADING_ONE_DEGREE_VALUE);
+	if (orientation.isYawValid) {
+		MONRData.yaw = (uint16_t) (mapHostHeadingToISOHeading(orientation.yaw_rad)
+									   * 180.0 / M_PI * YAW_ONE_DEGREE_VALUE);
 	}
 	else {
-		MONRData.heading = HEADING_UNAVAILABLE_VALUE;
+		MONRData.yaw = YAW_UNAVAILABLE_VALUE;
+	}
+
+	if (orientation.isPitchValid) {
+		MONRData.pitch = (uint16_t) (mapHostHeadingToISOHeading(orientation.pitch_rad)
+									   * 180.0 / M_PI * PITCH_ONE_DEGREE_VALUE);
+	}
+	else {
+		MONRData.pitch = PITCH_UNAVAILABLE_VALUE;
+	}
+
+	if (orientation.isRollValid) {
+		MONRData.roll = (uint16_t) (mapHostHeadingToISOHeading(orientation.roll_rad)
+									   * 180.0 / M_PI * ROLL_ONE_DEGREE_VALUE);
+	}
+	else {
+		MONRData.roll = ROLL_UNAVAILABLE_VALUE;
 	}
 
 	if (speed.isLongitudinalValid) {
@@ -3343,16 +3362,26 @@ void convertMONRToHostRepresentation(const MONRType * MONRData,
 		}
 	}
 
-	// Position / heading
+	// Position 
 	monitorData->position.xCoord_m = (double)(MONRData->xPosition) / POSITION_ONE_METER_VALUE;
 	monitorData->position.yCoord_m = (double)(MONRData->yPosition) / POSITION_ONE_METER_VALUE;
 	monitorData->position.zCoord_m = (double)(MONRData->zPosition) / POSITION_ONE_METER_VALUE;
 	monitorData->position.isPositionValid = true;
-	monitorData->position.isHeadingValid = MONRData->heading != HEADING_UNAVAILABLE_VALUE;
-	if (monitorData->position.isHeadingValid) {
-		monitorData->position.heading_rad =
-			mapISOHeadingToHostHeading(MONRData->heading / 100.0 * M_PI / 180.0);
-	}
+
+	// Orientation
+	monitorData->orientation.isYawValid = MONRData->yaw != YAW_UNAVAILABLE_VALUE;
+	monitorData->orientation.yaw_rad = monitorData->orientation.isYawValid ?
+		mapISOHeadingToHostHeading(MONRData->yaw / 100.0 * M_PI / 180.0) : 0;
+
+	monitorData->orientation.isPitchValid = MONRData->pitch != PITCH_UNAVAILABLE_VALUE;
+	monitorData->orientation.pitch_rad = monitorData->orientation.isPitchValid ?
+		mapISOHeadingToHostHeading(MONRData->pitch / 100.0 * M_PI / 180.0) : 0;
+
+	monitorData->orientation.isRollValid = MONRData->roll != ROLL_UNAVAILABLE_VALUE;
+	monitorData->orientation.roll_rad = monitorData->orientation.isRollValid ?
+		mapISOHeadingToHostHeading(MONRData->roll / 100.0 * M_PI / 180.0) : 0;
+
+	monitorData->orientation.isOrientationValid = true;
 
 	// Velocity
 	monitorData->speed.isLongitudinalValid = MONRData->longitudinalSpeed != SPEED_UNAVAILABLE_VALUE;
@@ -5888,18 +5917,18 @@ ssize_t encodeGREMMessage(const GeneralResponseMessageType* gremObjectData,
 
 
 /*!
- * \brief mapISOHeadingToHostHeading Converts between ISO NED heading to internal heading measured from the test x axis
- * \param isoHeading_rad Heading measured according to ISO specification, in radians
- * \return Heading, in radians, measured from the test x axis
+ * \brief mapISOYawToHostYaw Converts between ISO NED heading to internal heading measured from the test x axis
+ * \param isoYaw_rad Yaw measured according to ISO specification, in radians
+ * \return Yaw, in radians, measured from the test x axis
  */
-double_t mapISOHeadingToHostHeading(const double_t isoHeading_rad) {
+double_t mapISOYawToHostYaw(const double_t isoYaw_rad) {
 	// TODO: Reevaluate this when ISO specification is updated with new heading and rotated coordinate system
 
-	double_t retval = isoHeading_rad;
+	double_t retval = isoYaw_rad;
 
-	// Host heading is CCW while ISO is CW
+	// Host Yaw is CCW while ISO is CW
 	retval = -retval;
-	// Host heading is measured from the x axis while ISO is measured from the y axis
+	// Host Yaw is measured from the x axis while ISO is measured from the y axis
 	retval = retval + M_PI / 2.0;
 	// Ensure angle lies between 0 and 2pi
 	while (retval < 0.0) {
@@ -5912,18 +5941,18 @@ double_t mapISOHeadingToHostHeading(const double_t isoHeading_rad) {
 }
 
 /*!
- * \brief mapHostHeadingToISOHeading Converts between internal heading measured from the test x axis to ISO NED heading
- * \param isoHeading_rad Heading measured form test x axis, in radians
- * \return Heading, in radians, measured as specified by ISO 22133
+ * \brief mapHostYawToISOYaw Converts between internal Yaw measured from the test x axis to ISO NED yaw
+ * \param isoYaw_rad Yaw measured form test x axis, in radians
+ * \return Yaw, in radians, measured as specified by ISO 22133
  */
-double_t mapHostHeadingToISOHeading(const double_t hostHeading_rad) {
+double_t mapHostYawToISOYaw(const double_t hostYaw_rad) {
 	// TODO: Reevaluate this when ISO specification is updated with new heading and rotated coordinate system
 
-	double_t retval = hostHeading_rad;
+	double_t retval = hostYaw_rad;
 
-	// Host heading is CCW while ISO is CW
+	// Host yaw is CCW while ISO is CW
 	retval = -retval;
-	// Host heading is measured from the x axis while ISO is measured from the y axis
+	// Host yaw is measured from the x axis while ISO is measured from the y axis
 	retval = retval + M_PI / 2.0;
 	// Ensure angle lies between 0 and 2pi
 	while (retval < 0.0) {
