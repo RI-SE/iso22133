@@ -64,9 +64,9 @@ typedef struct {
 	uint16_t zPositionValueID;
 	uint16_t zPositionContentLength;
 	int32_t zPosition;
-	uint16_t headingValueID;
-	uint16_t headingContentLength;
-	uint16_t heading;
+	uint16_t yawValueID;
+	uint16_t yawContentLength;
+	uint16_t yaw;
 	uint16_t longitudinalSpeedValueID;
 	uint16_t longitudinalSpeedContentLength;
 	int16_t longitudinalSpeed;
@@ -1171,7 +1171,7 @@ enum ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType*
  *		EINVAL		if one of the input parameters are invalid
  *		ENOBUFS		if supplied buffer is too small to hold point
  */
-ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const CartesianPosition position,
+ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const CartesianPosition position, const OrientationType orientation,
 							   const SpeedType speed, const AccelerationType acceleration,
 							   const float curvature, char *trajDataBufferPointer,
 							   const size_t remainingBufferLength, const char debug) {
@@ -1214,14 +1214,14 @@ ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const C
 		return -1;
 	}
 
-	TRAJData.headingValueID = VALUE_ID_TRAJ_HEADING;
-	TRAJData.headingContentLength = sizeof (TRAJData.heading);
-	if (position.isHeadingValid) {
-		TRAJData.heading = (uint16_t) (mapHostHeadingToISOHeading(position.heading_rad)
-									   * 180.0 / M_PI * HEADING_ONE_DEGREE_VALUE);
+	TRAJData.yawValueID = VALUE_ID_TRAJ_HEADING;
+	TRAJData.yawContentLength = sizeof (TRAJData.yaw);
+	if (orientation.isYawValid) {
+		TRAJData.yaw = (uint16_t) (mapHostHeadingToISOHeading(orientation.yaw_rad)
+									   * 180.0 / M_PI * YAW_ONE_DEGREE_VALUE);
 	}
 	else {
-		TRAJData.heading = HEADING_UNAVAILABLE_VALUE;
+		TRAJData.yaw = YAW_UNAVAILABLE_VALUE;
 	}
 
 	TRAJData.longitudinalSpeedValueID = VALUE_ID_TRAJ_LONGITUDINAL_SPEED;
@@ -1270,9 +1270,9 @@ ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const C
 			   "z position value ID: 0x%x\n\t"
 			   "z position content length: %u\n\t"
 			   "z position: %d\n\t"
-			   "Heading value ID: 0x%x\n\t"
-			   "Heading content length: %u\n\t"
-			   "Heading: %u\n\t"
+			   "Yaw value ID: 0x%x\n\t"
+			   "Yaw content length: %u\n\t"
+			   "Yaw: %u\n\t"
 			   "Longitudinal speed value ID: 0x%x\n\t"
 			   "Longitudinal speed content length: %u\n\t"
 			   "Longitudinal speed: %d\n\t"
@@ -1292,8 +1292,8 @@ ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const C
 			   TRAJData.relativeTime, TRAJData.xPositionValueID, TRAJData.xPositionContentLength,
 			   TRAJData.xPosition, TRAJData.yPositionValueID, TRAJData.yPositionContentLength,
 			   TRAJData.yPosition, TRAJData.zPositionValueID, TRAJData.zPositionContentLength,
-			   TRAJData.zPosition, TRAJData.headingValueID, TRAJData.headingContentLength,
-			   TRAJData.heading, TRAJData.longitudinalSpeedValueID, TRAJData.longitudinalSpeedContentLength,
+			   TRAJData.zPosition, TRAJData.yawValueID, TRAJData.yawContentLength,
+			   TRAJData.yaw, TRAJData.longitudinalSpeedValueID, TRAJData.longitudinalSpeedContentLength,
 			   TRAJData.longitudinalSpeed, TRAJData.lateralSpeedValueID, TRAJData.lateralSpeedContentLength,
 			   TRAJData.lateralSpeed, TRAJData.longitudinalAccelerationValueID,
 			   TRAJData.longitudinalAccelerationContentLength, TRAJData.longitudinalAcceleration,
@@ -1315,9 +1315,9 @@ ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const C
 	TRAJData.zPositionValueID = htole16(TRAJData.zPositionValueID);
 	TRAJData.zPositionContentLength = htole16(TRAJData.zPositionContentLength);
 	TRAJData.zPosition = (int32_t) htole32(TRAJData.zPosition);
-	TRAJData.headingValueID = htole16(TRAJData.headingValueID);
-	TRAJData.headingContentLength = htole16(TRAJData.headingContentLength);
-	TRAJData.heading = htole16(TRAJData.heading);
+	TRAJData.yawValueID = htole16(TRAJData.yawValueID);
+	TRAJData.yawContentLength = htole16(TRAJData.yawContentLength);
+	TRAJData.yaw = htole16(TRAJData.yaw);
 	TRAJData.longitudinalSpeedValueID = htole16(TRAJData.longitudinalSpeedValueID);
 	TRAJData.longitudinalSpeedContentLength = htole16(TRAJData.longitudinalSpeedContentLength);
 	TRAJData.longitudinalSpeed = (int16_t) htole16(TRAJData.longitudinalSpeed);
@@ -1449,10 +1449,10 @@ ssize_t decodeTRAJMessagePoint(
 			expectedContentLength = sizeof(TRAJPointData.zPosition);
 			break;
 		case VALUE_ID_TRAJ_HEADING:
-			TRAJPointData.headingValueID = valueID;
-			TRAJPointData.headingContentLength = contentLength;
-			memcpy(&TRAJPointData.heading, p, sizeof (TRAJPointData.heading));
-			expectedContentLength = sizeof(TRAJPointData.heading);
+			TRAJPointData.yawValueID = valueID;
+			TRAJPointData.yawContentLength = contentLength;
+			memcpy(&TRAJPointData.yaw, p, sizeof (TRAJPointData.yaw));
+			expectedContentLength = sizeof(TRAJPointData.yaw);
 			break;
 		case VALUE_ID_TRAJ_LONGITUDINAL_SPEED:
 			TRAJPointData.longitudinalSpeedValueID = valueID;
@@ -1502,7 +1502,7 @@ ssize_t decodeTRAJMessagePoint(
 	TRAJPointData.xPosition = (int32_t)le32toh(TRAJPointData.xPosition);
 	TRAJPointData.yPosition = (int32_t)le32toh(TRAJPointData.yPosition);
 	TRAJPointData.zPosition = (int32_t)le32toh(TRAJPointData.zPosition);
-	TRAJPointData.heading = le16toh(TRAJPointData.heading);
+	TRAJPointData.yaw = le16toh(TRAJPointData.yaw);
 	TRAJPointData.longitudinalSpeed = (int16_t)le16toh(TRAJPointData.longitudinalSpeed);
 	TRAJPointData.lateralSpeed = (int16_t)le16toh(TRAJPointData.lateralSpeed);
 	TRAJPointData.longitudinalAcceleration = (int16_t)le16toh(TRAJPointData.longitudinalAcceleration);
@@ -1517,7 +1517,7 @@ ssize_t decodeTRAJMessagePoint(
 		printf("\tTRAJPointData X: %d\n", TRAJPointData.xPosition);
 		printf("\tTRAJPointData Y: %d\n", TRAJPointData.yPosition);
 		printf("\tTRAJPointData Z: %d\n", TRAJPointData.zPosition);
-		printf("\tTRAJPointData Heading: %d\n", TRAJPointData.heading);
+		printf("\tTRAJPointData Yaw: %d\n", TRAJPointData.yaw);
 		printf("\tTRAJPointData Longitudinal speed: %d\n", TRAJPointData.longitudinalSpeed);
 		printf("\tTRAJPointData Lateral speed: %d\n", TRAJPointData.lateralSpeed);
 		printf("\tTRAJPointData Longitudinal acceleration: %d\n", TRAJPointData.longitudinalAcceleration);
@@ -1561,9 +1561,9 @@ enum ISOMessageReturnValue convertTRAJPointToHostRepresentation(
 	wayPoint->pos.zCoord_m = TRAJPointData->zPosition / POSITION_ONE_METER_VALUE;
 	wayPoint->pos.isPositionValid = TRAJPointData->xPositionValueID != 0
 			&& TRAJPointData->yPositionValueID  != 0 && TRAJPointData->zPositionValueID != 0;
-	wayPoint->pos.heading_rad = TRAJPointData->heading / HEADING_ONE_DEGREE_VALUE * M_PI / 180.0;
-	wayPoint->pos.heading_rad = mapISOHeadingToHostHeading(wayPoint->pos.heading_rad);
-	wayPoint->pos.isHeadingValid = TRAJPointData->headingValueID != 0;
+	wayPoint->orientation.yaw_rad = TRAJPointData->yaw / YAW_ONE_DEGREE_VALUE * M_PI / 180.0;
+	wayPoint->orientation.yaw_rad = mapISOHeadingToHostHeading(wayPoint->orientation.yaw_rad);
+	wayPoint->orientation.isYawValid = TRAJPointData->yawValueID != 0;
 	wayPoint->spd.longitudinal_m_s = TRAJPointData->longitudinalSpeed / SPEED_ONE_METER_PER_SECOND_VALUE;
 	wayPoint->spd.isLongitudinalValid = TRAJPointData->longitudinalSpeedValueID != 0;
 	wayPoint->spd.lateral_m_s = TRAJPointData->lateralSpeed / SPEED_ONE_METER_PER_SECOND_VALUE;
@@ -2702,7 +2702,7 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	}
 
 	if (orientation.isPitchValid) {
-		MONRData.pitch = (uint16_t) (mapHostHeadingToISOHeading(orientation.pitch_rad)
+		MONRData.pitch = (int16_t) (mapHostHeadingToISOHeading(orientation.pitch_rad)
 									   * 180.0 / M_PI * PITCH_ONE_DEGREE_VALUE);
 	}
 	else {
@@ -2710,7 +2710,7 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	}
 
 	if (orientation.isRollValid) {
-		MONRData.roll = (uint16_t) (mapHostHeadingToISOHeading(orientation.roll_rad)
+		MONRData.roll = (int16_t) (mapHostHeadingToISOHeading(orientation.roll_rad)
 									   * 180.0 / M_PI * ROLL_ONE_DEGREE_VALUE);
 	}
 	else {
@@ -2748,7 +2748,9 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 			   "X-position: %u [mm]\n\t"
 			   "Y-position: %u [mm]\n\t"
 			   "Z-position: %u [mm]\n\t"
-			   "Heading: %u [0,01 deg]\n\t"
+			   "Yaw: %u [0,01 deg]\n\t"
+			   "Pitch: %u [0,01 deg]\n\t"
+			   "Roll: %u [0,01 deg]\n\t"
 			   "Longitudinal Speed: %u [0,01 m/s]\n\t"
 			   "Lateral Speed: %u [0,01 m/s]\n\t"
 			   "Longitudinal Acceleration: %u [0,001 m/s²]\n\t"
@@ -2763,7 +2765,9 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 			   MONRData.xPosition,
 			   MONRData.yPosition,
 			   MONRData.zPosition,
-			   MONRData.heading,
+			   MONRData.yaw,
+			   MONRData.pitch,
+			   MONRData.roll,
 			   MONRData.longitudinalSpeed,
 			   MONRData.lateralSpeed,
 			   MONRData.longitudinalAcc,
@@ -2778,7 +2782,9 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	MONRData.xPosition = (int32_t) htole32(MONRData.xPosition);
 	MONRData.yPosition = (int32_t) htole32(MONRData.yPosition);
 	MONRData.zPosition = (int32_t) htole32(MONRData.zPosition);
-	MONRData.heading = htole16(MONRData.heading);
+	MONRData.yaw = htole16(MONRData.yaw);
+	MONRData.pitch = htole16(MONRData.pitch);
+	MONRData.roll = htole16(MONRData.roll);
 	MONRData.longitudinalSpeed = (int16_t) htole16(MONRData.longitudinalSpeed);
 	MONRData.lateralSpeed = (int16_t) htole16(MONRData.lateralSpeed);
 	MONRData.longitudinalAcc = (int16_t) htole16(MONRData.longitudinalAcc);
@@ -3259,9 +3265,17 @@ ssize_t decodeMONRMessage(const char *monrDataBuffer,
 	p += sizeof (MONRData.zPosition);
 	MONRData.zPosition = (int32_t) le32toh(MONRData.zPosition);
 
-	memcpy(&MONRData.heading, p, sizeof (MONRData.heading));
-	p += sizeof (MONRData.heading);
-	MONRData.heading = le16toh(MONRData.heading);
+	memcpy(&MONRData.yaw, p, sizeof (MONRData.yaw));
+	p += sizeof (MONRData.yaw);
+	MONRData.yaw = le16toh(MONRData.yaw);
+
+	memcpy(&MONRData.pitch, p, sizeof (MONRData.pitch));
+	p += sizeof (MONRData.pitch);
+	MONRData.pitch = le16toh(MONRData.pitch);
+
+	memcpy(&MONRData.roll, p, sizeof (MONRData.roll));
+	p += sizeof (MONRData.roll);
+	MONRData.roll = le16toh(MONRData.roll);
 
 	memcpy(&MONRData.longitudinalSpeed, p, sizeof (MONRData.longitudinalSpeed));
 	p += sizeof (MONRData.longitudinalSpeed);
@@ -3320,7 +3334,9 @@ ssize_t decodeMONRMessage(const char *monrDataBuffer,
 		printf("XPosition = %d\n", MONRData.xPosition);
 		printf("YPosition = %d\n", MONRData.yPosition);
 		printf("ZPosition = %d\n", MONRData.zPosition);
-		printf("Heading = %d\n", MONRData.heading);
+		printf("Yaw = %d\n", MONRData.yaw);
+		printf("Pitch = %d\n", MONRData.pitch);
+		printf("Roll = %d\n", MONRData.roll);
 		printf("LongitudinalSpeed = %d\n", MONRData.longitudinalSpeed);
 		printf("LateralSpeed = %d\n", MONRData.lateralSpeed);
 		printf("LongitudinalAcc = %d\n", MONRData.longitudinalAcc);

@@ -13,18 +13,27 @@ extern "C" {
 #endif
 
 
-/*! Struct describing a position and orientation in a local cartesian coordinate system */
+/*! Struct describing a position in a local cartesian coordinate system */
 typedef struct {
 	double xCoord_m;
 	double yCoord_m;
 	double zCoord_m;
-	double heading_rad;
 	bool isXcoordValid;
 	bool isYcoordValid;
 	bool isZcoordValid;
 	bool isPositionValid;
-	bool isHeadingValid;
-} CartesianPosition; // TODO: rename
+} CartesianPosition; 
+
+/*! Struct describing an orientation */
+typedef struct {
+	double yaw_rad;
+	double pitch_rad;
+	double roll_rad;
+	bool isYawValid;
+	bool isPitchValid;
+	bool isRollValid;
+	bool isOrientationValid;
+} OrientationType; 
 
 /*! Struct describing a position in geographic coordinates */
 typedef struct {
