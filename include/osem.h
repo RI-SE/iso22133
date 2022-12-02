@@ -59,52 +59,38 @@ typedef struct {
 /*! OSEM message */
 typedef struct {
 	HeaderType header;
-	uint16_t desiredTransmitterIDValueID;
-	uint16_t desiredTransmitterIDContentLength;
-	uint32_t desiredTransmitterID;
-	uint16_t latitudeValueID;
-	uint16_t latitudeContentLength;
-	int64_t latitude;
-	uint16_t longitudeValueID;
-	uint16_t longitudeContentLength;
-	int64_t longitude;
-	uint16_t altitudeValueID;
-	uint16_t altitudeContentLength;
-	int32_t altitude;
-	uint16_t dateValueID;
-	uint16_t dateContentLength;
-	uint32_t date;
-	uint16_t GPSWeekValueID;
-	uint16_t GPSWeekContentLength;
-	uint16_t GPSWeek;
-	uint16_t GPSQmsOfWeekValueID;
-	uint16_t GPSQmsOfWeekContentLength;
-	uint32_t GPSQmsOfWeek;
-	uint16_t maxWayDeviationValueID;
-	uint16_t maxWayDeviationContentLength;
-	uint16_t maxWayDeviation;
-	uint16_t maxLateralDeviationValueID;
-	uint16_t maxLateralDeviationContentLength;
-	uint16_t maxLateralDeviation;
-	uint16_t minPosAccuracyValueID;
-	uint16_t minPosAccuracyContentLength;
-	uint16_t minPosAccuracy;
+	uint16_t idStructValueID;
+	uint16_t idStructContentLength;
+	OSEMIDType ids;
+	uint16_t originStructValueID;
+	uint16_t originStructContentLength;
+	OSEMOriginType origin;
+	uint16_t dateTimeStructValueID;
+	uint16_t dateTimeStructContentLength;
+	OSEMDateTimeType timestamp;
+	uint16_t accReqStructValueID;
+	uint16_t accReqStructContentLength;
+	OSEMAccuracyRequirementsType requirements;
+	uint16_t timeServerStructValueID;
+	uint16_t timeServerStructContentLength;
+	OSEMTimeServerType timeserver;
+	uint16_t idAssociationStructValueID;
+	uint16_t idAssociationStructContentLength;
+	OSEMIDAssociationType idAssociation;
 	FooterType footer;
-} OSEMType;						//85 bytes
+} OSEMType;
 #pragma pack(pop)
 
 
 //! OSEM value IDs
-#define VALUE_ID_OSEM_TRANSMITTER_ID 0x0010
-#define VALUE_ID_OSEM_LATITUDE 0x0020
-#define VALUE_ID_OSEM_LONGITUDE 0x0021
-#define VALUE_ID_OSEM_ALTITUDE 0x0022
-#define VALUE_ID_OSEM_DATE 0x0004
-#define VALUE_ID_OSEM_GPS_WEEK 0x0003
-#define VALUE_ID_OSEM_GPS_QUARTER_MILLISECOND_OF_WEEK 0x0002
-#define VALUE_ID_OSEM_MAX_WAY_DEVIATION 0x0070
-#define VALUE_ID_OSEM_MAX_LATERAL_DEVIATION 0x0072
-#define VALUE_ID_OSEM_MIN_POSITIONING_ACCURACY 0x0074
+#define VALUE_ID_OSEM_ID_STRUCT 0x0020
+#define VALUE_ID_OSEM_ORIGIN_STRUCT 0x0021
+#define VALUE_ID_OSEM_DATE_TIME_STRUCT 0x0022
+#define VALUE_ID_OSEM_ACC_REQ_STRUCT 0x0023
+#define VALUE_ID_OSEM_TIME_SERVER_STRUCT 0x0024
+#define VALUE_ID_OSEM_PAIRING_COUNT 0x0025
+#define VALUE_ID_OSEM_PAIRING_ID 0x0026
+#define VALUE_ID_OSEM_PAIRING_NAME 0x0027
 
 
 void convertOSEMToHostRepresentation(
