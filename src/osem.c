@@ -1,5 +1,6 @@
 #include "osem.h"
 #include "defines.h"
+#include "timeconversions.h"
 
 #include <errno.h>
 #include <stdio.h>
@@ -244,15 +245,16 @@ ssize_t encodeOSEMMessage(
  * \param debug Flag for enabling debugging
  * \return Value according to ::ISOMessageReturnValue
  */
-ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
-										const char *osemDataBuffer, const size_t bufferLength,
-										uint32_t * senderID, const char debug) {
+ssize_t decodeOSEMMessage(
+	ObjectSettingsType * objectSettingsData,
+	const char *osemDataBuffer, const size_t bufferLength,
+	const char debug) {
 
 	OSEMType OSEMData;
 	const char SizeDifference64bitTo48bit = 2;
 	const char *p = osemDataBuffer;
-	const uint16_t ExpectedOSEMStructSize = (uint16_t) (sizeof (OSEMData) - sizeof (OSEMData.header)
-														- sizeof (OSEMData.footer.Crc));	//TO do check!!
+	//const uint16_t ExpectedOSEMStructSize = (uint16_t) (sizeof (OSEMData) - sizeof (OSEMData.header)
+	//													- sizeof (OSEMData.footer.Crc));	//TO do check!!
 	uint16_t valueID;
 	uint16_t contentLength;
 
@@ -261,8 +263,6 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
 		fprintf(stderr, "Input pointer error\n");
 		return ISO_FUNCTION_ERROR;
 	}
-
-
 
 	ssize_t retval = MESSAGE_OK;
 
@@ -274,9 +274,6 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
 		return retval;
 	}
 	p += sizeof (OSEMData.header);
-	if (senderID != NULL) {
-		*senderID = OSEMData.header.transmitterID;
-	}
 
 	// If message is not a OSEM message, generate an error
 	if (OSEMData.header.messageID != MESSAGE_ID_OSEM) {
@@ -297,73 +294,79 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
 		p += sizeof (contentLength);
 		// Handle contents
 		switch (valueID) {
-		case VALUE_ID_OSEM_LATITUDE:
-			memcpy(&OSEMData.latitudeValueID, &valueID, sizeof (OSEMData.latitudeValueID));
-			memcpy(&OSEMData.latitudeContentLength, &contentLength, sizeof (OSEMData.latitudeContentLength));
-			// Don't like solution anyone has a better one?
-			memcpy(&OSEMData.latitude, p, sizeof (OSEMData.latitude) - SizeDifference64bitTo48bit);
-			OSEMData.latitude = le48toh(OSEMData.latitude);
+		case VALUE_ID_OSEM_ID_STRUCT:
+			if (contentLength != sizeof (OSEMData.ids)) {
+				fprintf(stderr, "Invalid OSEM ID struct length\n");
+				return MESSAGE_LENGTH_ERROR;
+			}
+			OSEMData.idStructValueID = valueID;
+			OSEMData.idStructContentLength = contentLength;
+			memcpy(&OSEMData.ids, p, contentLength);
+			OSEMData.ids.deviceID = le32toh(OSEMData.ids.deviceID);
+			OSEMData.ids.subDeviceID = le32toh(OSEMData.ids.subDeviceID);
+			OSEMData.ids.systemControlCentreID = le32toh(OSEMData.ids.systemControlCentreID);
 			break;
-		case VALUE_ID_OSEM_LONGITUDE:
-			memcpy(&OSEMData.longitudeValueID, &contentLength, sizeof (OSEMData.latitudeValueID));
-			memcpy(&OSEMData.longitudeContentLength, &contentLength,
-				   sizeof (OSEMData.longitudeContentLength));
-			// Don't like solution anyone has a better one?
-			memcpy(&OSEMData.longitude, p, sizeof (OSEMData.longitude) - SizeDifference64bitTo48bit);
-			OSEMData.longitude = le48toh(OSEMData.longitude);
+		case VALUE_ID_OSEM_ORIGIN_STRUCT:
+			if (contentLength != sizeof (OSEMData.origin) - 2*SizeDifference64bitTo48bit) {
+				fprintf(stderr, "Invalid OSEM origin struct length\n");
+				return MESSAGE_LENGTH_ERROR;
+			}
+			OSEMData.originStructValueID = valueID;
+			OSEMData.originStructContentLength = contentLength;
+
+			// Special handling of 48 bit values
+			memcpy(&OSEMData.origin.latitude, p, sizeof (OSEMData.origin.latitude) - SizeDifference64bitTo48bit);
+			memcpy(&OSEMData.origin.longitude, p + sizeof (OSEMData.origin.latitude) - SizeDifference64bitTo48bit,
+				sizeof (OSEMData.origin.longitude) - SizeDifference64bitTo48bit);
+			memcpy(&OSEMData.origin.altitude, p + sizeof (OSEMData.origin.latitude) + sizeof (OSEMData.origin.longitude)
+				- 2*SizeDifference64bitTo48bit, sizeof (OSEMData.origin.altitude));
+			memcpy(&OSEMData.origin.rotation, p + sizeof (OSEMData.origin.latitude) + sizeof (OSEMData.origin.longitude)
+				+ sizeof (OSEMData.origin.altitude) - 2*SizeDifference64bitTo48bit, sizeof (OSEMData.origin.rotation));
+			memcpy(&OSEMData.origin.coordinateSystem, p + sizeof (OSEMData.origin.latitude) + sizeof (OSEMData.origin.longitude)
+				+ sizeof (OSEMData.origin.altitude) + sizeof (OSEMData.origin.rotation) - 2*SizeDifference64bitTo48bit,
+				sizeof (OSEMData.origin.coordinateSystem));
+
+			OSEMData.origin.latitude = le48toh(OSEMData.origin.latitude);
+			OSEMData.origin.longitude = le48toh(OSEMData.origin.longitude);
+			OSEMData.origin.altitude = le32toh(OSEMData.origin.altitude);
+			OSEMData.origin.rotation = le16toh(OSEMData.origin.rotation);
 			break;
-		case VALUE_ID_OSEM_ALTITUDE:
-			memcpy(&OSEMData.altitudeValueID, &valueID, sizeof (OSEMData.latitudeValueID));
-			memcpy(&OSEMData.altitudeContentLength, &contentLength, sizeof (OSEMData.altitudeContentLength));
-			memcpy(&OSEMData.altitude, p, sizeof (OSEMData.altitude));
-			OSEMData.altitude = le32toh(OSEMData.altitude);
+		case VALUE_ID_OSEM_DATE_TIME_STRUCT:
+			if (contentLength != sizeof (OSEMData.timestamp)) {
+				fprintf(stderr, "Invalid OSEM date time struct length\n");
+				return MESSAGE_LENGTH_ERROR;
+			}
+			OSEMData.dateTimeStructValueID = valueID;
+			OSEMData.dateTimeStructContentLength = contentLength;
+			memcpy(&OSEMData.timestamp, p, contentLength);
+			OSEMData.timestamp.dateISO8601 = le32toh(OSEMData.timestamp.dateISO8601);
+			OSEMData.timestamp.gpsWeek = le16toh(OSEMData.timestamp.gpsWeek);
+			OSEMData.timestamp.gpsQmsOfWeek = le32toh(OSEMData.timestamp.gpsQmsOfWeek);
 			break;
-		case VALUE_ID_OSEM_DATE:
-			memcpy(&OSEMData.dateValueID, &valueID, sizeof (OSEMData.latitudeValueID));
-			memcpy(&OSEMData.dateContentLength, &contentLength, sizeof (OSEMData.dateContentLength));
-			memcpy(&OSEMData.date, p, sizeof (OSEMData.date));
-			OSEMData.date = le32toh(OSEMData.date);
+		case VALUE_ID_OSEM_ACC_REQ_STRUCT:
+			if (contentLength != sizeof (OSEMData.requirements)) {
+				fprintf(stderr, "Invalid OSEM access requirements struct length\n");
+				return MESSAGE_LENGTH_ERROR;
+			}
+			OSEMData.accReqStructValueID = valueID;
+			OSEMData.accReqStructContentLength = contentLength;
+			memcpy(&OSEMData.requirements, p, contentLength);
+			OSEMData.requirements.maxWayDeviation = le16toh(OSEMData.requirements.maxWayDeviation);
+			OSEMData.requirements.maxLateralDeviation = le16toh(OSEMData.requirements.maxLateralDeviation);
+			OSEMData.requirements.maxYawDeviation = le16toh(OSEMData.requirements.maxYawDeviation);
+			OSEMData.requirements.maxPositionError = le16toh(OSEMData.requirements.maxPositionError);
+			OSEMData.requirements.heabTimeout = le16toh(OSEMData.requirements.heabTimeout);
 			break;
-		case VALUE_ID_OSEM_GPS_WEEK:
-			memcpy(&OSEMData.GPSWeekValueID, &valueID, sizeof (OSEMData.latitudeValueID));
-			memcpy(&OSEMData.GPSWeekContentLength, &contentLength, sizeof (OSEMData.GPSWeekContentLength));
-			memcpy(&OSEMData.GPSWeek, p, sizeof (OSEMData.GPSWeek));
-			OSEMData.GPSWeek = le16toh(OSEMData.GPSWeek);
-			break;
-		case VALUE_ID_OSEM_GPS_QUARTER_MILLISECOND_OF_WEEK:
-			memcpy(&OSEMData.GPSQmsOfWeekValueID, &valueID, sizeof (OSEMData.latitudeValueID));
-			memcpy(&OSEMData.GPSQmsOfWeekContentLength, &contentLength,
-				   sizeof (OSEMData.GPSQmsOfWeekContentLength));
-			memcpy(&OSEMData.GPSQmsOfWeek, p, sizeof (OSEMData.GPSQmsOfWeek));
-			OSEMData.GPSQmsOfWeek = le32toh(OSEMData.GPSQmsOfWeek);
-			break;
-		case VALUE_ID_OSEM_MAX_WAY_DEVIATION:
-			memcpy(&OSEMData.maxWayDeviationValueID, &valueID, sizeof (OSEMData.latitudeValueID));
-			memcpy(&OSEMData.maxWayDeviationContentLength, &contentLength,
-				   sizeof (OSEMData.maxWayDeviationContentLength));
-			memcpy(&OSEMData.maxWayDeviation, p, sizeof (OSEMData.maxWayDeviation));
-			OSEMData.maxWayDeviation = le16toh(OSEMData.maxWayDeviation);
-			break;
-		case VALUE_ID_OSEM_MAX_LATERAL_DEVIATION:
-			memcpy(&OSEMData.maxLateralDeviationValueID, &valueID, sizeof (OSEMData.latitudeValueID));
-			memcpy(&OSEMData.maxLateralDeviationContentLength, &contentLength,
-				   sizeof (OSEMData.maxLateralDeviationContentLength));
-			memcpy(&OSEMData.maxLateralDeviation, p, sizeof (OSEMData.maxLateralDeviation));
-			OSEMData.maxLateralDeviation = le16toh(OSEMData.maxLateralDeviation);
-			break;
-		case VALUE_ID_OSEM_MIN_POSITIONING_ACCURACY:
-			memcpy(&OSEMData.minPosAccuracyValueID, &valueID, sizeof (OSEMData.latitudeValueID));
-			memcpy(&OSEMData.minPosAccuracyContentLength, &contentLength,
-				   sizeof (OSEMData.minPosAccuracyContentLength));
-			memcpy(&OSEMData.minPosAccuracy, p, sizeof (OSEMData.minPosAccuracy));
-			OSEMData.minPosAccuracy = le16toh(OSEMData.minPosAccuracy);
-			break;
-		case VALUE_ID_OSEM_TRANSMITTER_ID:
-			memcpy(&OSEMData.desiredTransmitterIDValueID, &valueID, sizeof (OSEMData.desiredTransmitterIDValueID));
-			memcpy(&OSEMData.desiredTransmitterIDContentLength, &contentLength,
-				   sizeof (OSEMData.desiredTransmitterIDContentLength));
-			memcpy(&OSEMData.desiredTransmitterID, p, sizeof (OSEMData.desiredTransmitterID));
-			OSEMData.desiredTransmitterID = le32toh(OSEMData.desiredTransmitterID);
+		case VALUE_ID_OSEM_TIME_SERVER_STRUCT:
+			if (contentLength != sizeof (OSEMData.timeserver)) {
+				fprintf(stderr, "Invalid OSEM time server struct length\n");
+				return MESSAGE_LENGTH_ERROR;
+			}
+			OSEMData.timeServerStructValueID = valueID;
+			OSEMData.timeServerStructContentLength = contentLength;
+			memcpy(&OSEMData.timeserver, p, contentLength);
+			OSEMData.timeserver.ip = le32toh(OSEMData.timeserver.ip);
+			OSEMData.timeserver.port = le16toh(OSEMData.timeserver.port);
 			break;
 		default:
 			printf("Unable to handle OSEM value ID 0x%x\n", valueID);
@@ -388,37 +391,35 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
 	}
 
 	if (debug) {
-		printf("OSEM message:\n");
-		printf("\tDesired transmitter ID value ID: 0x%x\n", OSEMData.desiredTransmitterIDValueID);
-		printf("\tDesired transmitter ID content length: %u\n", OSEMData.desiredTransmitterIDContentLength);
-		printf("\tDesired transmitter ID: %u\n", OSEMData.desiredTransmitterID);
-		printf("\tLatitude value ID: 0x%x\n", OSEMData.latitudeValueID);
-		printf("\tLatitude content length: %u\n", OSEMData.latitudeContentLength);
-		printf("\tLatitude: %ld\n", OSEMData.latitude);
-		printf("\tLongitude value ID: 0x%x\n", OSEMData.longitudeValueID);
-		printf("\tLongitude content length: %u\n", OSEMData.longitudeContentLength);
-		printf("\tLongitude: %ld\n", OSEMData.longitude);
-		printf("\tAltitude value ID: 0x%x\n", OSEMData.altitudeValueID);
-		printf("\tAltitude content length: %u\n", OSEMData.altitudeContentLength);
-		printf("\tAltitude: %d\n", OSEMData.altitude);
-		printf("\tDate value ID: 0x%x\n", OSEMData.dateValueID);
-		printf("\tDate content length ID: %u\n", OSEMData.dateContentLength);
-		printf("\tDate: %u\n", OSEMData.date);
-		printf("\tGPS week value ID: 0x%x\n", OSEMData.GPSWeekValueID);
-		printf("\tGPS week content length: %u\n", OSEMData.GPSWeekContentLength);
-		printf("\tGPS week: %u\n", OSEMData.GPSWeek);
-		printf("\tGPS time of week value ID: 0x%x\n", OSEMData.GPSQmsOfWeekValueID);
-		printf("\tGPS time of week content length: %u\n", OSEMData.GPSQmsOfWeekContentLength);
-		printf("\tGPS time of week: %u [¼ ms]\n", OSEMData.GPSQmsOfWeek);
-		printf("\tMax position deviation value ID: 0x%x\n", OSEMData.maxWayDeviationValueID);
-		printf("\tMax position deviation content length: %u\n", OSEMData.maxWayDeviationContentLength);
-		printf("\tMax position deviation: %u\n", OSEMData.maxWayDeviation);
-		printf("\tMax lateral deviation value ID: 0x%x\n", OSEMData.maxLateralDeviationValueID);
-		printf("\tMax lateral deviation content length: %u\n", OSEMData.maxLateralDeviationContentLength);
-		printf("\tMax lateral deviation: %u\n", OSEMData.maxLateralDeviation);
-		printf("\tMin position accuracy value ID: 0x%x\n", OSEMData.minPosAccuracyValueID);
-		printf("\tMin position accuracy content length: %u\n", OSEMData.minPosAccuracyContentLength);
-		printf("\tMin position accuracy: %u\n", OSEMData.minPosAccuracy);
+		printf
+			("OSEM message:\n\tID struct value ID: 0x%x\n\tID struct content length: %u"
+			 "\n\tDevice ID: %u \n\tSub device ID: %u \n\tSystem control centre ID: %u"
+			 "\n\tOrigin struct value ID: 0x%x\n\tOrigin struct content length: %u"
+			 "\n\tLatitude: %ld [100 nanodegrees]\n\tLongitude: %ld [100 nanodegrees]"
+			 "\n\tAltitude: %d [cm]\n\tRotation: %u [10 millidegrees]\n\tCoordinate system: %u"
+			 "\n\tDate time struct value ID: 0x%x\n\tDate time struct content length: %u"
+			 "\n\tDate: %u [YYYYMMDD]\n\tGPS week: %u\n\tGPS second of week: %u [¼ ms]"
+			 "\n\tLeap seconds: %u [s]"
+			 "\n\tAcc req struct value ID: 0x%x\n\tAcc req struct content length: %u"
+			 "\n\tMax way deviation: %u [mm]\n\tMax lateral deviation: %u [mm]"
+			 "\n\tMax yaw deviation: %u [10 millidegrees]\n\tMax position error: %u [cm]"
+			 "\n\tHEAB timeout: %u [10 ms]\n\tTest mode: %u\n\tMONR rate: %u [1 Hz]"
+			 "\n\tMONR2 rate: %u [1 Hz]\n\tHEAB rate: %u [1 Hz]\n\tMax message length: %u [B]",
+			 OSEMData.idStructValueID, OSEMData.idStructContentLength, OSEMData.ids.deviceID,
+			 OSEMData.ids.subDeviceID, OSEMData.ids.systemControlCentreID, OSEMData.originStructValueID,
+			 OSEMData.originStructContentLength, OSEMData.origin.latitude,
+			 OSEMData.origin.longitude, OSEMData.origin.altitude, OSEMData.origin.rotation,
+			 OSEMData.origin.coordinateSystem, OSEMData.dateTimeStructValueID,
+			 OSEMData.dateTimeStructContentLength, OSEMData.timestamp.dateISO8601,
+			 OSEMData.timestamp.gpsWeek, OSEMData.timestamp.gpsQmsOfWeek,
+			 OSEMData.timestamp.leapSeconds, OSEMData.accReqStructValueID,
+			 OSEMData.accReqStructContentLength, OSEMData.requirements.maxWayDeviation,
+			 OSEMData.requirements.maxLateralDeviation, OSEMData.requirements.maxYawDeviation,
+			 OSEMData.requirements.maxPositionError, OSEMData.requirements.heabTimeout,
+			 OSEMData.requirements.testMode, OSEMData.requirements.monrRate,
+			 OSEMData.requirements.monr2Rate, OSEMData.requirements.heabRate,
+			 OSEMData.requirements.maxMessageLength);
+			 // TODO print time server
 	}
 
 	// Fill output struct with parsed data
@@ -432,63 +433,63 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
  * \param OSEMData OSEMType struct with decoded OSEM values from server
  * \param ObjectSettingsData Custom struct ObjectSettingsType output values needed later in other functions
  */
-void convertOSEMToHostRepresentation(const OSEMType * OSEMData, ObjectSettingsType * ObjectSettingsData) {
-	// Check for validity of contents
-	ObjectSettingsData->isTransmitterIDValid =
-			OSEMData->desiredTransmitterIDValueID
-			&& OSEMData->desiredTransmitterID != TRANSMITTER_ID_UNAVAILABLE_VALUE;
-	ObjectSettingsData->isTimestampValid =
-			OSEMData->GPSWeekValueID
-			&& OSEMData->GPSQmsOfWeekValueID
-			&& OSEMData->GPSWeek != GPS_WEEK_UNAVAILABLE_VALUE
-			&& OSEMData->GPSQmsOfWeek != GPS_SECOND_OF_WEEK_UNAVAILABLE_VALUE;
-	ObjectSettingsData->isLateralDeviationLimited =
-			OSEMData->maxLateralDeviationValueID
-			&& OSEMData->maxLateralDeviation != MAX_LATERAL_DEVIATION_UNAVAILABLE_VALUE;
-	ObjectSettingsData->isPositionDeviationLimited =
-			OSEMData->maxWayDeviationValueID
-			&& OSEMData->maxWayDeviation != MAX_WAY_DEVIATION_UNAVAILABLE_VALUE;
-	ObjectSettingsData->isPositioningAccuracyRequired =
-			OSEMData->minPosAccuracyValueID
-			&& OSEMData->minPosAccuracy != MIN_POSITIONING_ACCURACY_NOT_REQUIRED_VALUE;
-	ObjectSettingsData->coordinateSystemOrigin.isLatitudeValid =
-			OSEMData->latitudeValueID
-			&& OSEMData->latitude != LATITUDE_UNAVAILABLE_VALUE;
-	ObjectSettingsData->coordinateSystemOrigin.isLongitudeValid =
-			OSEMData->longitudeValueID
-			&& OSEMData->longitude != LONGITUDE_UNAVAILABLE_VALUE;
-	ObjectSettingsData->coordinateSystemOrigin.isAltitudeValid =
-			OSEMData->altitudeValueID
-			&& OSEMData->altitude != ALTITUDE_UNAVAILABLE_VALUE;
-
-	// Convert timestamp
-	if (ObjectSettingsData->isTimestampValid) {
-		ObjectSettingsData->isTimestampValid = setToGPStime(&ObjectSettingsData->currentTime,
-															OSEMData->GPSWeek, OSEMData->GPSQmsOfWeek) >= 0;
-	}
-
-	// Transmitter ID
-	ObjectSettingsData->desiredTransmitterID =
-			ObjectSettingsData->isTransmitterIDValid ?
-				OSEMData->desiredTransmitterID : 0;
+void convertOSEMToHostRepresentation(
+	const OSEMType * OSEMData,
+	ObjectSettingsType * ObjectSettingsData)
+{
+	// Copy IDs
+	ObjectSettingsData->desiredID.transmitter = OSEMData->ids.deviceID;
+	ObjectSettingsData->desiredID.subTransmitter = OSEMData->ids.subDeviceID;
+	ObjectSettingsData->desiredID.controlCentre = OSEMData->ids.systemControlCentreID;
 
 	// Convert origin
+	ObjectSettingsData->coordinateSystemOrigin.isLatitudeValid =
+		OSEMData->originStructValueID
+		&& OSEMData->origin.latitude != LATITUDE_UNAVAILABLE_VALUE;
+	ObjectSettingsData->coordinateSystemOrigin.isLongitudeValid =
+			OSEMData->originStructValueID
+			&& OSEMData->origin.longitude != LONGITUDE_UNAVAILABLE_VALUE;
+	ObjectSettingsData->coordinateSystemOrigin.isAltitudeValid =
+			OSEMData->originStructValueID
+			&& OSEMData->origin.altitude != ALTITUDE_UNAVAILABLE_VALUE;
+	ObjectSettingsData->coordinateSystemRotation_rad =
+			OSEMData->originStructValueID ? OSEMData->origin.rotation
+				/ ROTATION_ONE_DEGREE_VALUE * M_PI / 180.0 : 0.0;
+	ObjectSettingsData->coordinateSystemType = OSEMData->originStructValueID
+			? OSEMData->origin.coordinateSystem : COORDINATE_SYSTEM_UNAVAILABLE;
 	ObjectSettingsData->coordinateSystemOrigin.latitude_deg =
-		ObjectSettingsData->coordinateSystemOrigin.isLatitudeValid ? OSEMData->latitude /
+		ObjectSettingsData->coordinateSystemOrigin.isLatitudeValid ? OSEMData->origin.latitude /
 		LATITUDE_ONE_DEGREE_VALUE : 0;
 	ObjectSettingsData->coordinateSystemOrigin.longitude_deg =
-		ObjectSettingsData->coordinateSystemOrigin.isLongitudeValid ? OSEMData->longitude /
+		ObjectSettingsData->coordinateSystemOrigin.isLongitudeValid ? OSEMData->origin.longitude /
 		LONGITUDE_ONE_DEGREE_VALUE : 0;
 	ObjectSettingsData->coordinateSystemOrigin.altitude_m =
-		ObjectSettingsData->coordinateSystemOrigin.isAltitudeValid ? OSEMData->altitude /
+		ObjectSettingsData->coordinateSystemOrigin.isAltitudeValid ? OSEMData->origin.altitude /
 		ALTITUDE_ONE_METER_VALUE : 0;
 
-	// Accuracies / deviations
-	ObjectSettingsData->minRequiredPositioningAccuracy_m = ObjectSettingsData->isPositioningAccuracyRequired ?
-		OSEMData->minPosAccuracy / MIN_POSITIONING_ACCURACY_ONE_METER_VALUE : 0;
-	ObjectSettingsData->maxPositionDeviation_m = ObjectSettingsData->isPositionDeviationLimited ?
-		OSEMData->maxWayDeviation / MAX_WAY_DEVIATION_ONE_METER_VALUE : 0;
-	ObjectSettingsData->maxLateralDeviation_m = ObjectSettingsData->isLateralDeviationLimited ?
-		OSEMData->maxLateralDeviation / MAX_LATERAL_DEVIATION_ONE_METER_VALUE : 0;
-
+	// Convert timestamp
+	setToGPStime(&ObjectSettingsData->currentTime,
+		OSEMData->timestamp.gpsWeek, OSEMData->timestamp.gpsQmsOfWeek);
+	
+	// Convert requirements
+	ObjectSettingsData->maxDeviation.position_m = OSEMData->requirements.maxWayDeviation != MAX_WAY_DEVIATION_UNAVAILABLE_VALUE ?
+		 OSEMData->requirements.maxWayDeviation / MAX_WAY_DEVIATION_ONE_METER_VALUE : 1000000.0;
+	ObjectSettingsData->maxDeviation.lateral_m = OSEMData->requirements.maxLateralDeviation != MAX_LATERAL_DEVIATION_UNAVAILABLE_VALUE ?
+		 OSEMData->requirements.maxLateralDeviation / MAX_LATERAL_DEVIATION_ONE_METER_VALUE : 1000000.0;
+	ObjectSettingsData->maxDeviation.yaw_rad = OSEMData->requirements.maxYawDeviation != MAX_YAW_DEVIATION_UNAVAILABLE_VALUE ?
+		 OSEMData->requirements.maxYawDeviation / MAX_YAW_DEVIATION_ONE_DEGREE_VALUE * M_PI / 180.0 : 2 * M_PI;
+	ObjectSettingsData->minRequiredPositioningAccuracy_m = OSEMData->requirements.maxPositionError != MIN_POSITIONING_ACCURACY_NOT_REQUIRED_VALUE ?
+		 OSEMData->requirements.maxPositionError / MIN_POSITIONING_ACCURACY_ONE_METER_VALUE : 1000000.0;
+	ObjectSettingsData->testMode = OSEMData->requirements.testMode;
+	ObjectSettingsData->rate.monr = OSEMData->requirements.monrRate / MONR_RATE_ONE_HZ_VALUE;
+	ObjectSettingsData->rate.monr2 = OSEMData->requirements.monr2Rate / MONR2_RATE_ONE_HZ_VALUE;
+	ObjectSettingsData->rate.heab = OSEMData->requirements.heabRate / HEAB_RATE_ONE_HZ_VALUE;
+	ObjectSettingsData->heabTimeout.tv_sec = OSEMData->requirements.heabTimeout / COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE;
+	ObjectSettingsData->heabTimeout.tv_usec = (OSEMData->requirements.heabTimeout
+			- ObjectSettingsData->heabTimeout.tv_sec * COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE)
+		/ COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE * 1000000;
+	
+	// Convert timeserver
+	ObjectSettingsData->timeServer.ip = OSEMData->timeserver.ip;
+	ObjectSettingsData->timeServer.port = OSEMData->timeserver.port;
 }
