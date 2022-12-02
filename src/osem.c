@@ -81,8 +81,7 @@ ssize_t encodeOSEMMessage(
 
 	OSEMData.dateTimeStructValueID = VALUE_ID_OSEM_DATE_TIME_STRUCT;
 	OSEMData.dateTimeStructContentLength = sizeof (OSEMData.timestamp);
-	// TODO date time struct
-	//OSEMData.timestamp.dateISO8601
+	
 	OSEMData.timestamp.dateISO8601 =
 		(uint32_t) ((printableTime->tm_year + 1900) * 10000 + (printableTime->tm_mon + 1) * 100 +
 						   (printableTime->tm_mday));
@@ -296,7 +295,6 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
 		memcpy(&contentLength, p, sizeof (contentLength));
 		contentLength = le16toh(contentLength);
 		p += sizeof (contentLength);
-		/*
 		// Handle contents
 		switch (valueID) {
 		case VALUE_ID_OSEM_LATITUDE:
@@ -372,7 +370,6 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
 			break;
 		}
 		p += contentLength;
-		*/
 	}
 
 	// Decode footer
@@ -391,7 +388,6 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
 	}
 
 	if (debug) {
-		/*
 		printf("OSEM message:\n");
 		printf("\tDesired transmitter ID value ID: 0x%x\n", OSEMData.desiredTransmitterIDValueID);
 		printf("\tDesired transmitter ID content length: %u\n", OSEMData.desiredTransmitterIDContentLength);
@@ -423,7 +419,6 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
 		printf("\tMin position accuracy value ID: 0x%x\n", OSEMData.minPosAccuracyValueID);
 		printf("\tMin position accuracy content length: %u\n", OSEMData.minPosAccuracyContentLength);
 		printf("\tMin position accuracy: %u\n", OSEMData.minPosAccuracy);
-		*/
 	}
 
 	// Fill output struct with parsed data
@@ -438,7 +433,6 @@ ssize_t decodeOSEMMessage(ObjectSettingsType * objectSettingsData,
  * \param ObjectSettingsData Custom struct ObjectSettingsType output values needed later in other functions
  */
 void convertOSEMToHostRepresentation(const OSEMType * OSEMData, ObjectSettingsType * ObjectSettingsData) {
-	/*
 	// Check for validity of contents
 	ObjectSettingsData->isTransmitterIDValid =
 			OSEMData->desiredTransmitterIDValueID
@@ -497,5 +491,4 @@ void convertOSEMToHostRepresentation(const OSEMType * OSEMData, ObjectSettingsTy
 	ObjectSettingsData->maxLateralDeviation_m = ObjectSettingsData->isLateralDeviationLimited ?
 		OSEMData->maxLateralDeviation / MAX_LATERAL_DEVIATION_ONE_METER_VALUE : 0;
 
-*/
 }
