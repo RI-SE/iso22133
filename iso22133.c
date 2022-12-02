@@ -96,7 +96,7 @@ typedef struct {
 #define VALUE_ID_TRAJ_X_POSITION 0x0010
 #define VALUE_ID_TRAJ_Y_POSITION 0x0011
 #define VALUE_ID_TRAJ_Z_POSITION 0x0012
-#define VALUE_ID_TRAJ_HEADING 0x0030
+#define VALUE_ID_TRAJ_YAW 0x0030
 #define VALUE_ID_TRAJ_LONGITUDINAL_SPEED 0x0040
 #define VALUE_ID_TRAJ_LATERAL_SPEED 0x0041
 #define VALUE_ID_TRAJ_LONGITUDINAL_ACCELERATION 0x0050
@@ -510,9 +510,9 @@ typedef struct {
 	uint16_t zPositionValueID;
 	uint16_t zPositionContentLength;
 	int32_t  zPosition;
-	uint16_t headingValueID;
-	uint16_t headingContentLength;
-	uint16_t heading;
+	uint16_t yawValueID;
+	uint16_t yawContentLength;
+	uint16_t yaw;
 	uint16_t pitchValueID;
 	uint16_t pitchContentLength;
 	uint16_t pitch;
@@ -535,7 +535,7 @@ typedef struct {
 #define VALUE_ID_PODI_X_POSITION				0x010D
 #define VALUE_ID_PODI_Y_POSITION				0x010E
 #define VALUE_ID_PODI_Z_POSITION				0x010F
-#define VALUE_ID_PODI_HEADING					0x0110
+#define VALUE_ID_PODI_YAW						0x0110
 #define VALUE_ID_PODI_PITCH						0x0111
 #define VALUE_ID_PODI_ROLL						0x0112
 #define VALUE_ID_PODI_LONGITUDINAL_SPEED		0x0113
@@ -548,7 +548,7 @@ static DebugStrings_t PODIObjectStateDescription =			{"ObjectState",				"",			&p
 static DebugStrings_t PODIxPositionDescription =			{"Object X position",		"[mm]",		&printI32};
 static DebugStrings_t PODIyPositionDescription =			{"Object Y position",		"[mm]",		&printI32};
 static DebugStrings_t PODIzPositionDescription =			{"Object Z position",		"[mm]",		&printI32};
-static DebugStrings_t PODIHeadingDescription =				{"Object heading (yaw)",	"[cdeg]",	&printU16};
+static DebugStrings_t PODIYawDescription =					{"Object yaw",				"[cdeg]",	&printU16};
 static DebugStrings_t PODIPitchDescription =				{"Object pitch",			"[cdeg]",	&printU16};
 static DebugStrings_t PODIRollDescription =					{"Object roll",				"[cdeg]",	&printU16};
 static DebugStrings_t PODILongitudinalSpeedDescription =	{"Longitudinal speed",		"[cm/s]",	&printI16};
@@ -718,8 +718,8 @@ static DebugStrings_t DCTITransmitterIdDescription = {"TransmitterID",	"",		&pri
 // ************************** static function declarations ********************************************************
 
 static char isValidMessageID(const uint16_t id);
-static double_t mapISOYawToHostHeading(const double_t isoHeading_rad);
-static double_t mapHostYawToISOHeading(const double_t hostHeading_rad);
+static double_t mapISOYawToHostYaw(const double_t isoYaw_rad);
+static double_t mapHostYawToISOYaw(const double_t hostYaw_rad);
 
 static enum ISOMessageReturnValue convertHEABToHostRepresentation(
 		HEABType* HEABData,
@@ -1214,10 +1214,10 @@ ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const C
 		return -1;
 	}
 
-	TRAJData.yawValueID = VALUE_ID_TRAJ_HEADING;
+	TRAJData.yawValueID = VALUE_ID_TRAJ_YAW;
 	TRAJData.yawContentLength = sizeof (TRAJData.yaw);
 	if (orientation.isYawValid) {
-		TRAJData.yaw = (uint16_t) (mapHostHeadingToISOHeading(orientation.yaw_rad)
+		TRAJData.yaw = (uint16_t) (mapHostYawToISOYaw(orientation.yaw_rad)
 									   * 180.0 / M_PI * YAW_ONE_DEGREE_VALUE);
 	}
 	else {
@@ -1448,7 +1448,7 @@ ssize_t decodeTRAJMessagePoint(
 			memcpy(&TRAJPointData.zPosition, p, sizeof (TRAJPointData.zPosition));
 			expectedContentLength = sizeof(TRAJPointData.zPosition);
 			break;
-		case VALUE_ID_TRAJ_HEADING:
+		case VALUE_ID_TRAJ_YAW:
 			TRAJPointData.yawValueID = valueID;
 			TRAJPointData.yawContentLength = contentLength;
 			memcpy(&TRAJPointData.yaw, p, sizeof (TRAJPointData.yaw));
@@ -1562,7 +1562,7 @@ enum ISOMessageReturnValue convertTRAJPointToHostRepresentation(
 	wayPoint->pos.isPositionValid = TRAJPointData->xPositionValueID != 0
 			&& TRAJPointData->yPositionValueID  != 0 && TRAJPointData->zPositionValueID != 0;
 	wayPoint->orientation.yaw_rad = TRAJPointData->yaw / YAW_ONE_DEGREE_VALUE * M_PI / 180.0;
-	wayPoint->orientation.yaw_rad = mapISOHeadingToHostHeading(wayPoint->orientation.yaw_rad);
+	wayPoint->orientation.yaw_rad = mapISOYawToHostYaw(wayPoint->orientation.yaw_rad);
 	wayPoint->orientation.isYawValid = TRAJPointData->yawValueID != 0;
 	wayPoint->spd.longitudinal_m_s = TRAJPointData->longitudinalSpeed / SPEED_ONE_METER_PER_SECOND_VALUE;
 	wayPoint->spd.isLongitudinalValid = TRAJPointData->longitudinalSpeedValueID != 0;
@@ -2639,10 +2639,11 @@ enum ISOMessageReturnValue convertHEABToHostRepresentation(HEABType* HEABData,
 /*!
  * \brief encodeMONRMessage Constructs an ISO MONR message based on object dynamics data from trajectory file or data generated in a simulator
  * \param objectTime Time of the object
- * \param position Position of the object in relation to test origin (includes heading/yaw)
+ * \param position Position of the object in relation to test origin.
+ * \param orientation Orientation of the object.
  * \param speed Speed of the object (longitudinal and lateral)
  * \param acceleration Acceleration of the object (longitudinal and lateral)
- * \param driveDirection Drive direction with respect to the heading (backward or forward)
+ * \param driveDirection Drive direction with respect to the yaw (backward or forward)
  * \param objectState Current State of the object (off(0),init(1),armed(2),disarmed(3),running(4),postrun(5),remoteControlled(6),aborting(7))
  * \param readyToArm Ready to arm indicator (notReady(0),readyToARM(1),unavailable(2))
  * \param objectErrorState Error status of the object (bit field encoded)
@@ -2694,7 +2695,7 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	}
 
 	if (orientation.isYawValid) {
-		MONRData.yaw = (uint16_t) (mapHostHeadingToISOHeading(orientation.yaw_rad)
+		MONRData.yaw = (uint16_t) (mapHostYawToISOYaw(orientation.yaw_rad)
 									   * 180.0 / M_PI * YAW_ONE_DEGREE_VALUE);
 	}
 	else {
@@ -2702,7 +2703,7 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	}
 
 	if (orientation.isPitchValid) {
-		MONRData.pitch = (int16_t) (mapHostHeadingToISOHeading(orientation.pitch_rad)
+		MONRData.pitch = (int16_t) (mapHostYawToISOYaw(orientation.pitch_rad)
 									   * 180.0 / M_PI * PITCH_ONE_DEGREE_VALUE);
 	}
 	else {
@@ -2710,7 +2711,7 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	}
 
 	if (orientation.isRollValid) {
-		MONRData.roll = (int16_t) (mapHostHeadingToISOHeading(orientation.roll_rad)
+		MONRData.roll = (int16_t) (mapHostYawToISOYaw(orientation.roll_rad)
 									   * 180.0 / M_PI * ROLL_ONE_DEGREE_VALUE);
 	}
 	else {
@@ -3387,15 +3388,15 @@ void convertMONRToHostRepresentation(const MONRType * MONRData,
 	// Orientation
 	monitorData->orientation.isYawValid = MONRData->yaw != YAW_UNAVAILABLE_VALUE;
 	monitorData->orientation.yaw_rad = monitorData->orientation.isYawValid ?
-		mapISOHeadingToHostHeading(MONRData->yaw / 100.0 * M_PI / 180.0) : 0;
+		mapISOYawToHostYaw(MONRData->yaw / 100.0 * M_PI / 180.0) : 0;
 
 	monitorData->orientation.isPitchValid = MONRData->pitch != PITCH_UNAVAILABLE_VALUE;
 	monitorData->orientation.pitch_rad = monitorData->orientation.isPitchValid ?
-		mapISOHeadingToHostHeading(MONRData->pitch / 100.0 * M_PI / 180.0) : 0;
+		mapISOYawToHostYaw(MONRData->pitch / 100.0 * M_PI / 180.0) : 0;
 
 	monitorData->orientation.isRollValid = MONRData->roll != ROLL_UNAVAILABLE_VALUE;
 	monitorData->orientation.roll_rad = monitorData->orientation.isRollValid ?
-		mapISOHeadingToHostHeading(MONRData->roll / 100.0 * M_PI / 180.0) : 0;
+		mapISOYawToHostYaw(MONRData->roll / 100.0 * M_PI / 180.0) : 0;
 
 	monitorData->orientation.isOrientationValid = true;
 
@@ -3977,18 +3978,18 @@ ssize_t encodePODIMessage(const PeerObjectInjectionType* peerObjectData,
 						  sizeof (PODIData.yPosition), &remainingBytes, &PODIyPositionDescription, debug);
 	retval |= encodeContent(VALUE_ID_PODI_Z_POSITION, &PODIData.zPosition, &p,
 						  sizeof (PODIData.zPosition), &remainingBytes, &PODIzPositionDescription, debug);
-	PODIData.heading = peerObjectData->position.isHeadingValid ?
-				(uint16_t) (mapHostHeadingToISOHeading(peerObjectData->position.heading_rad)
-					* 180.0 / M_PI * HEADING_ONE_DEGREE_VALUE)
-			  : HEADING_UNAVAILABLE_VALUE;
-	retval |= encodeContent(VALUE_ID_PODI_HEADING, &PODIData.heading, &p,
-						  sizeof (PODIData.heading), &remainingBytes, &PODIHeadingDescription, debug);
-	PODIData.pitch = peerObjectData->isPitchValid ?
+	PODIData.yaw = peerObjectData->orientation.isYawValid ?
+				(uint16_t) (mapHostYawToISOYaw(peerObjectData->orientation.yaw_rad)
+					* 180.0 / M_PI * YAW_ONE_DEGREE_VALUE)
+			  : YAW_UNAVAILABLE_VALUE;
+	retval |= encodeContent(VALUE_ID_PODI_YAW, &PODIData.yaw, &p,
+						  sizeof (PODIData.yaw), &remainingBytes, &PODIYawDescription, debug);
+	PODIData.pitch = peerObjectData->orientation.isPitchValid ?
 				(uint16_t)(peerObjectData->pitch_rad * 180.0 / M_PI * PITCH_ONE_DEGREE_VALUE)
 			  : PITCH_UNAVAILABLE_VALUE;
 	retval |= encodeContent(VALUE_ID_PODI_PITCH, &PODIData.pitch, &p,
 						  sizeof (PODIData.pitch), &remainingBytes, &PODIPitchDescription, debug);
-	PODIData.roll = peerObjectData->isRollValid ?
+	PODIData.roll = peerObjectData->orientation.isRollValid ?
 				(uint16_t)(peerObjectData->roll_rad * 180.0 / M_PI * ROLL_ONE_DEGREE_VALUE)
 			  : ROLL_UNAVAILABLE_VALUE;
 	retval |= encodeContent(VALUE_ID_PODI_ROLL, &PODIData.roll, &p,
@@ -4128,12 +4129,12 @@ ssize_t decodePODIMessage(
 			PODIData.objectStateContentLength = contentLength;
 			expectedContentLength = sizeof (PODIData.objectState);
 			break;
-		case VALUE_ID_PODI_HEADING:
-			memcpy(&PODIData.heading, p, sizeof (PODIData.heading));
-			PODIData.heading = le16toh(PODIData.heading);
-			PODIData.headingValueID = valueID;
-			PODIData.headingContentLength = contentLength;
-			expectedContentLength = sizeof (PODIData.heading);
+		case VALUE_ID_PODI_YAW:
+			memcpy(&PODIData.yaw, p, sizeof (PODIData.yaw));
+			PODIData.yaw = le16toh(PODIData.yaw);
+			PODIData.yawValueID = valueID;
+			PODIData.yawContentLength = contentLength;
+			expectedContentLength = sizeof (PODIData.yaw);
 			break;
 		case VALUE_ID_PODI_PITCH:
 			memcpy(&PODIData.pitch, p, sizeof (PODIData.pitch));
@@ -4211,9 +4212,9 @@ ssize_t decodePODIMessage(
 		printf("\tz position value ID: 0x%x\n", PODIData.zPositionValueID);
 		printf("\tz position content length: %u\n", PODIData.zPositionContentLength);
 		printf("\tz position: %u\n", PODIData.zPosition);
-		printf("\tHeading value ID: 0x%x\n", PODIData.headingValueID);
-		printf("\tHeading content length: %u\n", PODIData.headingContentLength);
-		printf("\tHeading: %u\n", PODIData.heading);
+		printf("\tYaw value ID: 0x%x\n", PODIData.yawValueID);
+		printf("\tYaw content length: %u\n", PODIData.yawContentLength);
+		printf("\tYaw: %u\n", PODIData.yaw);
 		printf("\tPitch value ID: 0x%x\n", PODIData.pitchValueID);
 		printf("\tPitch content length: %u\n", PODIData.pitchContentLength);
 		printf("\tPitch: %u\n", PODIData.pitch);
@@ -4280,34 +4281,34 @@ enum ISOMessageReturnValue convertPODIToHostRepresentation(PODIType* PODIData,
 	peerData->position.yCoord_m = PODIData->yPosition / POSITION_ONE_METER_VALUE;
 	peerData->position.zCoord_m = PODIData->zPosition / POSITION_ONE_METER_VALUE;
 
-	if (!PODIData->headingValueID) {
-		fprintf(stderr, "Heading not supplied in PODI message\n");
+	if (!PODIData->yawValueID) {
+		fprintf(stderr, "Yaw not supplied in PODI message\n");
 		return MESSAGE_VALUE_ID_ERROR;
 	}
 
-	peerData->position.isHeadingValid = PODIData->heading != HEADING_UNAVAILABLE_VALUE;
-	peerData->position.heading_rad = mapISOHeadingToHostHeading(
-				PODIData->heading / HEADING_ONE_DEGREE_VALUE * M_PI / 180.0);
+	peerData->orientation.isYawValid = PODIData->yaw != YAW_UNAVAILABLE_VALUE;
+	peerData->orientation.yaw_rad = mapISOYawToHostYaw(
+				PODIData->yaw / YAW_ONE_DEGREE_VALUE * M_PI / 180.0);
 
 	if (PODIData->rollValueID && PODIData->roll != ROLL_UNAVAILABLE_VALUE) {
-		peerData->isRollValid = 1;
+		peerData->orientation.isRollValid = 1;
 		peerData->roll_rad = PODIData->roll / ROLL_ONE_DEGREE_VALUE * M_PI / 180.0;
 	}
 	else {
-		peerData->isRollValid = 0;
+		peerData->orientation.isRollValid = 0;
 	}
 
 	if (PODIData->pitchValueID && PODIData->pitch != PITCH_UNAVAILABLE_VALUE) {
-		peerData->isPitchValid = 1;
+		peerData->orientation.isPitchValid = 1;
 		peerData->pitch_rad = PODIData->pitch / PITCH_ONE_DEGREE_VALUE * M_PI / 180.0;
 	}
 	else {
-		peerData->isRollValid = 0;
+		peerData->orientation.isRollValid = 0;
 	}
 
 	// Until these are clearly defined, force them to be invalid
-	peerData->isRollValid = 0;
-	peerData->isPitchValid = 0;
+	peerData->orientation.isRollValid = 0;
+	peerData->orientation.isPitchValid = 0;
 
 	return MESSAGE_OK;
 }
@@ -5933,12 +5934,12 @@ ssize_t encodeGREMMessage(const GeneralResponseMessageType* gremObjectData,
 
 
 /*!
- * \brief mapISOYawToHostYaw Converts between ISO NED heading to internal heading measured from the test x axis
+ * \brief mapISOYawToHostYaw Converts between ISO NED yaw to internal yaw measured from the test x axis
  * \param isoYaw_rad Yaw measured according to ISO specification, in radians
  * \return Yaw, in radians, measured from the test x axis
  */
 double_t mapISOYawToHostYaw(const double_t isoYaw_rad) {
-	// TODO: Reevaluate this when ISO specification is updated with new heading and rotated coordinate system
+	// TODO: Reevaluate this when ISO specification is updated with new heading/yaw and rotated coordinate system
 
 	double_t retval = isoYaw_rad;
 
@@ -5962,7 +5963,7 @@ double_t mapISOYawToHostYaw(const double_t isoYaw_rad) {
  * \return Yaw, in radians, measured as specified by ISO 22133
  */
 double_t mapHostYawToISOYaw(const double_t hostYaw_rad) {
-	// TODO: Reevaluate this when ISO specification is updated with new heading and rotated coordinate system
+	// TODO: Reevaluate this when ISO specification is updated with new heading/yaw and rotated coordinate system
 
 	double_t retval = hostYaw_rad;
 
