@@ -26,19 +26,41 @@ extern "C" {
 #define ISO_22133_OBJECT_UDP_PORT 53240
 #define ISO_22133_DEFAULT_OBJECT_TCP_PORT 53241
 
+typedef enum {
+	TEST_MODE_PREPLANNED = 0,
+	TEST_MODE_ONLINE = 1,
+	TEST_MODE_SCENARIO = 2,
+	TEST_MODE_UNAVAILABLE = 255
+} TestModeType;
+
 /*! OSEM settings */
 typedef struct {
-	uint32_t desiredTransmitterID;
+	struct {
+		uint32_t transmitter;
+		uint32_t subTransmitter;
+		uint32_t controlCentre;
+	} desiredID;
 	GeographicPositionType coordinateSystemOrigin;
+	double coordinateSystemRotation_rad;
+	CoordinateSystemType coordinateSystemType;
 	struct timeval currentTime;
-	double_t maxPositionDeviation_m;
-	double_t maxLateralDeviation_m;
+	struct {
+		double_t position_m;
+		double_t lateral_m;
+		double_t yaw_rad;
+	} maxDeviation;
 	double_t minRequiredPositioningAccuracy_m;
-	bool isTransmitterIDValid;
-	bool isPositionDeviationLimited;
-	bool isLateralDeviationLimited;
-	bool isPositioningAccuracyRequired;
-	bool isTimestampValid;
+	TestModeType testMode;
+	struct timeval heabTimeout;
+	struct {
+		double_t monr;
+		double_t monr2;
+		double_t heab;
+	} rate;
+	struct {
+		uint32_t ip;
+		uint16_t port;
+	} timeServer;
 } ObjectSettingsType;
 
 /*! ISO message constants */
