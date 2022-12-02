@@ -36,6 +36,15 @@ typedef struct {
     bool isAltitudeValid;
 } GeographicPositionType;
 
+typedef enum {
+	COORDINATE_SYSTEM_ETRS89 = 0,
+	COORDINATE_SYSTEM_NAD83 = 1,
+	COORDINATE_SYSTEM_ITRF2000 = 2,
+	COORDINATE_SYSTEM_WGS84 = 3,
+	COORDINATE_SYSTEM_LOCAL = 4,
+	COORDINATE_SYSTEM_UNAVAILABLE = 255
+} CoordinateSystemType;
+
 /*! Struct describing longitudinal and lateral speed of an object */
 typedef struct {
 	double longitudinal_m_s;
