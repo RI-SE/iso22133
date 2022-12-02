@@ -376,8 +376,6 @@ typedef struct {
 	CartesianPosition position;
 	OrientationType orientation;
 	SpeedType speed;
-	double pitch_rad;
-	double roll_rad;
 } PeerObjectInjectionType;
 
 /*! OPRO message contents */
