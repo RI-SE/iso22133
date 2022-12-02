@@ -12,7 +12,7 @@ typedef struct {
 
 enum ISOMessageReturnValue decodeISOFooter(const char *MessageBuffer, const size_t length,
 											 FooterType * HeaderData, const char debug);
-FooterType buildISOFooter(const void *message, const size_t sizeExclFooter, const char debug);
+FooterType buildISOFooter(const void *message, const size_t messageSize, const char debug);
 
 uint16_t crcByte(const uint16_t crc, const uint8_t byte);
 uint16_t crc16(const uint8_t * data, size_t dataLen);
