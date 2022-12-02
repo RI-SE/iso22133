@@ -468,7 +468,7 @@ ssize_t decodeTRAJMessageHeader(TrajectoryHeaderType* trajHeader, const char* tr
 ssize_t encodeSTRTMessage(const StartMessageType* startData, char * strtDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeSTRTMessage(const char *strtDataBuffer, const size_t bufferLength, const struct timeval* currentTime, StartMessageType * startData, const char debug) ;
 ssize_t encodeOSEMMessage(const ObjectSettingsType* objectSettingsData, char * osemDataBuffer, const size_t bufferLength, const char debug);
-ssize_t decodeOSEMMessage(ObjectSettingsType *objectSettingsData, const char * osemDataBuffer, const size_t bufferLength, uint32_t *senderID, const char debug);
+ssize_t decodeOSEMMessage(ObjectSettingsType *objectSettingsData, const char * osemDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeOSTMMessage(const enum ObjectCommandType command, char * ostmDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeOSTMMessage(const char* ostmDataBuffer, const size_t bufferLength, enum ObjectCommandType* command, const char debug);
 ssize_t encodeHEABMessage(const struct timeval* heabTime, const enum ControlCenterStatusType status, char * heabDataBuffer, const size_t bufferLength, const char debug);
