@@ -157,23 +157,3 @@ static const uint8_t SupportedProtocolVersions[] = { 2 };
 #define WEEK_TIME_MS 604800000
 // Time between 1970-01-01 and 1980-01-06
 #define MS_TIME_DIFF_UTC_GPS ((uint64_t)(315964800000))
-
-
-typedef void (*DebugPrinter_t)(const void*);
-// ************************* Debug printout helper data **********************************************************
-/*! Debug formatting functions*/
-void printU8(const void* val)  { printf("%u",  *(const uint8_t*)val); }
-void printU16(const void* val) { printf("%u",  *(const uint16_t*)val); }
-void printU32(const void* val) { printf("%u",  *(const uint32_t*)val); }
-void printU64(const void* val) { printf("%lu", *(const uint64_t*)val); }
-void printI8(const void* val)  { printf("%d",  *(const int8_t*)val); }
-void printI16(const void* val) { printf("%d",  *(const int16_t*)val); }
-void printI32(const void* val) { printf("%d",  *(const int32_t*)val); }
-void printI64(const void* val) { printf("%ld", *(const int64_t*)val); }
-
-/*! Debug struct */
-typedef struct {
-	char* name;
-	char* unit;
-	DebugPrinter_t printer;
-} DebugStrings_t;
