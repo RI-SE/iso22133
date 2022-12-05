@@ -1,4 +1,5 @@
 #include "traj.h"
+#include "iohelpers.h"
 #include <errno.h>
 
 static uint16_t trajectoryMessageCrc = 0;
@@ -19,13 +20,21 @@ static uint16_t trajectoryMessageCrc = 0;
  *		ENOBUFS		if supplied buffer is too small to hold header
  *		EMSGSIZE	if trajectory name is too long
  */
-ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const uint16_t trajectoryVersion,
-								const char *trajectoryName, const size_t nameLength,
-								const uint32_t numberOfPointsInTraj, char *trajDataBuffer,
-								const size_t bufferLength, const char debug) {
+ssize_t encodeTRAJMessageHeader(
+	const uint16_t trajectoryID,
+	const enum TrajectoryInfo trajectoryInfo,
+	const char* trajectoryName,
+	const size_t nameLength,
+	const uint32_t numberOfPointsInTraj,
+	char *trajDataBuffer,
+	const size_t bufferLength,
+	const char debug)
+{
 
 	TRAJHeaderType TRAJData;
-	size_t dataLen;
+	char* p = trajDataBuffer;
+	size_t remainingBytes = bufferLength;
+	int retval = 0;
 
 	memset(trajDataBuffer, 0, bufferLength);
 
@@ -52,64 +61,56 @@ ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const uint16_t traj
 	}
 
 	// Construct ISO header
-	TRAJData.header = buildISOHeader(MESSAGE_ID_TRAJ, sizeof (TRAJHeaderType)
-									 + numberOfPointsInTraj * sizeof (TRAJPointType) +
-									 sizeof (TRAJFooterType), debug);
+	TRAJData.header = buildISOHeader(
+		MESSAGE_ID_TRAJ,
+		sizeof (TRAJHeaderType)
+			+ numberOfPointsInTraj * sizeof (TRAJPointType)
+			+ sizeof (TRAJFooterType),
+		debug);
+
+	if (debug) {
+			printf("TRAJ message header:\n");
+	}
 
 	// Fill contents
-	TRAJData.trajectoryIDValueID = VALUE_ID_TRAJ_TRAJECTORY_IDENTIFIER;
-	TRAJData.trajectoryIDContentLength = sizeof (TRAJData.trajectoryID);
-	TRAJData.trajectoryID = trajectoryID;
-
-	TRAJData.trajectoryVersionValueID = VALUE_ID_TRAJ_TRAJECTORY_VERSION;
-	TRAJData.trajectoryVersionContentLength = sizeof (TRAJData.trajectoryVersion);
-	TRAJData.trajectoryVersion = trajectoryVersion;
-
+	retval |= encodeContent(VALUE_ID_TRAJ_TRAJECTORY_IDENTIFIER, &trajectoryID, &p,
+		sizeof (TRAJData.trajectoryID), &remainingBytes, &TRAJIdentifierDescription, debug);
+	TRAJData.trajectoryInfo = trajectoryInfo;
+	retval |= encodeContent(VALUE_ID_TRAJ_TRAJECTORY_INFO, &TRAJData.trajectoryInfo, &p,
+		sizeof (TRAJData.trajectoryInfo), &remainingBytes, &TRAJInfoDescription, debug);
+	
+	// Encode string separately since encodeContent does not handle strings
 	TRAJData.trajectoryNameValueID = VALUE_ID_TRAJ_TRAJECTORY_NAME;
 	TRAJData.trajectoryNameContentLength = sizeof (TRAJData.trajectoryName);
 	memset(TRAJData.trajectoryName, 0, sizeof (TRAJData.trajectoryName));
 	if (trajectoryName != NULL) {
 		memcpy(&TRAJData.trajectoryName, trajectoryName, nameLength);
+		// Ensure null termination
+		TRAJData.trajectoryName[TRAJ_NAME_STRING_MAX_LENGTH] = '\0';
 	}
-
+	memcpy(p, TRAJData.trajectoryName, sizeof (TRAJData.trajectoryName));
+	p += sizeof (TRAJData.trajectoryName);
+	
 	if (debug) {
-		printf("TRAJ message header:\n\t"
-			   "Trajectory ID value ID: 0x%x\n\t"
-			   "Trajectory ID content length: %u\n\t"
-			   "Trajectory ID: %u\n\t"
-			   "Trajectory name value ID: 0x%x\n\t"
-			   "Trajectory name content length: %u\n\t"
-			   "Trajectory name: %s\n\t"
-			   "Trajectory version value ID: 0x%x\n\t"
-			   "Trajectory version content length: %u\n\t"
-			   "Trajectory version: %u\n", TRAJData.trajectoryIDValueID,
-			   TRAJData.trajectoryIDContentLength, TRAJData.trajectoryID,
-			   TRAJData.trajectoryNameValueID, TRAJData.trajectoryNameContentLength,
-			   TRAJData.trajectoryName, TRAJData.trajectoryVersionValueID,
-			   TRAJData.trajectoryVersionContentLength, TRAJData.trajectoryVersion);
+		printContent(TRAJData.trajectoryNameValueID,
+			TRAJData.trajectoryNameContentLength,
+			TRAJData.trajectoryName,
+			&TRAJNameDescription);
 	}
-
-	// Switch endianness to little endian for all fields
-	TRAJData.trajectoryIDValueID = htole16(TRAJData.trajectoryIDValueID);
-	TRAJData.trajectoryIDContentLength = htole16(TRAJData.trajectoryIDContentLength);
-	TRAJData.trajectoryID = htole16(TRAJData.trajectoryID);
-	TRAJData.trajectoryVersionValueID = htole16(TRAJData.trajectoryVersionValueID);
-	TRAJData.trajectoryVersionContentLength = htole16(TRAJData.trajectoryVersionContentLength);
-	TRAJData.trajectoryVersion = htole16(TRAJData.trajectoryVersion);
+	// Switch endianness to little endian for name
 	TRAJData.trajectoryNameValueID = htole16(TRAJData.trajectoryNameValueID);
 	TRAJData.trajectoryNameContentLength = htole16(TRAJData.trajectoryNameContentLength);
 
 	// Reset CRC
 	trajectoryMessageCrc = DEFAULT_CRC_INIT_VALUE;
 
-	memcpy(trajDataBuffer, &TRAJData, sizeof (TRAJData));
-
 	// Update CRC
-	dataLen = sizeof (TRAJData);
+	size_t dataLen = p - trajDataBuffer;
+	char* crcPtr = trajDataBuffer;
 	while (dataLen-- > 0) {
-		trajectoryMessageCrc = crcByte(trajectoryMessageCrc, (uint8_t) (*trajDataBuffer++));
+		trajectoryMessageCrc = crcByte(trajectoryMessageCrc, (uint8_t) (*crcPtr++));
 	}
-	return sizeof (TRAJHeaderType);
+	return retval ? retval : p - trajDataBuffer;
 }
 
 /*!
