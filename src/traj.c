@@ -1,8 +1,14 @@
 #include "traj.h"
 #include "iohelpers.h"
 #include <errno.h>
+#include <string.h>
 
 static uint16_t trajectoryMessageCrc = 0;
+
+//! TRAJ header field descriptions
+static DebugStrings_t TRAJIdentifierDescription = 	{"Trajectory ID",	"",	&printU32};
+static DebugStrings_t TRAJNameDescription = 		{"Trajectory name",	"",	&printString};
+static DebugStrings_t TRAJInfoDescription = 		{"Trajectory info",	"",	&printU8};
 
 /*!
  * \brief encodeTRAJMessageHeader Creates a TRAJ message header based on supplied values and resets
@@ -22,7 +28,7 @@ static uint16_t trajectoryMessageCrc = 0;
  */
 ssize_t encodeTRAJMessageHeader(
 	const uint16_t trajectoryID,
-	const enum TrajectoryInfo trajectoryInfo,
+	const TrajectoryInfoType trajectoryInfo,
 	const char* trajectoryName,
 	const size_t nameLength,
 	const uint32_t numberOfPointsInTraj,
@@ -67,6 +73,7 @@ ssize_t encodeTRAJMessageHeader(
 			+ numberOfPointsInTraj * sizeof (TRAJPointType)
 			+ sizeof (TRAJFooterType),
 		debug);
+	p += sizeof (HeaderType);
 
 	if (debug) {
 			printf("TRAJ message header:\n");
@@ -88,6 +95,10 @@ ssize_t encodeTRAJMessageHeader(
 		// Ensure null termination
 		TRAJData.trajectoryName[TRAJ_NAME_STRING_MAX_LENGTH] = '\0';
 	}
+	memcpy(p, &TRAJData.trajectoryNameValueID, sizeof (TRAJData.trajectoryNameValueID));
+	p += sizeof (TRAJData.trajectoryNameValueID);
+	memcpy(p, &TRAJData.trajectoryNameContentLength, sizeof (TRAJData.trajectoryNameContentLength));
+	p += sizeof (TRAJData.trajectoryNameContentLength);
 	memcpy(p, TRAJData.trajectoryName, sizeof (TRAJData.trajectoryName));
 	p += sizeof (TRAJData.trajectoryName);
 	
@@ -180,11 +191,11 @@ ssize_t decodeTRAJMessageHeader(
 			memcpy(&TRAJHeaderData.trajectoryName, p, contentLength);
 			expectedContentLength = TRAJ_NAME_STRING_MAX_LENGTH;
 			break;
-		case VALUE_ID_TRAJ_TRAJECTORY_VERSION:
-			TRAJHeaderData.trajectoryVersionValueID = valueID;
-			TRAJHeaderData.trajectoryVersionContentLength = contentLength;
-			memcpy(&TRAJHeaderData.trajectoryVersion, p, sizeof (TRAJHeaderData.trajectoryVersion));
-			expectedContentLength = sizeof (TRAJHeaderData.trajectoryVersion);
+		case VALUE_ID_TRAJ_TRAJECTORY_INFO:
+			TRAJHeaderData.trajectoryInfoValueID = valueID;
+			TRAJHeaderData.trajectoryInfoContentLength = contentLength;
+			memcpy(&TRAJHeaderData.trajectoryInfo, p, sizeof (TRAJHeaderData.trajectoryInfo));
+			expectedContentLength = sizeof (TRAJHeaderData.trajectoryInfo);
 			break;
 
 		default:
@@ -204,8 +215,9 @@ ssize_t decodeTRAJMessageHeader(
 		printf("TRAJ header data:\n");
 		printf("\tTrajectory ID: 0x%x\n", TRAJHeaderData.trajectoryID);
 		printf("\tTrajectory name: %s\n", TRAJHeaderData.trajectoryName);
-		printf("\tTrajectory version: %u\n", TRAJHeaderData.trajectoryVersion);
-		printf("\tTRAJ length: %u bytes\n", TRAJHeaderData.header.messageLength - sizeof(TRAJHeaderType) + sizeof(HeaderType));
+		printf("\tTrajectory info: %u\n", TRAJHeaderData.trajectoryInfo);
+		printf("\tTRAJ length: %ld bytes\n", TRAJHeaderData.header.messageLength
+			- sizeof(TRAJHeaderType) - sizeof(TRAJFooterType) + sizeof(FooterType));
 	}
 
 	// Fill output struct with parsed data
@@ -228,10 +240,10 @@ enum ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType*
 	}
 
 	trajectoryHeaderData->trajectoryID = TRAJHeaderData->trajectoryID;
-	memcpy(trajectoryHeaderData->trajectoryName, TRAJHeaderData->trajectoryName, strlen(TRAJHeaderData->trajectoryName));
-	trajectoryHeaderData->trajectoryVersion = TRAJHeaderData->trajectoryVersion;
-	trajectoryHeaderData->trajectoryLength = trajectoryLength - sizeof(TRAJHeaderType) + sizeof(HeaderType);
-	trajectoryHeaderData->nWayPoints = trajectoryHeaderData->trajectoryLength/sizeof(TRAJPointType);
+	memcpy(trajectoryHeaderData->trajectoryName, TRAJHeaderData->trajectoryName, sizeof(TRAJHeaderData->trajectoryName));
+	trajectoryHeaderData->trajectoryInfo = TRAJHeaderData->trajectoryInfo;
+	trajectoryHeaderData->trajectoryLength = trajectoryLength - sizeof(TRAJHeaderType) - sizeof(TRAJFooterType) + sizeof(FooterType);
+	trajectoryHeaderData->nWaypoints = trajectoryHeaderData->trajectoryLength/sizeof(TRAJPointType);
 
 	return MESSAGE_OK;
 }

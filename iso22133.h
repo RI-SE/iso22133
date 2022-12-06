@@ -69,18 +69,19 @@ enum ISOConstantsType {
 	ISO_TRAJ_WAYPOINT_SIZE = 70
 };
 
-enum TrajectoryInfo {
+typedef enum {
 	TRAJECTORY_INFO_RELATIVE_TO_OBJECT = 1,
 	TRAJECTORY_INFO_RELATIVE_TO_ORIGIN = 2,
 	TRAJECTORY_INFO_DELETE_TRAJECTORY = 3
-};
+} TrajectoryInfoType;
 
 /*! Trajectory header */
 typedef struct {
 	uint16_t trajectoryID;
 	char trajectoryName[64];
-	TrajectoryInfo trajectoryInfo;
+	TrajectoryInfoType trajectoryInfo;
 	uint32_t trajectoryLength;
+	uint32_t nWaypoints;
 } TrajectoryHeaderType;
 
 /*! Trajectory WayPoint */
@@ -465,7 +466,7 @@ typedef struct{
 
 ssize_t encodeMONRMessage(const struct timeval* objectTime, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const unsigned char driveDirection, const unsigned char objectState, const unsigned char readyToArm, const unsigned char objectErrorState, char * monrDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeMONRMessage(const char * monrDataBuffer, const size_t bufferLength, const struct timeval currentTime, uint32_t * objectID, ObjectMonitorType * MonitorData, const char debug);
-ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const enum TrajectoryInfo trajectoryInfo, const char* trajectoryName, const size_t nameLength,	const uint32_t numberOfPointsInTraj, char *trajDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const TrajectoryInfoType trajectoryInfo, const char* trajectoryName, const size_t nameLength,	const uint32_t numberOfPointsInTraj, char *trajDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeTRAJMessagePoint(const struct timeval * pointTimeFromStart, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const float curvature, char * trajDataBufferPointer, const size_t remainingBufferLength, const char debug);
 ssize_t decodeTRAJMessagePoint(TrajectoryWaypointType* wayPoints, const char* trajDataBuffer, const char debug);
 ssize_t encodeTRAJMessageFooter(char * trajDataBuffer, const size_t bufferLength, const char debug);

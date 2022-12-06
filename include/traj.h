@@ -2,6 +2,7 @@
 #include "header.h"
 #include "footer.h"
 #include "defines.h"
+#include "iohelpers.h"
 #include <stdint.h>
 
 #pragma pack(push, 1)
@@ -19,11 +20,6 @@ typedef struct {
 	uint16_t trajectoryInfoContentLength;
 	uint8_t trajectoryInfo;
 } TRAJHeaderType;
-
-//! TRAJ header field descriptions
-static DebugStrings_t TRAJIdentifierDescription = 	{"Trajectory ID",	"",	&printU32};
-static DebugStrings_t TRAJNameDescription = 		{"Trajectory name",	"",	&printString};
-static DebugStrings_t TRAJInfoDescription = 		{"Trajectory info",	"",	&printU8};
 
 typedef struct {
 	uint16_t trajectoryPointValueID;

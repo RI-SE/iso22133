@@ -1,6 +1,8 @@
 #include "iohelpers.h"
 #include <string.h>
 #include <errno.h>
+#include <stdio.h>
+#include <endian.h>
 
 void printContent(
 		const uint16_t valueID,
@@ -90,3 +92,14 @@ int encodeContent(uint16_t valueID,
 	*bufferSpace -= contentSize;
 	return 0;
 }
+
+
+void printU8(const void* val)  { printf("%u",  *(const uint8_t*)val); }
+void printU16(const void* val) { printf("%u",  *(const uint16_t*)val); }
+void printU32(const void* val) { printf("%u",  *(const uint32_t*)val); }
+void printU64(const void* val) { printf("%lu", *(const uint64_t*)val); }
+void printI8(const void* val)  { printf("%d",  *(const int8_t*)val); }
+void printI16(const void* val) { printf("%d",  *(const int16_t*)val); }
+void printI32(const void* val) { printf("%d",  *(const int32_t*)val); }
+void printI64(const void* val) { printf("%ld", *(const int64_t*)val); }
+void printString(const void* val) { printf("%s", (const char*)val); }
