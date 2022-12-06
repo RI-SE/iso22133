@@ -155,3 +155,145 @@ TEST_F(DecodeTRAJHeader, Name)
 		EXPECT_EQ(header.trajectoryName[i], '\0');
 	}
 }
+
+class EncodeTRAJPoint : public ::testing::Test
+{
+protected:
+	EncodeTRAJPoint() 
+	{
+		timeFromStart.tv_sec = 1;
+		timeFromStart.tv_usec = 2000;
+		pos.isXcoordValid = true;
+		pos.isYcoordValid = true;
+		pos.isZcoordValid = true;
+		pos.isPositionValid = true;
+		pos.xCoord_m = 1.0;
+		pos.yCoord_m = -2.0;
+		pos.zCoord_m = 3.0;
+		pos.isHeadingValid = true;
+		pos.heading_rad = 0.4;
+		speed.isLongitudinalValid = true;
+		speed.isLateralValid = true;
+		speed.longitudinal_m_s = 2.0;
+		speed.lateral_m_s = 1.0;
+		acc.isLongitudinalValid = true;
+		acc.isLateralValid = true;
+		acc.longitudinal_m_s2 = 3.0;
+		acc.lateral_m_s2 = 4.0;
+		curvature = 0.5;
+	}
+
+	void SetUp() override
+	{
+		memset(encodeBuffer, 0, sizeof(encodeBuffer));
+		auto res = encodeTRAJMessagePoint(
+			&timeFromStart,
+			pos,
+			speed,
+			acc,
+			curvature,
+			encodeBuffer,
+			sizeof(encodeBuffer),
+			false);
+		ASSERT_GT(res, 0);
+	}
+
+	char encodeBuffer[1024];
+	struct timeval timeFromStart;
+	CartesianPosition pos;
+	SpeedType speed;
+	AccelerationType acc;
+	float curvature;
+};
+
+
+TEST_F(EncodeTRAJPoint, Preamble)
+{
+	EXPECT_EQ(encodeBuffer[0], '\x01');
+	EXPECT_EQ(encodeBuffer[1], '\x00');
+	EXPECT_EQ(encodeBuffer[2], '\x1E');
+	EXPECT_EQ(encodeBuffer[3], '\x00');
+}
+
+TEST_F(EncodeTRAJPoint, RelativeTime)
+{
+	// 1.002 seconds
+	EXPECT_EQ(encodeBuffer[4], '\xEA');
+	EXPECT_EQ(encodeBuffer[5], '\x03');
+	EXPECT_EQ(encodeBuffer[6], '\x00');
+	EXPECT_EQ(encodeBuffer[7], '\x00');
+}
+
+TEST_F(EncodeTRAJPoint, XPosition)
+{
+	// 1.0 meters
+	EXPECT_EQ(encodeBuffer[8], '\xE8');
+	EXPECT_EQ(encodeBuffer[9], '\x03');
+	EXPECT_EQ(encodeBuffer[10], '\x00');
+	EXPECT_EQ(encodeBuffer[11], '\x00');
+}
+
+TEST_F(EncodeTRAJPoint, YPosition)
+{
+	// -2.0 meters
+	EXPECT_EQ(encodeBuffer[12], '\x30');
+	EXPECT_EQ(encodeBuffer[13], '\xF8');
+	EXPECT_EQ(encodeBuffer[14], '\xFF');
+	EXPECT_EQ(encodeBuffer[15], '\xFF');
+}
+
+TEST_F(EncodeTRAJPoint, ZPosition)
+{
+	// 3.0 meters
+	EXPECT_EQ(encodeBuffer[16], '\xB8');
+	EXPECT_EQ(encodeBuffer[17], '\x0B');
+	EXPECT_EQ(encodeBuffer[18], '\x00');
+	EXPECT_EQ(encodeBuffer[19], '\x00');
+}
+
+TEST_F(EncodeTRAJPoint, Yaw)
+{
+	// 0.4 radians = 2291 centidegrees rounded down
+	EXPECT_EQ(encodeBuffer[20], '\xF3');
+	EXPECT_EQ(encodeBuffer[21], '\x08');
+}
+
+TEST_F(EncodeTRAJPoint, LongitudinalSpeed)
+{
+	// 2.0 meters per second
+	EXPECT_EQ(encodeBuffer[22], '\xC8');
+	EXPECT_EQ(encodeBuffer[23], '\x00');
+}
+
+TEST_F(EncodeTRAJPoint, LateralSpeed)
+{
+	// 1.0 meters per second
+	EXPECT_EQ(encodeBuffer[24], '\x64');
+	EXPECT_EQ(encodeBuffer[25], '\x00');
+}
+
+TEST_F(EncodeTRAJPoint, LongitudinalAcceleration)
+{
+	// 3.0 meters per second squared
+	EXPECT_EQ(encodeBuffer[26], '\xB8');
+	EXPECT_EQ(encodeBuffer[27], '\x0B');
+}
+
+TEST_F(EncodeTRAJPoint, LateralAcceleration)
+{
+	// 4.0 meters per second squared
+	EXPECT_EQ(encodeBuffer[28], '\xA0');
+	EXPECT_EQ(encodeBuffer[29], '\x0F');
+}
+
+TEST_F(EncodeTRAJPoint, Curvature)
+{
+	// 0.5 meters per second squared
+	union {
+		float val;
+		uint32_t bytes;
+	} u;
+	memcpy(&u.bytes, &encodeBuffer[30], sizeof(u.bytes));
+	u.bytes = le32toh(u.bytes);
+	EXPECT_FLOAT_EQ(u.val, 0.5);
+}
