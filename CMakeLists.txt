@@ -22,11 +22,11 @@ set(ISO22133_TARGET ${TARGET_NAMESPACE}${PROJECT_NAME})
 
 include(GNUInstallDirs)
 
+file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
 add_library(${ISO22133_TARGET} SHARED
-        ${CMAKE_CURRENT_SOURCE_DIR}/positioning.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/iso22133.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/header.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/footer.c
+	${CMAKE_CURRENT_SOURCE_DIR}/positioning.c
+	${CMAKE_CURRENT_SOURCE_DIR}/iso22133.c
+	${SOURCES}
 )
 
 target_include_directories(${ISO22133_TARGET} PUBLIC
