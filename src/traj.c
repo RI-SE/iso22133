@@ -303,10 +303,10 @@ ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const C
 	}
 
 	if (position.isHeadingValid) {
-		TRAJData.yaw = (uint16_t) (position.heading_rad * 180.0 / M_PI * HEADING_ONE_DEGREE_VALUE);
+		TRAJData.yaw = (uint16_t) (position.heading_rad * 180.0 / M_PI * YAW_ONE_DEGREE_VALUE);
 	}
 	else {
-		TRAJData.yaw = HEADING_UNAVAILABLE_VALUE;
+		TRAJData.yaw = YAW_UNAVAILABLE_VALUE;
 	}
 
 	if (speed.isLongitudinalValid) {
@@ -561,8 +561,8 @@ enum ISOMessageReturnValue convertTRAJPointToHostRepresentation(
 	wayPoint->pos.isXcoordValid = true;
 	wayPoint->pos.isYcoordValid = true;
 	wayPoint->pos.isZcoordValid = true;
-	wayPoint->pos.heading_rad = TRAJPointData->yaw / HEADING_ONE_DEGREE_VALUE * M_PI / 180.0;
-	wayPoint->pos.isHeadingValid = TRAJPointData->yaw != HEADING_UNAVAILABLE_VALUE;
+	wayPoint->pos.heading_rad = TRAJPointData->yaw / YAW_ONE_DEGREE_VALUE * M_PI / 180.0;
+	wayPoint->pos.isHeadingValid = TRAJPointData->yaw != YAW_UNAVAILABLE_VALUE;
 	wayPoint->spd.longitudinal_m_s = TRAJPointData->longitudinalSpeed / SPEED_ONE_METER_PER_SECOND_VALUE;
 	wayPoint->spd.isLongitudinalValid = TRAJPointData->longitudinalSpeed != SPEED_UNAVAILABLE_VALUE;
 	wayPoint->spd.lateral_m_s = TRAJPointData->lateralSpeed / SPEED_ONE_METER_PER_SECOND_VALUE;
