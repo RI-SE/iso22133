@@ -70,6 +70,9 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	else {
 		MONRData.yaw = YAW_UNAVAILABLE_VALUE;
 	}
+	// TODO: Add support for pitch and roll
+	MONRData.pitch = 0;
+	MONRData.roll = 0;
 
 	if (speed.isLongitudinalValid) {
 		MONRData.longitudinalSpeed = (int16_t) (speed.longitudinal_m_s * SPEED_ONE_METER_PER_SECOND_VALUE);
@@ -94,6 +97,7 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	MONRData.state = objectState;
 	MONRData.readyToArm = readyToArm;
 	MONRData.errorStatus = objectErrorState;
+	MONRData.errorCode = objectErrorCode;
 
 	if (debug) {
 		printf("MONR message:\n\tMONR struct value ID: 0x%x\n\t"
@@ -133,10 +137,13 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	MONRData.yPosition = (int32_t) htole32(MONRData.yPosition);
 	MONRData.zPosition = (int32_t) htole32(MONRData.zPosition);
 	MONRData.yaw = htole16(MONRData.yaw);
+	MONRData.pitch = (int16_t) htole16(MONRData.pitch);
+	MONRData.roll = (int16_t) htole16(MONRData.roll);
 	MONRData.longitudinalSpeed = (int16_t) htole16(MONRData.longitudinalSpeed);
 	MONRData.lateralSpeed = (int16_t) htole16(MONRData.lateralSpeed);
 	MONRData.longitudinalAcc = (int16_t) htole16(MONRData.longitudinalAcc);
 	MONRData.lateralAcc = (int16_t) htole16(MONRData.lateralAcc);
+	MONRData.errorCode = htole16(MONRData.errorCode);
 
 
 

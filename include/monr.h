@@ -4,6 +4,7 @@
 #include "footer.h"
 #include "iso22133.h"
 
+#pragma pack(push, 1)
 //! MONR message */
 typedef struct {
 	HeaderType header;
@@ -27,6 +28,7 @@ typedef struct {
 	uint16_t errorCode;
 	FooterType footer;
 } MONRType;
+#pragma pack(pop)
 
 //! MONR value IDs
 #define VALUE_ID_MONR_STRUCT 0x80
