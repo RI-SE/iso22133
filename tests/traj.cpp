@@ -297,3 +297,134 @@ TEST_F(EncodeTRAJPoint, Curvature)
 	u.bytes = le32toh(u.bytes);
 	EXPECT_FLOAT_EQ(u.val, 0.5);
 }
+
+
+class DecodeTRAJPoint : public ::testing::Test
+{
+protected:
+	DecodeTRAJPoint()
+	{
+		decodeBuffer[0] = '\x01';
+		decodeBuffer[1] = '\x00';
+		decodeBuffer[2] = '\x1E';
+		decodeBuffer[3] = '\x00';
+
+		decodeBuffer[4] = '\xEA';
+		decodeBuffer[5] = '\x03';
+		decodeBuffer[6] = '\x00';
+		decodeBuffer[7] = '\x00';
+
+		decodeBuffer[8] = '\xE8';
+		decodeBuffer[9] = '\x03';
+		decodeBuffer[10] = '\x00';
+		decodeBuffer[11] = '\x00';
+
+		decodeBuffer[12] = '\x30';
+		decodeBuffer[13] = '\xF8';
+		decodeBuffer[14] = '\xFF';
+		decodeBuffer[15] = '\xFF';
+
+		decodeBuffer[16] = '\xB8';
+		decodeBuffer[17] = '\x0B';
+		decodeBuffer[18] = '\x00';
+		decodeBuffer[19] = '\x00';
+
+		decodeBuffer[20] = '\xF3';
+		decodeBuffer[21] = '\x08';
+
+		decodeBuffer[22] = '\xC8';
+		decodeBuffer[23] = '\x00';
+
+		decodeBuffer[24] = '\x64';
+		decodeBuffer[25] = '\x00';
+
+		decodeBuffer[26] = '\xB8';
+		decodeBuffer[27] = '\x0B';
+
+		decodeBuffer[28] = '\xA0';
+		decodeBuffer[29] = '\x0F';
+
+		union {
+			float flt;
+			uint32_t u32;
+		} u;
+		u.flt = 0.5;
+		u.u32 = htole32(u.u32);
+		memcpy(&decodeBuffer[30], &u.u32, sizeof(u.u32));
+	}
+
+	void SetUp() override
+	{
+		memset(&point, 0, sizeof(point));
+		auto res = decodeTRAJMessagePoint(
+			&point,
+			decodeBuffer,
+			false);
+		ASSERT_GT(res, 0);
+	}
+
+	TrajectoryWaypointType point;
+	char decodeBuffer[1024];
+};
+
+TEST_F(DecodeTRAJPoint, RelativeTime)
+{
+	EXPECT_EQ(point.relativeTime.tv_sec, 1);
+	EXPECT_EQ(point.relativeTime.tv_usec, 2000);
+}
+
+TEST_F(DecodeTRAJPoint, XPosition)
+{
+	ASSERT_TRUE(point.pos.isXcoordValid);
+	ASSERT_TRUE(point.pos.isPositionValid);
+	EXPECT_FLOAT_EQ(point.pos.xCoord_m, 1.0);
+}
+
+TEST_F(DecodeTRAJPoint, YPosition)
+{
+	ASSERT_TRUE(point.pos.isYcoordValid);
+	ASSERT_TRUE(point.pos.isPositionValid);
+	EXPECT_FLOAT_EQ(point.pos.yCoord_m, -2.0);
+}
+
+TEST_F(DecodeTRAJPoint, ZPosition)
+{
+	ASSERT_TRUE(point.pos.isZcoordValid);
+	ASSERT_TRUE(point.pos.isPositionValid);
+	EXPECT_FLOAT_EQ(point.pos.zCoord_m, 3.0);
+}
+
+TEST_F(DecodeTRAJPoint, Yaw)
+{
+	ASSERT_TRUE(point.pos.isHeadingValid);
+	EXPECT_FLOAT_EQ(point.pos.heading_rad, 0.399854932);
+}
+
+TEST_F(DecodeTRAJPoint, LongitudinalSpeed)
+{
+	ASSERT_TRUE(point.spd.isLongitudinalValid);
+	EXPECT_FLOAT_EQ(point.spd.longitudinal_m_s, 2.0);
+}
+
+TEST_F(DecodeTRAJPoint, LateralSpeed)
+{
+	ASSERT_TRUE(point.spd.isLateralValid);
+	EXPECT_FLOAT_EQ(point.spd.lateral_m_s, 1.0);
+}
+
+TEST_F(DecodeTRAJPoint, LongitudinalAcceleration)
+{
+	ASSERT_TRUE(point.acc.isLongitudinalValid);
+	EXPECT_FLOAT_EQ(point.acc.longitudinal_m_s2, 3.0);
+}
+
+TEST_F(DecodeTRAJPoint, LateralAcceleration)
+{
+	ASSERT_TRUE(point.acc.isLateralValid);
+	EXPECT_FLOAT_EQ(point.acc.lateral_m_s2, 4.0);
+}
+
+TEST_F(DecodeTRAJPoint, Curvature)
+{
+	EXPECT_FLOAT_EQ(point.curvature, 0.5);
+}
