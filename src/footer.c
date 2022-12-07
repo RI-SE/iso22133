@@ -130,8 +130,12 @@ uint16_t crcByte(const uint16_t crc, const uint8_t byte) {
  * \param CRC Received CRC value for the data
  * \return Value according to ::ISOMessageReturnValue
  */
-enum ISOMessageReturnValue verifyChecksum(const void *data, const size_t dataLen, const uint16_t CRC,
-									 const char debug) {
+enum ISOMessageReturnValue verifyChecksum(
+	const void *data,
+	const size_t dataLen,
+	const uint16_t CRC,
+	const char debug)
+{
 	if (!isCRCVerificationEnabled || CRC == 0) {
 		return MESSAGE_OK;
 	}
@@ -139,7 +143,11 @@ enum ISOMessageReturnValue verifyChecksum(const void *data, const size_t dataLen
 	const uint16_t dataCRC = crc16(data, dataLen);
 
 	if (debug) {
-		printf("CRC given: %u, CRC calculated: %u\n", CRC, dataCRC);
+		printf("CRC given: %04x, CRC calculated: %04x\n", CRC, dataCRC);
+		printf("Data, %ld bytes: ", dataLen);
+		for (size_t i = 0; i < dataLen; i++) {
+			printf("%02x ", ((uint8_t *) data)[i]);
+		}
 	}
 	return dataCRC == CRC ? MESSAGE_OK : MESSAGE_CRC_ERROR;
 }
