@@ -428,3 +428,75 @@ TEST_F(DecodeTRAJPoint, Curvature)
 {
 	EXPECT_FLOAT_EQ(point.curvature, 0.5);
 }
+
+class EncodeTRAJFooter : public ::testing::Test
+{
+protected:
+	EncodeTRAJFooter()
+	{
+
+	}
+	void SetUp() override
+	{
+		memset(encodeBuffer, 0, sizeof(encodeBuffer));
+		auto p = encodeBuffer;
+		auto offset = encodeTRAJMessageHeader(
+			0x123,
+			TRAJECTORY_INFO_RELATIVE_TO_OBJECT,
+			"some description",
+			17,
+			3,
+			p,
+			sizeof(encodeBuffer),
+			false);
+		ASSERT_GT(offset, 0);
+		p += offset;
+		for (int i = 0; i < 3; i++) {
+			struct timeval tv = {1,2};
+			CartesianPosition pos = {1,2,3,4,true,true,true,true,true};
+			SpeedType spd = {1,2,true,true};
+			AccelerationType acc = {1,2,true,true};
+			offset = encodeTRAJMessagePoint(
+				&tv,
+				pos,
+				spd,
+				acc,
+				12.34,
+				p,
+				sizeof(encodeBuffer) - (p-encodeBuffer),
+				false);
+			ASSERT_GT(offset, 0);
+			p += offset;
+		}
+		offset = encodeTRAJMessageFooter(
+			p,
+			sizeof(encodeBuffer) - (p - encodeBuffer),
+			false
+		);
+		ASSERT_GT(offset, 0);
+		p += offset;
+		// Run this to view raw data for which to generate CRC
+		// for (int i = 0; i < p - encodeBuffer; ++i) {
+		// 	printf("%02x ",(uint8_t)encodeBuffer[i]);
+		// }
+		// printf("\n");
+	}
+
+	char encodeBuffer[1024];
+	char* lineInfo = encodeBuffer + 18 + (6 + 5 + 68) + 3*34; // Skip message header, traj header and 3 points
+	char* crc = lineInfo + 5;
+};
+
+TEST_F(EncodeTRAJFooter, EndOfTransmission) {
+	EXPECT_EQ(lineInfo[0], '\x53');
+	EXPECT_EQ(lineInfo[1], '\x00');
+	EXPECT_EQ(lineInfo[2], '\x01');
+	EXPECT_EQ(lineInfo[3], '\x00');
+	EXPECT_EQ(lineInfo[4], '\x04');
+}
+
+// https://crccalc.com/?crc=7f 7e ba 00 00 00 02 ff 00 00 00 00 00 00 00 00 01 00 01 01 02 00 23 01 04 01 01 00 01 02 01 40 00 73 6f 6d 65 20 64 65 73 63 72 69 70 74 69 6f 6e 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 1e 00 e8 03 00 00 e8 03 00 00 d0 07 00 00 b8 0b 00 00 86 59 64 00 c8 00 e8 03 d0 07 a4 70 45 41 01 00 1e 00 e8 03 00 00 e8 03 00 00 d0 07 00 00 b8 0b 00 00 86 59 64 00 c8 00 e8 03 d0 07 a4 70 45 41 01 00 1e 00 e8 03 00 00 e8 03 00 00 d0 07 00 00 b8 0b 00 00 86 59 64 00 c8 00 e8 03 d0 07 a4 70 45 41 53 00 01 00 04&method=crc16&datatype=hex&outtype=0
+TEST_F(EncodeTRAJFooter, Crc) {
+	EXPECT_EQ(crc[0], '\x34');
+	EXPECT_EQ(crc[1], '\x21');
+}

@@ -73,6 +73,7 @@ ssize_t encodeTRAJMessageHeader(
 			+ numberOfPointsInTraj * sizeof (TRAJPointType)
 			+ sizeof (TRAJFooterType),
 		debug);
+	memcpy(p, &TRAJData.header, sizeof(TRAJData.header));
 	p += sizeof (HeaderType);
 
 	if (debug) {
@@ -121,6 +122,7 @@ ssize_t encodeTRAJMessageHeader(
 	while (dataLen-- > 0) {
 		trajectoryMessageCrc = crcByte(trajectoryMessageCrc, (uint8_t) (*crcPtr++));
 	}
+	printf("CRC hdr %x\n",trajectoryMessageCrc);
 	return retval ? retval : p - trajDataBuffer;
 }
 
@@ -377,6 +379,7 @@ ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const C
 	while (dataLen-- > 0) {
 		trajectoryMessageCrc = crcByte(trajectoryMessageCrc, (uint8_t) (*trajDataBufferPointer++));
 	}
+	printf("CRC: %x\n", trajectoryMessageCrc);
 	return sizeof (TRAJData);
 }
 
@@ -391,9 +394,14 @@ ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const C
  *		EINVAL		if one of the input parameters are invalid
  *		ENOBUFS		if supplied buffer is too small to hold footer
  */
-ssize_t encodeTRAJMessageFooter(char *trajDataBuffer, const size_t remainingBufferLength, const char debug) {
-	/*
+ssize_t encodeTRAJMessageFooter(
+	char *trajDataBuffer,
+	const size_t remainingBufferLength,
+	const char debug) {
+
 	TRAJFooterType TRAJData;
+	ssize_t dataLen = 0;
+	char* p = trajDataBuffer;
 
 	if (remainingBufferLength < sizeof (TRAJFooterType)) {
 		errno = ENOBUFS;
@@ -405,16 +413,32 @@ ssize_t encodeTRAJMessageFooter(char *trajDataBuffer, const size_t remainingBuff
 		printf("Invalid trajectory data buffer supplied\n");
 		return -1;
 	}
+	TRAJData.lineInfoValueID = VALUE_ID_TRAJ_LINE_INFO;
+	TRAJData.lineInfoContentLength = sizeof (TRAJData.lineInfo);
+	TRAJData.lineInfo = TRAJ_LINE_INFO_END_OF_TRANSMISSION;
+
+	TRAJData.lineInfoValueID = le16toh(TRAJData.lineInfoValueID);
+	TRAJData.lineInfoContentLength = le16toh(TRAJData.lineInfoContentLength);
+
+	memcpy(p, &TRAJData, sizeof (TRAJData) - sizeof(FooterType));
+	p += sizeof (TRAJData) - sizeof(FooterType);
+
+	dataLen = p - trajDataBuffer;
+	char* crcPtr = trajDataBuffer;
+	while (dataLen-- > 0) {
+		trajectoryMessageCrc = crcByte(trajectoryMessageCrc, (uint8_t) (*crcPtr++));
+	}
 
 	TRAJData.footer.Crc = trajectoryMessageCrc;
-
-	memcpy(trajDataBuffer, &TRAJData, sizeof (TRAJData));
+	TRAJData.footer.Crc = le16toh(TRAJData.footer.Crc);
+	memcpy(p, &TRAJData.footer, sizeof(TRAJData.footer));
+	p += sizeof(TRAJData.footer);
 
 	if (debug) {
 		printf("Encoded ISO footer:\n\tCRC: 0x%x\n", TRAJData.footer.Crc);
 	}
-*/
-	return sizeof (TRAJFooterType);
+
+	return p - trajDataBuffer;
 }
 
 

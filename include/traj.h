@@ -39,7 +39,7 @@ typedef struct {
 typedef struct {
 	uint16_t lineInfoValueID;
 	uint16_t lineInfoContentLength;
-	uint16_t lineInfo;
+	uint8_t lineInfo;
 	FooterType footer;
 } TRAJFooterType;
 #pragma pack(pop)
@@ -52,6 +52,8 @@ typedef struct {
 #define VALUE_ID_TRAJ_LINE_INFO 0x0053
 #define VALUE_ID_TRAJ_VENDOR_SPECIFIC_RANGE_LOWER 0xA000
 #define VALUE_ID_TRAJ_VENDOR_SPECIFIC_RANGE_UPPER 0xAFFF
+
+#define TRAJ_LINE_INFO_END_OF_TRANSMISSION 0x04
 
 static enum ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType* TRAJHeaderData,
 				uint32_t trajectoryLength,	TrajectoryHeaderType* trajectoryHeaderData);
