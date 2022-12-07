@@ -34,9 +34,6 @@ protected:
 		objState = ObjectStateType::OBJECT_STATE_RUNNING;
 		readyToArm = ObjectArmReadinessType::OBJECT_READY_TO_ARM;
 
-		errState.outsideGeofence = true;
-		errState.badPositioningAccuracy = true;
-
 		errCode = 0xBEEF;
 	}
 	void SetUp() override
@@ -65,7 +62,6 @@ protected:
 	DriveDirectionType driveDir;
 	ObjectStateType objState;
 	ObjectArmReadinessType readyToArm;
-	ObjectErrorType errState;
 	unsigned short errCode;
 
 	char* preamble = encodeBuffer + 18; // Skip header
@@ -191,3 +187,123 @@ TEST_F(EncodeMONR, ErrorCode)
 	EXPECT_EQ(monrStruct[34], '\xEF');
 	EXPECT_EQ(monrStruct[35], '\xBE');
 }
+
+
+class DecodeMONR : public ::testing::Test
+{
+protected:
+	DecodeMONR()
+	{	
+		decodeBuffer[0] = 0x7F;	// preamble
+		decodeBuffer[1] = 0x7E;
+		decodeBuffer[2] = 0x28;
+		decodeBuffer[3] = 0x00;
+		decodeBuffer[4] = 0x00;
+		decodeBuffer[5] = 0x00;	 // Message length
+		decodeBuffer[6] = 0x02;	 // Acknowledge protocol version
+		decodeBuffer[7] = 0x34;
+		decodeBuffer[8] = 0x12;
+		decodeBuffer[9] = 0x00;
+		decodeBuffer[10] = 0x00;	 // Transmitter ID
+		decodeBuffer[11] = 0x78;
+		decodeBuffer[12] = 0x56;
+		decodeBuffer[13] = 0x00;
+		decodeBuffer[14] = 0x00;	 // Receiver ID
+		decodeBuffer[15] = 0x00;	 // Message count
+		decodeBuffer[16] = 0x06;
+		decodeBuffer[17] = 0x00;	 // Message ID
+		decodeBuffer[18] = 0x80;
+		decodeBuffer[19] = 0x00;
+		decodeBuffer[20] = 0x24;
+		decodeBuffer[21] = 0x00;
+		decodeBuffer[22] = 0x00;
+		decodeBuffer[23] = 0xA6;
+		decodeBuffer[24] = 0x09;
+		decodeBuffer[25] = 0x69;
+		decodeBuffer[26] = 0xE8;
+		decodeBuffer[27] = 0x03;
+		decodeBuffer[28] = 0x00;
+		decodeBuffer[29] = 0x00;
+		decodeBuffer[30] = 0x30;
+		decodeBuffer[31] = 0xF8;
+		decodeBuffer[32] = 0xFF;
+		decodeBuffer[33] = 0xFF;
+		decodeBuffer[34] = 0xB8;
+		decodeBuffer[35] = 0x0B;
+		decodeBuffer[36] = 0x00;
+		decodeBuffer[37] = 0x00;
+		decodeBuffer[38] = 0xF3;
+		decodeBuffer[39] = 0x08;
+		decodeBuffer[40] = 0x00;
+		decodeBuffer[41] = 0x00;
+		decodeBuffer[42] = 0x00;
+		decodeBuffer[43] = 0x00;
+		decodeBuffer[44] = 0x64;
+		decodeBuffer[45] = 0x00;
+		decodeBuffer[46] = 0xC8;
+		decodeBuffer[47] = 0x00;
+		decodeBuffer[48] = 0xE8;
+		decodeBuffer[49] = 0x03;
+		decodeBuffer[50] = 0xD0;
+		decodeBuffer[51] = 0x07;
+		decodeBuffer[52] = 0x00;
+		decodeBuffer[53] = 0x04;
+		decodeBuffer[54] = 0x01;
+		decodeBuffer[55] = 0b01101011;
+		decodeBuffer[56] = 0xEF;
+		decodeBuffer[57] = 0xBE;
+		decodeBuffer[58] = 0x33;
+		decodeBuffer[59] = 0x86;
+	}
+
+	void SetUp() override
+	{
+		memset(&monrStruct, 0, sizeof(monrStruct));
+		// TODO set current time
+		currTime.tv_sec = 
+		// Friday, April 29, 2022 2:22:22 AM
+		// minus 30000 s since it should only be
+		// used for getting the GPS week
+		currTime.tv_sec = 1651168942;
+		currTime.tv_usec = 0;
+		objID = 0;
+		auto res = decodeMONRMessage(
+			decodeBuffer,
+			sizeof(decodeBuffer),
+			currTime,
+			&objID,
+			&monrStruct,
+			false);
+		ASSERT_GT(res, 0);
+	}
+
+	char decodeBuffer[1024];
+	ObjectMonitorType monrStruct;
+	uint32_t objID;
+	struct timeval currTime;
+};
+
+TEST_F(DecodeMONR, Timestamp)
+{
+	// Friday, April 29, 2022 2:22:22 AM
+	EXPECT_EQ(monrStruct.timestamp.tv_sec, 1651198942);
+	EXPECT_EQ(monrStruct.timestamp.tv_usec, 0);
+}
+
+TEST_F(DecodeMONR, Position)
+{
+	ASSERT_TRUE(monrStruct.position.isPositionValid);
+	ASSERT_TRUE(monrStruct.position.isXcoordValid);
+	ASSERT_TRUE(monrStruct.position.isYcoordValid);
+	ASSERT_TRUE(monrStruct.position.isZcoordValid);
+	EXPECT_DOUBLE_EQ(monrStruct.position.xCoord_m, 1.0);
+	EXPECT_DOUBLE_EQ(monrStruct.position.yCoord_m, -2.0);
+	EXPECT_DOUBLE_EQ(monrStruct.position.zCoord_m, 3.0);
+}
+
+TEST_F(DecodeMONR, Orientation)
+{
+	ASSERT_TRUE(monrStruct.position.isHeadingValid);
+	EXPECT_FLOAT_EQ(monrStruct.position.heading_rad, 0.399854932);
+}
+
