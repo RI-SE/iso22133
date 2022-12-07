@@ -261,6 +261,14 @@ ssize_t decodeMONRMessage(
 	p += sizeof (MONRData.yaw);
 	MONRData.yaw = le16toh(MONRData.yaw);
 
+	memcpy(&MONRData.pitch, p, sizeof (MONRData.pitch));
+	p += sizeof (MONRData.pitch);
+	MONRData.pitch = (int16_t) le16toh(MONRData.pitch);
+
+	memcpy(&MONRData.roll, p, sizeof (MONRData.roll));
+	p += sizeof (MONRData.roll);
+	MONRData.roll = (int16_t) le16toh(MONRData.roll);
+
 	memcpy(&MONRData.longitudinalSpeed, p, sizeof (MONRData.longitudinalSpeed));
 	p += sizeof (MONRData.longitudinalSpeed);
 	MONRData.longitudinalSpeed = (int16_t) le16toh(MONRData.longitudinalSpeed);
@@ -301,7 +309,7 @@ ssize_t decodeMONRMessage(
 	}
 	p += sizeof (MONRData.footer);
 
-	if ((retval = verifyChecksum(&MONRData, sizeof (MONRData) - sizeof (MONRData.footer),
+	if ((retval = verifyChecksum(monrDataBuffer, p - monrDataBuffer - sizeof (MONRData.footer),
 								 MONRData.footer.Crc, debug)) == MESSAGE_CRC_ERROR) {
 		fprintf(stderr, "MONR checksum error\n");
 		return retval;
@@ -369,6 +377,9 @@ void convertMONRToHostRepresentation(const MONRType * MONRData,
 	monitorData->position.yCoord_m = (double)(MONRData->yPosition) / POSITION_ONE_METER_VALUE;
 	monitorData->position.zCoord_m = (double)(MONRData->zPosition) / POSITION_ONE_METER_VALUE;
 	monitorData->position.isPositionValid = true;
+	monitorData->position.isXcoordValid = true;
+	monitorData->position.isYcoordValid = true;
+	monitorData->position.isZcoordValid = true;
 	monitorData->position.isHeadingValid = MONRData->yaw != YAW_UNAVAILABLE_VALUE;
 	if (monitorData->position.isHeadingValid) {
 		monitorData->position.heading_rad = MONRData->yaw / YAW_ONE_DEGREE_VALUE * M_PI / 180.0;
