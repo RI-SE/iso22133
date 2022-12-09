@@ -83,7 +83,8 @@ enum ISOMessageReturnValue decodeISOHeader(
 
 	// If sync word is not correct, generate error
 	if (HeaderData->syncWord != ISO_SYNC_WORD) {
-		fprintf(stderr, "Sync word error when decoding ISO header\n");
+		fprintf(stderr, "Sync word error when decoding ISO header (0x%04x)\n",
+				HeaderData->syncWord);
 		memset(HeaderData, 0, sizeof (*HeaderData));
 		return MESSAGE_SYNC_WORD_ERROR;
 	}
