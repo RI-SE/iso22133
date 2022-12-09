@@ -1,10 +1,12 @@
 #include "osem.h"
 #include "defines.h"
 #include "timeconversions.h"
+#include "iso22133.h"
 
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+
 
 /*!
  * \brief encodeOSEMMessage Creates an OSEM message and writes it into a buffer based on supplied values. All values are passed as pointers and

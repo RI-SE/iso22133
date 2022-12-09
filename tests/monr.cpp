@@ -69,6 +69,19 @@ protected:
 
 };
 
+TEST_F(EncodeMONR, MessageID)
+{
+	EXPECT_EQ(encodeBuffer[16], '\x06');
+	EXPECT_EQ(encodeBuffer[17], '\x00');
+}
+
+TEST_F(EncodeMONR, MessageLength)
+{
+	EXPECT_EQ(encodeBuffer[2], '\x28');
+	EXPECT_EQ(encodeBuffer[3], '\x00');
+	EXPECT_EQ(encodeBuffer[4], '\x00');
+	EXPECT_EQ(encodeBuffer[5], '\x00');
+}
 
 TEST_F(EncodeMONR, Preamble)
 {
