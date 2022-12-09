@@ -53,10 +53,11 @@ ssize_t encodeOSEMMessage(
 
 	// Build header, and account for the two values which are 48 bit in the message
 	uint32_t msgLen = sizeof (HeaderType) + sizeof(OSEMIDType) + sizeof(OSEMOriginType)
-		- 2 * SizeDifference64bitTo48bit + sizeof (OSEMDateTimeType)
-		+ sizeof(OSEMAccuracyRequirementsType) + 4*2*sizeof(uint16_t) + sizeof (FooterType) 
-		+ timeServerUsed ? sizeof (OSEMTimeServerType) + 2*sizeof(uint16_t) : 0
-		+ idAssociationUsed ? sizeof(OSEMIDAssociationType) + 2*sizeof(uint16_t) : 0; // TODO handle id association
+		+ sizeof(OSEMDateTimeType) + sizeof(OSEMAccuracyRequirementsType)
+		+ 4*2*sizeof(uint16_t) + sizeof (FooterType);
+	msgLen -= 2 * SizeDifference64bitTo48bit;
+	msgLen += timeServerUsed ? sizeof (OSEMTimeServerType) + 2*sizeof(uint16_t) : 0;
+	msgLen += idAssociationUsed ? sizeof(OSEMIDAssociationType) + 2*sizeof(uint16_t) : 0; // TODO handle id association
 	OSEMData.header = buildISOHeader(MESSAGE_ID_OSEM, msgLen, debug);
 
 	// Fill the OSEM struct with relevant values
