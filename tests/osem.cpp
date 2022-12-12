@@ -57,6 +57,20 @@ protected:
 	char* timeServer = accReq + 22; // skip accuracy requirements
 };
 
+TEST_F(EncodeOSEM, MessageID)
+{
+	EXPECT_EQ(encodeBuffer[16], '\x02');
+	EXPECT_EQ(encodeBuffer[17], '\x00');
+}
+
+TEST_F(EncodeOSEM, MessageLength)
+{
+	EXPECT_EQ(encodeBuffer[2], '\x56');
+	EXPECT_EQ(encodeBuffer[3], '\x00');
+	EXPECT_EQ(encodeBuffer[4], '\x00');
+	EXPECT_EQ(encodeBuffer[5], '\x00');
+}
+
 TEST_F(EncodeOSEM, IdStructPreamble)
 {
 	EXPECT_EQ(id[0], '\x20');

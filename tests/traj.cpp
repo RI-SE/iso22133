@@ -29,6 +29,21 @@ protected:
 	char* name = info + 5;	// skip info
 };
 
+TEST_F(EncodeTRAJHeader, MessageID)
+{
+	EXPECT_EQ(encodeBuffer[16], '\x01');
+	EXPECT_EQ(encodeBuffer[17], '\x00');
+}
+
+TEST_F(EncodeTRAJHeader, MessageLength)
+{
+	// 68+6+5+21×(34)+5
+	EXPECT_EQ(encodeBuffer[2], '\x1E');
+	EXPECT_EQ(encodeBuffer[3], '\x03');
+	EXPECT_EQ(encodeBuffer[4], '\x00');
+	EXPECT_EQ(encodeBuffer[5], '\x00');
+}
+
 TEST_F(EncodeTRAJHeader, Id)
 {
 	EXPECT_EQ(id[0], '\x01');
