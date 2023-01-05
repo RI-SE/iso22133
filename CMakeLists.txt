@@ -56,7 +56,7 @@ install(TARGETS ${ISO22133_TARGET}
 # Tests
 
 #only build tests if swig is not used upstream
-if (WITH_SWIG)
+if (NOT WITH_SWIG)
 	enable_testing()
 	file(GLOB TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp)
 	add_executable(${ISO22133_TARGET}_test
