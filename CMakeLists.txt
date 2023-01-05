@@ -54,18 +54,22 @@ install(TARGETS ${ISO22133_TARGET}
 
 
 # Tests
-enable_testing()
-file(GLOB TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp)
-add_executable(${ISO22133_TARGET}_test
-	${TEST_SOURCES}
-)
-target_link_libraries(${ISO22133_TARGET}_test
-	gtest_main
-	${ISO22133_TARGET}
-)
-target_include_directories(${ISO22133_TARGET}_test PUBLIC
-	${CMAKE_CURRENT_SOURCE_DIR}
-	${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-include(GoogleTest)
-gtest_discover_tests(${ISO22133_TARGET}_test)
+
+#only build tests if swig is not used upstream
+if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" AND (NOT "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "${CMAKE_HOST_SYSTEM_PROCESSOR}")) #target is x86_64 arch and we are not cross compling
+	enable_testing()
+	file(GLOB TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp)
+	add_executable(${ISO22133_TARGET}_test
+		${TEST_SOURCES}
+	)
+	target_link_libraries(${ISO22133_TARGET}_test
+		gtest_main
+		${ISO22133_TARGET}
+	)
+	target_include_directories(${ISO22133_TARGET}_test PUBLIC
+		${CMAKE_CURRENT_SOURCE_DIR}
+		${CMAKE_CURRENT_SOURCE_DIR}/include
+	)
+	include(GoogleTest)
+	gtest_discover_tests(${ISO22133_TARGET}_test)
+endif()
