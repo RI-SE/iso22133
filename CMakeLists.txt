@@ -21,6 +21,8 @@ FetchContent_MakeAvailable(googletest)
 set(ISO22133_TARGET ${TARGET_NAMESPACE}${PROJECT_NAME})
 
 include(GNUInstallDirs)
+# When building all packages in util top CMakeLists not only this lib we need to set this cmake policy to OLD due to target namespace are not unique in the same build tree in util
+# ref for info about the policy https://cmake.org/cmake/help/latest/policy/CMP0002.html 
 cmake_policy(SET CMP0002 OLD)
 
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
