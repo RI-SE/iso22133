@@ -26,19 +26,41 @@ extern "C" {
 #define ISO_22133_OBJECT_UDP_PORT 53240
 #define ISO_22133_DEFAULT_OBJECT_TCP_PORT 53241
 
+typedef enum {
+	TEST_MODE_PREPLANNED = 0,
+	TEST_MODE_ONLINE = 1,
+	TEST_MODE_SCENARIO = 2,
+	TEST_MODE_UNAVAILABLE = 255
+} TestModeType;
+
 /*! OSEM settings */
 typedef struct {
-	uint32_t desiredTransmitterID;
+	struct {
+		uint32_t transmitter;
+		uint32_t subTransmitter;
+		uint32_t controlCentre;
+	} desiredID;
 	GeographicPositionType coordinateSystemOrigin;
+	double coordinateSystemRotation_rad;
+	CoordinateSystemType coordinateSystemType;
 	struct timeval currentTime;
-	double_t maxPositionDeviation_m;
-	double_t maxLateralDeviation_m;
+	struct {
+		double_t position_m;
+		double_t lateral_m;
+		double_t yaw_rad;
+	} maxDeviation;
 	double_t minRequiredPositioningAccuracy_m;
-	bool isTransmitterIDValid;
-	bool isPositionDeviationLimited;
-	bool isLateralDeviationLimited;
-	bool isPositioningAccuracyRequired;
-	bool isTimestampValid;
+	TestModeType testMode;
+	struct timeval heabTimeout;
+	struct {
+		double_t monr;
+		double_t monr2;
+		double_t heab;
+	} rate;
+	struct {
+		uint32_t ip;
+		uint16_t port;
+	} timeServer;
 } ObjectSettingsType;
 
 /*! ISO message constants */
@@ -47,13 +69,19 @@ enum ISOConstantsType {
 	ISO_TRAJ_WAYPOINT_SIZE = 70
 };
 
+typedef enum {
+	TRAJECTORY_INFO_RELATIVE_TO_OBJECT = 1,
+	TRAJECTORY_INFO_RELATIVE_TO_ORIGIN = 2,
+	TRAJECTORY_INFO_DELETE_TRAJECTORY = 3
+} TrajectoryInfoType;
+
 /*! Trajectory header */
 typedef struct {
 	uint16_t trajectoryID;
 	char trajectoryName[64];
-	uint16_t trajectoryVersion;
+	TrajectoryInfoType trajectoryInfo;
 	uint32_t trajectoryLength;
-	uint32_t nWayPoints;
+	uint32_t nWaypoints;
 } TrajectoryHeaderType;
 
 /*! Trajectory WayPoint */
@@ -436,9 +464,9 @@ typedef struct{
 } GeneralResponseMessageType;
 
 
-ssize_t encodeMONRMessage(const struct timeval* objectTime, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const unsigned char driveDirection, const unsigned char objectState, const unsigned char readyToArm, const unsigned char objectErrorState, char * monrDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeMONRMessage(const struct timeval* objectTime, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const unsigned char driveDirection, const unsigned char objectState, const unsigned char readyToArm, const unsigned char objectErrorState, const unsigned short errorCode, char * monrDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeMONRMessage(const char * monrDataBuffer, const size_t bufferLength, const struct timeval currentTime, uint32_t * objectID, ObjectMonitorType * MonitorData, const char debug);
-ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const uint16_t trajectoryVersion, const char * trajectoryName, const size_t nameLength, const uint32_t numberOfPointsInTraj, char * trajDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const TrajectoryInfoType trajectoryInfo, const char* trajectoryName, const size_t nameLength,	const uint32_t numberOfPointsInTraj, char *trajDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeTRAJMessagePoint(const struct timeval * pointTimeFromStart, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const float curvature, char * trajDataBufferPointer, const size_t remainingBufferLength, const char debug);
 ssize_t decodeTRAJMessagePoint(TrajectoryWaypointType* wayPoints, const char* trajDataBuffer, const char debug);
 ssize_t encodeTRAJMessageFooter(char * trajDataBuffer, const size_t bufferLength, const char debug);
@@ -446,7 +474,7 @@ ssize_t decodeTRAJMessageHeader(TrajectoryHeaderType* trajHeader, const char* tr
 ssize_t encodeSTRTMessage(const StartMessageType* startData, char * strtDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeSTRTMessage(const char *strtDataBuffer, const size_t bufferLength, const struct timeval* currentTime, StartMessageType * startData, const char debug) ;
 ssize_t encodeOSEMMessage(const ObjectSettingsType* objectSettingsData, char * osemDataBuffer, const size_t bufferLength, const char debug);
-ssize_t decodeOSEMMessage(ObjectSettingsType *objectSettingsData, const char * osemDataBuffer, const size_t bufferLength, uint32_t *senderID, const char debug);
+ssize_t decodeOSEMMessage(ObjectSettingsType *objectSettingsData, const char * osemDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeOSTMMessage(const enum ObjectCommandType command, char * ostmDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeOSTMMessage(const char* ostmDataBuffer, const size_t bufferLength, enum ObjectCommandType* command, const char debug);
 ssize_t encodeHEABMessage(const struct timeval* heabTime, const enum ControlCenterStatusType status, char * heabDataBuffer, const size_t bufferLength, const char debug);
@@ -463,8 +491,8 @@ ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData, char *dctiDataBuf
 enum ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer, const size_t bufferLength, DctiMessageDataType* dctiData, const char debug);
 enum ISOMessageID getISOMessageType(const char * messageData, const size_t length, const char debug);
 void setISOCRCVerification(const int8_t enabled);
-void setTransmitterID(const uint8_t transmitterID);
-uint8_t getTransmitterID();
+void setTransmitterID(const uint32_t transmitterID);
+uint32_t getTransmitterID();
 
 /* AstaZero vendor specific messages - TODO move to a separate repository */
 ssize_t encodePODIMessage(const PeerObjectInjectionType* peerObjectData, char* podiDataBuffer, const size_t bufferLength, const char debug);
