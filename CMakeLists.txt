@@ -9,7 +9,6 @@ set(ISO22133_TARGET ${TARGET_NAMESPACE}${PROJECT_NAME})
 include(GNUInstallDirs)
 cmake_policy(SET CMP0002 OLD)
 
-
 add_library(${ISO22133_TARGET} SHARED
         ${CMAKE_CURRENT_SOURCE_DIR}/positioning.c
         ${CMAKE_CURRENT_SOURCE_DIR}/iso22133.c
