@@ -158,9 +158,9 @@ ssize_t encodeOSEMMessage(
 		if (timeServerUsed) {
 			printf
 				("\n\tTime server struct value ID: 0x%x\n\tTime server struct content length: %u"
-				 "\n\tTime server IP: %s\n\tTime server port: %u",
+				 "\n\tTime server IP: %lu\n\tTime server port: %u",
 				 OSEMData.timeServerStructValueID, OSEMData.timeServerStructContentLength,
-				 OSEMData.timeserver.ip, OSEMData.timeserver.port);
+				 (unsigned long)OSEMData.timeserver.ip, OSEMData.timeserver.port);
 		}
 	}
 
