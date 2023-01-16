@@ -1402,7 +1402,7 @@ ssize_t encodeRCMMMessage(const RemoteControlManoeuvreMessageType* rcmmData,
 
 	if(debug)
 	{
-		printf("RCMM message data (size = %lu):\n", sizeof (RCMMType));
+		printf("RCMM message data (size = %zu):\n", sizeof (RCMMType));
 		for(size_t i = 0; i < sizeof (RCMMType); i++) printf("%x ", *(rcmmDataBuffer+i));
 		printf("\n");
 	}
@@ -1946,7 +1946,7 @@ ssize_t encodePODIMessage(const PeerObjectInjectionType* peerObjectData,
 
 	if(debug)
 	{
-		printf("PODI message data (size = %d):\n", sizeof (PODIType));
+		printf("PODI message data (size = %zu):\n", sizeof (PODIType));
 		for(int i = 0; i < sizeof (PODIType); i++) printf("%x ", *(podiDataBuffer+i));
 		printf("\n");
 	}
@@ -2516,7 +2516,7 @@ ssize_t encodeOPROMessage(
 	remainingBytes -= sizeof (OPROData.footer);
 	if(debug)
 	{
-		printf("OPRO message data (size = %d):\n", sizeof (OPROType));
+		printf("OPRO message data (size = %zu):\n", sizeof (OPROType));
 		for(int i = 0; i < sizeof (OPROType); i++) printf("%x ", *(oproDataBuffer+i));
 		printf("\n");
 	}
@@ -2618,7 +2618,7 @@ ssize_t encodeFOPRMessage(
 	remainingBytes -= sizeof (FOPRData.footer);
 	if(debug)
 	{
-		printf("FOPR message data (size = %d):\n", sizeof (FOPRType));
+		printf("FOPR message data (size = %zu):\n", sizeof (FOPRType));
 		for(int i = 0; i < sizeof (FOPRType); i++) printf("%x ", *(foprDataBuffer+i));
 		printf("\n");
 	}
@@ -2741,7 +2741,7 @@ ssize_t decodeFOPRMessage(
 
 	if(debug)
 	{
-		printf("FOPR message data (size = %d):\n", sizeof (FOPRType));
+		printf("FOPR message data (size = %zu):\n", sizeof (FOPRType));
 		for(int i = 0; i < sizeof (FOPRType); i++) printf("%x ", *(foprDataBuffer+i));
 		printf("\n");
 	}
@@ -2980,7 +2980,7 @@ ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuf
 
 	 if(debug)
 	 {
-		 printf("GDRM message data (size = %d):\n", sizeof (GDRMType));
+		 printf("GDRM message data (size = %zu):\n", sizeof (GDRMType));
 		 for(int i = 0; i < sizeof (GDRMType); i++) printf("%x ", *(gdrmDataBuffer+i));
 		 printf("\n");
 	 }
@@ -3147,7 +3147,7 @@ ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData,
 
 	if(debug)
 	{
-		printf("DCTI message data (size = %d):\n", sizeof (DCTIType));
+		printf("DCTI message data (size = %zu):\n", sizeof (DCTIType));
 		for(int i = 0; i < sizeof (DCTIType); i++) printf("%x ", *(dctiDataBuffer+i));
 		printf("\n");
 	}
@@ -3417,7 +3417,7 @@ ssize_t encodeRDCAMessage(const RequestControlActionType *rdcaData,
 	remainingBytes -= sizeof (RDCAData.footer);
 
 	if(debug) {
-		printf("RDCA message data (size = %lu):\n", sizeof (RDCAType));
+		printf("RDCA message data (size = %zu):\n", sizeof (RDCAType));
 		for(size_t i = 0; i < sizeof (RDCAType); i++) printf("%x ", *(rdcaDataBuffer+i));
 		printf("\n");
 	}

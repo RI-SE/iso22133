@@ -523,7 +523,7 @@ ssize_t decodeTRAJMessagePoint(
 		printf("\tLateral acceleration: %d\n", TRAJPointData.lateralAcceleration);
 		printf("\tCurvature: %3.3f\n", TRAJPointData.curvature);
 		printf("\tRaw data: ");
-		for(int i = 0; i<sizeof(TRAJPointType); i ++) printf("%x-", (unsigned char*)trajDataBuffer[i]);
+		for(int i = 0; i<sizeof(TRAJPointType); i ++) printf("%s-", (unsigned char*)trajDataBuffer[i]);
 		printf("\n");
 	}
 
