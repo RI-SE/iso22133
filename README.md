@@ -93,5 +93,5 @@ sudo apt install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
 Change to the build directory, then compile and build with the toolchain
 ```
 cmake .. -DCMAKE_TOOLCHAIN_FILE=../Toolchain_arm.cmake
-sudo make
+make
 ```
