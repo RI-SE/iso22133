@@ -548,7 +548,7 @@ static enum ISOMessageReturnValue convertSTRTToHostRepresentation(const STRTType
 
 
 // ************************** static variables ********************************************************************
-static uint32_t transmitterID = 0xFF;
+static uint32_t transmitterID = 0xFFFFFFFF;
 
 // ************************** function definitions ****************************************************************
 
