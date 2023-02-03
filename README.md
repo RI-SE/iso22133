@@ -1,6 +1,36 @@
-# Build to add Python wrapper with SWIG
+# ISO 22133
+Encoders and decoders for the ISO 22133 communication protocol.
 
-## Windows 
+## Build
+Navigate to the project directory and create a build directory. Then run cmake and finally build the project:
+```
+mkdir build && cd build
+cmake ..
+make
+```
+
+### Build for ARM (Linux only)
+Install the compilers
+```
+sudo apt install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+```
+
+Change to the build directory, then compile and build with the toolchain
+```
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../Toolchain_arm.cmake
+make
+```
+
+### Run tests
+After building the project, run
+```
+make test
+```
+
+## SWIG Python wrapper build
+To use the encoders and decoders in other languages than C/C++, use the below procedure
+
+### Windows 
 1. Install swig by downloading swig from their webpage, the download should include a pre-compiled build for windows.
 2. Add the path to the pre-compiled swig.exe file that you downloaded to path variabel in system enviroment. 
 3. Download a C/C++ compiler such as Visual Studio(_MSC_VER) or MinGW (preferable 64bit,__GNUC__,  __MINGW32__ ).  
@@ -28,12 +58,12 @@
     python setup.py install
     ```
     
-## Linux
+### Linux
 1. First install SWIG run:
     ```
     sudo apt install swig
     ```
-### Python
+#### Python
 2. Start your python virtual environment or use your base environment at your own risk.
 3. Start terminal and move to iso22133 folder to the setup.py file folder.
 4. Run the following command (it will build the python extension): 
@@ -45,7 +75,7 @@
     ```
     python setup.py install
     ```
-### Java 
+#### Java 
 1. Make sure you have Java JDK is installed. 
 2. Make sure the iso22133.i file includes the line %javaconst(1)
 3. Run the following command which will create all the necessary java files.  
@@ -82,16 +112,3 @@
             }
     }
       ```
-
-
-# Build for ARM
-Install the compilers
-```
-sudo apt install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
-```
-
-Change to the build directory, then compile and build with the toolchain
-```
-cmake .. -DCMAKE_TOOLCHAIN_FILE=../Toolchain_arm.cmake
-make
-```
