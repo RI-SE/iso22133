@@ -376,10 +376,10 @@ void convertMONRToHostRepresentation(const MONRType * MONRData,
 	monitorData->position.xCoord_m = (double)(MONRData->xPosition) / POSITION_ONE_METER_VALUE;
 	monitorData->position.yCoord_m = (double)(MONRData->yPosition) / POSITION_ONE_METER_VALUE;
 	monitorData->position.zCoord_m = (double)(MONRData->zPosition) / POSITION_ONE_METER_VALUE;
-	monitorData->position.isPositionValid = true;
-	monitorData->position.isXcoordValid = true;
-	monitorData->position.isYcoordValid = true;
-	monitorData->position.isZcoordValid = true;
+	monitorData->position.isXcoordValid = MONRData->xPosition != POSITION_UNAVAILABLE_VALUE;
+	monitorData->position.isYcoordValid = MONRData->yPosition != POSITION_UNAVAILABLE_VALUE;
+	monitorData->position.isZcoordValid = MONRData->zPosition != POSITION_UNAVAILABLE_VALUE;
+	monitorData->position.isPositionValid = monitorData->position.isXcoordValid && monitorData->position.isYcoordValid;
 	monitorData->position.isHeadingValid = MONRData->yaw != YAW_UNAVAILABLE_VALUE;
 	if (monitorData->position.isHeadingValid) {
 		monitorData->position.heading_rad = MONRData->yaw / YAW_ONE_DEGREE_VALUE * M_PI / 180.0;
