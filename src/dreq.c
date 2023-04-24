@@ -17,9 +17,7 @@ ssize_t encodeDREQMessage(
 	const size_t bufferLength,
 	const char debug)
 {
-
 	DREQType DREQData;
-
 	memset(dreqDataBuffer, 0, bufferLength);
 
 	// Check so buffer can hold message
@@ -31,8 +29,6 @@ ssize_t encodeDREQMessage(
 	// Construct header
 	DREQData.header = buildISOHeader(MESSAGE_ID_DREQ, sizeof (DREQData), debug);
 
-	// Fill contents
-    
 	if (debug) {
         printf("DREQ data: No data in DREQ message, just header and footer\n");
     }
