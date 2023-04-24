@@ -473,7 +473,7 @@ enum TestObjectType {
 	OBJECT_TYPE_STATIONARY = 1
 };
 
-/*! DRES message conents */
+/*! DRES message contents */
 typedef struct {
 	uint8_t vendor[64];
 	uint8_t productName[64];
@@ -482,6 +482,17 @@ typedef struct {
 	enum TestObjectType testObjectTypeCode;
 	uint32_t subDeviceId;
 } TestObjectDiscoveryType;
+
+/*! DREQ status type */
+enum DreqStatusType {
+	DREQ_NOT_RECEIVED = 0,
+	DREQ_RECEIVED = 1
+};
+
+/*! DREQ message contents */
+typedef struct {
+	enum DreqStatusType requestStatus;
+} TestObjectDiscoveryRequestType;
 
 
 ssize_t encodeMONRMessage(const struct timeval* objectTime, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const unsigned char driveDirection, const unsigned char objectState, const unsigned char readyToArm, const unsigned char objectErrorState, const unsigned short errorCode, char * monrDataBuffer, const size_t bufferLength, const char debug);
@@ -507,7 +518,9 @@ ssize_t encodeEXACMessage(const uint16_t* actionID, const struct timeval * execu
 ssize_t encodeRCMMMessage(const RemoteControlManoeuvreMessageType* rcmmObjectData, char* rcmmDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeDRESMessage(const TestObjectDiscoveryType *testObjectDiscoveryData, char *dresDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeDRESMessage(const char* dresDataBuffer, const size_t bufferLength, TestObjectDiscoveryType *testObjectDiscoveryData, const char debug);
-ssize_t decodeRCMMMessage( const char *rcmmDataBuffer, const size_t bufferLength, RemoteControlManoeuvreMessageType* rcmmData, const char debug);
+ssize_t encodeDREQMessage(char *dreqDataBuffer, const size_t bufferLength, const char debug);
+ssize_t decodeDREQMessage(const char* dreqDataBuffer, const size_t bufferLength, TestObjectDiscoveryRequestType *testObjectDiscoveryRequestData, const char debug);
+ssize_t decodeRCMMMessage(const char *rcmmDataBuffer, const size_t bufferLength, RemoteControlManoeuvreMessageType* rcmmData, const char debug);
 ssize_t encodeINSUPMessage(const enum SupervisorCommandType, char * insupDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData, char *dctiDataBuffer, const size_t bufferLength, const char debug);
 enum ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer, const size_t bufferLength, DctiMessageDataType* dctiData, const char debug);

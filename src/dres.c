@@ -7,7 +7,7 @@
 
 /*!
  * \brief encodeDRESMessage Constructs an ISO DRES message based on specified command
- * \param command Command to send to object according to ::ObjectCommandType
+ * \param testObjectDiscoveryData Test object discovery data
  * \param dresDataBuffer Data buffer to which DRES is to be written
  * \param bufferLength Length of data buffer to which DRES is to be written
  * \param debug Flag for enabling debugging
@@ -133,7 +133,6 @@ ssize_t decodeDRESMessage(
 	}
 
 	memset(&DRESData, 0, sizeof (DRESData));
-	//memset(command, 0, sizeof (*command));
 
 	// Decode ISO header
 	if ((retval = decodeISOHeader(p, bufferLength, &DRESData.header, debug)) != MESSAGE_OK) {
