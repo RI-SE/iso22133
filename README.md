@@ -2,7 +2,7 @@
 Encoders and decoders for the ISO 22133 communication protocol.
 
 ## Build
-Navigate to the project directory and create a build directory. Then run cmake and finally build the project:
+ Navigate to the project directory and create a build directory. Then run cmake and finally build the project:
 ```
 mkdir build && cd build
 cmake ..
