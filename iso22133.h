@@ -245,13 +245,15 @@ enum ISOMessageID {
 	MESSAGE_ID_RCMM = 0x000A,
 	MESSAGE_ID_SYPM = 0x000B,
 	MESSAGE_ID_MTSP = 0x000C,
-	MESSAGE_ID_TRCM = 0x0011,
+	MESSAGE_ID_DREQ = 0x0010,
+	MESSAGE_ID_DRES = 0x0011,
 	MESSAGE_ID_ACCM = 0x0012,
 	MESSAGE_ID_TREO = 0x0013,
 	MESSAGE_ID_EXAC = 0x0014,
 	MESSAGE_ID_CATA = 0x0015,
 	MESSAGE_ID_RCCM = 0x0020,
-	MESSAGE_ID_RCRT = 0x0021,
+	MESSAGE_ID_TRCM = 0x0021,
+	MESSAGE_ID_RCRT = 0x0033, //This is a temporary value, it was conflicting with TRCM
 	MESSAGE_ID_PIME = 0x0030,
 	MESSAGE_ID_COSE = 0x0031,
 	MESSAGE_ID_MOMA = 0x0032,
@@ -464,6 +466,24 @@ typedef struct{
 } GeneralResponseMessageType;
 
 
+
+/*! Object type */
+enum TestObjectType {
+	OBJECT_TYPE_MOVEABLE = 0,
+	OBJECT_TYPE_STATIONARY = 1
+};
+
+/*! DRES message conents */
+typedef struct {
+	uint8_t vendor[64];
+	uint8_t productName[64];
+	uint8_t firmwareVersion[64];
+	uint8_t testObjectName[64];
+	enum TestObjectType testObjectTypeCode;
+	uint32_t subDeviceId;
+} TestObjectDiscoveryType;
+
+
 ssize_t encodeMONRMessage(const struct timeval* objectTime, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const unsigned char driveDirection, const unsigned char objectState, const unsigned char readyToArm, const unsigned char objectErrorState, const unsigned short errorCode, char * monrDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeMONRMessage(const char * monrDataBuffer, const size_t bufferLength, const struct timeval currentTime, uint32_t * objectID, ObjectMonitorType * MonitorData, const char debug);
 ssize_t encodeTRAJMessageHeader(const uint16_t trajectoryID, const TrajectoryInfoType trajectoryInfo, const char* trajectoryName, const size_t nameLength,	const uint32_t numberOfPointsInTraj, char *trajDataBuffer, const size_t bufferLength, const char debug);
@@ -485,6 +505,8 @@ ssize_t encodeTRCMMessage(const uint16_t* triggerID, const enum TriggerType_t* t
 ssize_t encodeACCMMessage(const uint16_t* actionID, const enum ActionType_t* actionType, const enum ActionTypeParameter_t* param1, const enum ActionTypeParameter_t* param2, const enum ActionTypeParameter_t* param3, char * accmDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeEXACMessage(const uint16_t* actionID, const struct timeval * executionTime, char * exacDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeRCMMMessage(const RemoteControlManoeuvreMessageType* rcmmObjectData, char* rcmmDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeDRESMessage(const TestObjectDiscoveryType *testObjectDiscoveryData, char *dresDataBuffer, const size_t bufferLength, const char debug);
+ssize_t decodeDRESMessage(const char* dresDataBuffer, const size_t bufferLength, TestObjectDiscoveryType *testObjectDiscoveryData, const char debug);
 ssize_t decodeRCMMMessage( const char *rcmmDataBuffer, const size_t bufferLength, RemoteControlManoeuvreMessageType* rcmmData, const char debug);
 ssize_t encodeINSUPMessage(const enum SupervisorCommandType, char * insupDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData, char *dctiDataBuffer, const size_t bufferLength, const char debug);
