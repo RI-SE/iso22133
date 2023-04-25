@@ -475,10 +475,10 @@ enum TestObjectType {
 
 /*! DRES message contents */
 typedef struct {
-	uint8_t vendor[64];
-	uint8_t productName[64];
-	uint8_t firmwareVersion[64];
-	uint8_t testObjectName[64];
+	char vendor[64];
+	char productName[64];
+	char firmwareVersion[64];
+	char testObjectName[64];
 	enum TestObjectType testObjectTypeCode;
 	uint32_t subDeviceId;
 } TestObjectDiscoveryType;
