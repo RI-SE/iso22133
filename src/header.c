@@ -33,7 +33,7 @@ HeaderType buildISOHeader(enum ISOMessageID id, uint32_t messageLength, const ch
 	}
 
 	if (debug) {
-		printf("Encoded ISO header:\n\tSync word: 0x%x\n\tTransmitter ID: %u\n\tTransmitter ID: %u\n\tMessage counter: %u\n\t"
+		printf("Encoded ISO header:\n\tSync word: 0x%x\n\tTransmitter ID: %u\n\tReceiver ID: %u\n\tMessage counter: %u\n\t"
 			   "Ack request | Protocol version: 0x%x\n\tMessage ID: 0x%x\n\tMessage length: %u\n",
 			   header.syncWord, header.transmitterID, header.receiverID, header.messageCounter, header.ackReqProtVer,
 			   header.messageID, header.messageLength);

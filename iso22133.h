@@ -250,6 +250,7 @@ enum ISOMessageID {
 	MESSAGE_ID_TREO = 0x0013,
 	MESSAGE_ID_EXAC = 0x0014,
 	MESSAGE_ID_CATA = 0x0015,
+	MESSAGE_ID_GREM = 0x0018,
 	MESSAGE_ID_RCCM = 0x0020,
 	MESSAGE_ID_RCRT = 0x0021,
 	MESSAGE_ID_PIME = 0x0030,
@@ -268,7 +269,6 @@ enum ISOMessageID {
 	MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCTI = 0xA121,
 	MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_GDRM = 0xA120,
 	MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_RDCA = 0xA122,
-	MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_GREM = 0xA123,
 	MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCMM = 0xA124
 };
 
@@ -314,13 +314,15 @@ enum ISOUnitType {
 
 /*! GREM status */
 enum GeneralResponseStatus {
-	GREM_STATUS_OK = 1,
-	GREM_DATA_MISSING = 2,
-	GREM_STATE_ERROR = 3,
-	GREM_TIME_SLIPPAGE = 4,
-	GREM_WRONG_ID = 5,
-	GREM_OUT_OF_RANGE = 6
-};
+    UNDEFIEND_0 = 0,
+	GREM_OK = 1,
+	GREM_GENERAL_ERROR = 2,
+	GREM_NOT_SUPPORTED = 3,
+	GREM_NO_MEMORY = 4,
+	GREM_INVALID_DATA = 5,
+	GREM_CHUNK_RECEIVED = 6,
+    UNDEFIEND_1 = 7
+} __attribute__ ((__packed__));
 
 enum RemoteControlManoeuvreCommandType {
 	MANOEUVRE_NONE = 0,
@@ -460,7 +462,12 @@ typedef struct {
 } StartMessageType;
 
 typedef struct{
-	enum GeneralResponseStatus status;
+    uint32_t receivedHeaderTransmitterID;
+    uint8_t receivedHeaderMessageCounter;
+    uint16_t receivedHeaderMessageID; 
+	uint8_t responseCode;
+    uint16_t payloadLength;
+    uint8_t payload;
 } GeneralResponseMessageType;
 
 
@@ -486,6 +493,8 @@ ssize_t encodeACCMMessage(const uint16_t* actionID, const enum ActionType_t* act
 ssize_t encodeEXACMessage(const uint16_t* actionID, const struct timeval * executionTime, char * exacDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeRCMMMessage(const RemoteControlManoeuvreMessageType* rcmmObjectData, char* rcmmDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeRCMMMessage( const char *rcmmDataBuffer, const size_t bufferLength, RemoteControlManoeuvreMessageType* rcmmData, const char debug);
+ssize_t decodeGREMMessage(const char *gremDataBuffer, const size_t bufferLength, GeneralResponseMessageType* gremData, const char debug);
+ssize_t encodeGREMMessage(const GeneralResponseMessageType* gremObjectData, char* gremDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeINSUPMessage(const enum SupervisorCommandType, char * insupDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData, char *dctiDataBuffer, const size_t bufferLength, const char debug);
 enum ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer, const size_t bufferLength, DctiMessageDataType* dctiData, const char debug);
@@ -505,8 +514,6 @@ ssize_t encodeRDCAMessage(const RequestControlActionType* requestControlActionDa
 ssize_t decodeRDCAMessage(const char *rdcaDataBuffer, RequestControlActionType* requestControlActionData, const size_t bufferLength, const struct timeval currentTime, const char debug);
 ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuffer, const size_t bufferLength, const char debug);
 enum ISOMessageReturnValue decodeGDRMMessage(const char *gdrmDataBuffer, const size_t bufferLength, GdrmMessageDataType* gdrmData, const char debug);
-ssize_t decodeGREMMessage(const char *gremDataBuffer, const size_t bufferLength, GeneralResponseMessageType* gremData, const char debug);
-ssize_t encodeGREMMessage(const GeneralResponseMessageType* gremObjectData, char* gremDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeDCMMMessage(const RemoteControlManoeuvreMessageType* command, char* dcmmDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeDCMMMessage(const char * dcmmDataBuffer, const size_t bufferLenght, RemoteControlManoeuvreMessageType* dcmmData, const char debug);
 #ifdef __cplusplus
