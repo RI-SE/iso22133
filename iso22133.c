@@ -567,7 +567,7 @@ char isValidMessageID(const uint16_t id) {
 		|| id == MESSAGE_ID_INFO || id == MESSAGE_ID_RCMM || id == MESSAGE_ID_SYPM || id == MESSAGE_ID_MTSP
 		|| id == MESSAGE_ID_TRCM || id == MESSAGE_ID_ACCM || id == MESSAGE_ID_TREO || id == MESSAGE_ID_EXAC
 		|| id == MESSAGE_ID_CATA || id == MESSAGE_ID_RCCM || id == MESSAGE_ID_RCRT || id == MESSAGE_ID_PIME
-		|| id == MESSAGE_ID_COSE || id == MESSAGE_ID_MOMA
+		|| id == MESSAGE_ID_COSE || id == MESSAGE_ID_MOMA || id == MESSAGE_ID_GREM
 		|| (id >= MESSAGE_ID_VENDOR_SPECIFIC_LOWER_LIMIT && id <= MESSAGE_ID_VENDOR_SPECIFIC_UPPER_LIMIT);
 }
 

@@ -135,6 +135,7 @@ ssize_t decodeGREMMessage(
 
 	// Fill output struct with parsed data
 	retval = convertGREMoHostRepresentation(&GREMdata, gremData);
+	return retval < 0 ? retval : p - gremDataBuffer;
 }
 
 /*!
