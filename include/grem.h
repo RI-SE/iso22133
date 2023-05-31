@@ -23,7 +23,7 @@ typedef struct{
 
     uint16_t ResponseCodeValueID;
     uint16_t ResponseCodeContentLength;
-	uint8_t ResponseCode;
+    uint8_t ResponseCode;
 
     uint16_t PayloadLengthValueID;
     uint16_t PayloadLengthContentLength;
