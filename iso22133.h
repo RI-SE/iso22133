@@ -26,6 +26,19 @@ extern "C" {
 #define ISO_22133_OBJECT_UDP_PORT 53240
 #define ISO_22133_DEFAULT_OBJECT_TCP_PORT 53241
 
+#pragma pack(push,1)			// Ensure sizeof() is useable for (most) network byte lengths
+/*! ISO message header */
+typedef struct {
+	uint16_t syncWord;
+	uint32_t messageLength;
+	uint8_t ackReqProtVer;
+	uint32_t transmitterID;
+	uint32_t receiverID;
+	uint8_t messageCounter;
+	uint16_t messageID;
+} HeaderType;
+#pragma pack(pop)
+
 typedef enum {
 	TEST_MODE_PREPLANNED = 0,
 	TEST_MODE_ONLINE = 1,
@@ -499,6 +512,7 @@ ssize_t encodeINSUPMessage(const enum SupervisorCommandType, char * insupDataBuf
 ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData, char *dctiDataBuffer, const size_t bufferLength, const char debug);
 enum ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer, const size_t bufferLength, DctiMessageDataType* dctiData, const char debug);
 enum ISOMessageID getISOMessageType(const char * messageData, const size_t length, const char debug);
+enum ISOMessageReturnValue getISOMessageHeader(const char * messageData, const size_t length, HeaderType* header, const char debug);
 void setISOCRCVerification(const int8_t enabled);
 void setTransmitterID(const uint32_t transmitterID);
 uint32_t getTransmitterID();
