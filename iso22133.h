@@ -478,7 +478,7 @@ typedef struct{
     uint32_t receivedHeaderTransmitterID;
     uint8_t receivedHeaderMessageCounter;
     uint16_t receivedHeaderMessageID; 
-	uint8_t responseCode;
+    uint8_t responseCode;
     uint16_t payloadLength;
     uint8_t payload;
 } GeneralResponseMessageType;

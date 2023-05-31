@@ -8,9 +8,9 @@
 
 #pragma pack(push, 1)
 typedef struct{
-	HeaderType header;
+    HeaderType header;
     uint16_t ReceivedHeaderTransmitterIDValueID;
-	uint16_t ReceivedHeaderTransmitterIDContentLength;
+    uint16_t ReceivedHeaderTransmitterIDContentLength;
     uint32_t ReceivedHeaderTransmitterID;
 
     uint16_t ReceivedHeaderMessageCounterValueID;
@@ -31,7 +31,7 @@ typedef struct{
 
     uint16_t PayloadDataValueID;
     uint16_t PayloadDataContentLength;
-	FooterType footer;
+    FooterType footer;
 } GREMType;
 #pragma pack(pop)
 
@@ -40,7 +40,7 @@ typedef struct{
 #define VALUE_ID_GREM_RECEIVED_HEADER_TRANSMITTER_ID    0x0200
 #define VALUE_ID_GREM_RECEIVED_HEADER_MESSAGE_COUNTER	0x0201
 #define VALUE_ID_GREM_RECEIVED_HEADER_MESSAGE_ID    	0x0202
-#define VALUE_ID_GREM_RESPONSE_CODE	                    0x0203
+#define VALUE_ID_GREM_RESPONSE_CODE	                0x0203
 #define VALUE_ID_GREM_PAYLOAD_LENGTH                	0x0204
 #define VALUE_ID_GREM_PAYLOAD_DATA  	                0x0205
 
