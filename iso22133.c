@@ -596,30 +596,6 @@ enum ISOMessageID getISOMessageType(const char *messageData, const size_t length
 	}
 }
 
-/*!
- * \brief getISOMessageHeader returns the ISO message header type of a raw data buffer
- * \param messageData Buffer containing raw data to be parsed into an ISO message
- * \param length Size of buffer to be parsed
- * \param header The header struct to be filled with the parsed data
- * \param debug Flag for enabling debugging information
- * \return Value according to ::ISOMessageReturnValue
- */
-enum ISOMessageReturnValue getISOMessageHeader(const char *messageData, const size_t length, HeaderType* header, char debug) {
-	// Decode header
-	if (decodeISOHeader(messageData, length, header, debug) != MESSAGE_OK) {
-		fprintf(stderr, "Unable to parse raw data into ISO message header\n");
-		return ISO_FUNCTION_ERROR;
-	}
-
-	// Check if header contains valid message ID, if so return it
-	if (isValidMessageID(header->messageID))
-		return MESSAGE_OK;
-	else {
-		printf("Message ID %u does not match any known ISO message\n", header->messageID);
-		return MESSAGE_VALUE_ID_ERROR;
-	}
-}
-
 
 /*!
  * \brief encodeSTRTMessage Constructs an ISO STRT message based on start time parameters

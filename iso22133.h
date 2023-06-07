@@ -322,7 +322,7 @@ enum GeneralResponseStatus {
 	GREM_INVALID_DATA = 5,
 	GREM_CHUNK_RECEIVED = 6,
     UNDEFIEND_1 = 7
-} __attribute__ ((__packed__));
+};
 
 enum RemoteControlManoeuvreCommandType {
 	MANOEUVRE_NONE = 0,
