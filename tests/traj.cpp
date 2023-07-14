@@ -499,11 +499,11 @@ protected:
 		);
 		ASSERT_GT(offset, 0);
 		points += offset;
-		printf("Raw data for CRC:\n");
-		for (int i = 0; i < points - encodeBuffer - 2; ++i) {
-			printf("%02x ",(uint8_t)encodeBuffer[i]);
-		}
-		printf("\n");
+		// printf("Raw data for CRC:\n");
+		// for (int i = 0; i < points - encodeBuffer - 2; ++i) {
+		// 	printf("%02x ",(uint8_t)encodeBuffer[i]);
+		// }
+		// printf("\n");
 	}
 
 	char encodeBuffer[1024];
