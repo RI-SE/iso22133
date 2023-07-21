@@ -17,8 +17,12 @@ protected:
 	}
 	void SetUp() override
 	{
-		memset(encodeBuffer, 0, sizeof(encodeBuffer));
-		auto res = encodeGREMMessage(&grem, encodeBuffer,
+		Iso22133HeaderType header;
+		header.messageCounter = 0;
+		header.receiverID = 0x000000F0;
+		memset(&header, 0, sizeof(header));
+		memset(&encodeBuffer, 0, sizeof(encodeBuffer));
+		auto res = encodeGREMMessage(&header, &grem, encodeBuffer,
 									 sizeof(encodeBuffer), true);
 		ASSERT_GT(res, 0);
 	}
@@ -100,10 +104,12 @@ protected:
 	virtual void SetUp()
 	{
 		memset(&grem, 0, sizeof(grem));
-		decodeGREMMessage(decodeBuffer, sizeof(decodeBuffer), &grem, true);
+		memset(&header, 0, sizeof(header));
+		decodeGREMMessage(&header, decodeBuffer, sizeof(decodeBuffer), &grem, true);
 	}
 	char decodeBuffer[1024];
 	GeneralResponseMessageType grem;
+	Iso22133HeaderType header;
 };
 
 TEST_F(DecodeGREM, ResponceCode)

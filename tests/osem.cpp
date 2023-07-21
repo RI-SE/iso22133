@@ -44,7 +44,9 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
-		auto res = encodeOSEMMessage(&settings, encodeBuffer,
+		Iso22133HeaderType header;
+		memset(&header, 0, sizeof(header));
+		auto res = encodeOSEMMessage(&header, &settings, encodeBuffer,
 			sizeof(encodeBuffer), false);
 		ASSERT_GT(res, 0);
 	}
@@ -282,7 +284,8 @@ TEST_F(EncodeOSEM, NoTimeServerStruct)
 	timeServer[1] = 0;
 	timeServer[2] = 0;
 	timeServer[3] = 0;
-	auto res = encodeOSEMMessage(&settings, encodeBuffer,
+	Iso22133HeaderType header;
+	auto res = encodeOSEMMessage(&header, &settings, encodeBuffer,
 		sizeof(encodeBuffer), false);
 	ASSERT_GT(res, 0);
 	union {
@@ -415,7 +418,9 @@ protected:
 	virtual void SetUp()
 	{
 		memset(&settings, 0, sizeof(settings));
-		decodeOSEMMessage(&settings, decodeBuffer, sizeof(decodeBuffer), true);
+		Iso22133HeaderType header;
+		memset(&header, 0, sizeof(header));
+		decodeOSEMMessage(&header, &settings, decodeBuffer, sizeof(decodeBuffer), true);
 	}
 	char decodeBuffer[1024];
 	ObjectSettingsType settings;

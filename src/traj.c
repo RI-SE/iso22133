@@ -13,6 +13,7 @@ static DebugStrings_t TRAJInfoDescription = 		{"Trajectory info",	"",	&printU8};
 /*!
  * \brief encodeTRAJMessageHeader Creates a TRAJ message header based on supplied values and resets
  *	an internal CRC to be used in the corresponding footer. The header is printed to a buffer.
+ * \param header input header data to be used for the message
  * \param trajectoryID ID of the trajectory
  * \param trajectoryVersion Version of the trajectory
  * \param trajectoryName A string of maximum length 63 excluding the null terminator
@@ -27,6 +28,7 @@ static DebugStrings_t TRAJInfoDescription = 		{"Trajectory info",	"",	&printU8};
  *		EMSGSIZE	if trajectory name is too long
  */
 ssize_t encodeTRAJMessageHeader(
+	const Iso22133HeaderType *header,
 	const uint16_t trajectoryID,
 	const TrajectoryInfoType trajectoryInfo,
 	const char* trajectoryName,
@@ -68,6 +70,8 @@ ssize_t encodeTRAJMessageHeader(
 
 	// Construct ISO header
 	TRAJData.header = buildISOHeader(
+		header->receiverID,
+		header->messageCounter,
 		MESSAGE_ID_TRAJ,
 		sizeof (TRAJHeaderType)
 			+ numberOfPointsInTraj * sizeof (TRAJPointType)
@@ -128,6 +132,7 @@ ssize_t encodeTRAJMessageHeader(
 
 /*!
  * \brief decodeTRAJMessageHeader
+ * \param header output header to be filled from the message
  * \param trajHeader Output data struct, to be used by host
  * \param trajDataBuffer Received trajectory data buffer
  * \param bufferLength Length of trajDataBuffer
@@ -138,6 +143,7 @@ ssize_t encodeTRAJMessageHeader(
  *		EMSGSIZE	if trajectory name is too long
  */
 ssize_t decodeTRAJMessageHeader(
+		Iso22133HeaderType* header,
 		TrajectoryHeaderType* trajHeader,
 		const char* trajDataBuffer,
 		const size_t bufferLength,
@@ -164,6 +170,7 @@ ssize_t decodeTRAJMessageHeader(
 		return retval;
 	}
 	p += sizeof (TRAJHeaderData.header);
+	convertIsoHeaderToHostRepresentation(&TRAJHeaderData.header, header);
 
 	// If message is not a  message, generate an error
 	if (TRAJHeaderData.header.messageID != MESSAGE_ID_TRAJ) {

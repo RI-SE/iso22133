@@ -4,9 +4,11 @@
 #include <errno.h>
 #include "iso22133.h"
 #include "dres.h"
+#include "iohelpers.h"
 
 /*!
  * \brief encodeDRESMessage Constructs an ISO DRES message based on specified command
+ * \param header input header data to be used for the message
  * \param testObjectDiscoveryData Test object discovery data
  * \param dresDataBuffer Data buffer to which DRES is to be written
  * \param bufferLength Length of data buffer to which DRES is to be written
@@ -14,6 +16,7 @@
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeDRESMessage(
+	const Iso22133HeaderType *header,
 	const TestObjectDiscoveryType *testObjectDiscoveryData,
 	char *dresDataBuffer,
 	const size_t bufferLength,
@@ -31,7 +34,7 @@ ssize_t encodeDRESMessage(
 	}
 
 	// Construct header
-	DRESData.header = buildISOHeader(MESSAGE_ID_OSTM, sizeof (DRESData), debug);
+	DRESData.header = buildISOHeader(header->receiverID, header->messageCounter, MESSAGE_ID_OSTM, sizeof (DRESData), debug);
 
 	// Fill contents
     DRESData.vendorNameValueID = VALUE_ID_VENDOR_NAME;
@@ -105,6 +108,7 @@ ssize_t encodeDRESMessage(
 
 /*!
  * \brief decodeDRESMessage Decodes an ISO DRES message.
+ * \param header output header to be filled from the message
  * \param dresDataBuffer Buffer with data to be decoded.
  * \param bufferLength Length of DRES data buffer.
  * \param command Decoded state change request.
@@ -114,6 +118,7 @@ ssize_t encodeDRESMessage(
  */
 
 ssize_t decodeDRESMessage(
+		Iso22133HeaderType *header,
 		const char* dresDataBuffer,
 		const size_t bufferLength,
 		TestObjectDiscoveryType *testObjectDiscoveryData,
@@ -139,6 +144,7 @@ ssize_t decodeDRESMessage(
 	    return retval;
 	}
 	p += sizeof (DRESData.header);
+	convertIsoHeaderToHostRepresentation(&DRESData.header, header);
 
 	// If message is not a DRES message, generate an error
 	if (DRESData.header.messageID != MESSAGE_ID_DRES) {

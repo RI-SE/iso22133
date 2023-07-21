@@ -38,8 +38,11 @@ protected:
 	}
 	void SetUp() override
 	{
+		Iso22133HeaderType header;
+		memset(&header, 0, sizeof(header));
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
 		auto res = encodeMONRMessage(
+			&header,
 			&objTime,
 			pos,
 			spd,
@@ -279,12 +282,12 @@ protected:
 		// used for getting the GPS week
 		currTime.tv_sec = 1651168942;
 		currTime.tv_usec = 0;
-		objID = 0;
+		Iso22133HeaderType header;
 		auto res = decodeMONRMessage(
+			&header,
 			decodeBuffer,
 			sizeof(decodeBuffer),
 			currTime,
-			&objID,
 			&monrStruct,
 			false);
 		ASSERT_GT(res, 0);
@@ -292,7 +295,6 @@ protected:
 
 	char decodeBuffer[1024];
 	ObjectMonitorType monrStruct;
-	uint32_t objID;
 	struct timeval currTime;
 };
 

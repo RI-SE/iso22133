@@ -4,15 +4,18 @@
 #include <errno.h>
 #include "iso22133.h"
 #include "dreq.h"
+#include "iohelpers.h"
 
 /*!
  * \brief encodeDREQMessage Constructs an ISO DREQ message based on specified command (DREQ contains no message data)
+ * \param header input Header data to be used for the message
  * \param dreqDataBuffer Data buffer to which DREQ is to be written
  * \param bufferLength Length of data buffer to which DREQ is to be written
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeDREQMessage(
+	const Iso22133HeaderType *header,
 	char *dreqDataBuffer,
 	const size_t bufferLength,
 	const char debug)
@@ -27,7 +30,7 @@ ssize_t encodeDREQMessage(
 	}
 
 	// Construct header
-	DREQData.header = buildISOHeader(MESSAGE_ID_DREQ, sizeof (DREQData), debug);
+	DREQData.header = buildISOHeader(header->receiverID, header->messageCounter, MESSAGE_ID_DREQ, sizeof (DREQData), debug);
 
 	if (debug) {
         printf("DREQ data: No data in DREQ message, just header and footer\n");
@@ -42,6 +45,7 @@ ssize_t encodeDREQMessage(
 
 /*!
  * \brief decodeDREQMessage Decodes an ISO DREQ message.
+ * \param header output header to be filled from the message
  * \param dreqDataBuffer Buffer with data to be decoded.
  * \param bufferLength Length of DRES data buffer.
  * \param command Decoded state change request.
@@ -51,6 +55,7 @@ ssize_t encodeDREQMessage(
  */
 
 ssize_t decodeDREQMessage(
+		Iso22133HeaderType *header,
 		const char* dreqDataBuffer,
 		const size_t bufferLength,
 		TestObjectDiscoveryRequestType *testObjectDiscoveryRequestData,
@@ -76,6 +81,7 @@ ssize_t decodeDREQMessage(
 	    return retval;
 	}
 	p += sizeof (DREQData.header);
+	convertIsoHeaderToHostRepresentation(&DREQData.header, header);
 
 	// If message is not a DREQ message, generate an error
 	if (DREQData.header.messageID != MESSAGE_ID_DREQ) {

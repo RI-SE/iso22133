@@ -12,7 +12,10 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
+		Iso22133HeaderType header;
+		memset(&header, 0, sizeof(header));
 		auto res = encodeOSTMMessage(
+			&header,
 			OBJECT_COMMAND_ARM,
 			encodeBuffer,
 			sizeof(encodeBuffer),
@@ -68,7 +71,10 @@ protected:
 
 	void SetUp() override
 	{
+		Iso22133HeaderType header;
+		memset(&header, 0, sizeof(header));
 		auto res = decodeOSTMMessage(
+			&header,
 			decodeBuffer,
 			sizeof(decodeBuffer),
 			&cmd,
