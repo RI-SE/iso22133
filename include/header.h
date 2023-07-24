@@ -20,8 +20,6 @@ typedef struct {
 } HeaderType;
 #pragma pack(pop)
 
-void convertIsoHeaderToHostRepresentation(HeaderType* inputHeader, Iso22133HeaderType *outputHeader);
-
 enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t length,
 											 HeaderType * HeaderData, const char debug);
 

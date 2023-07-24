@@ -140,11 +140,3 @@ enum ISOMessageReturnValue decodeISOHeader(
 
 	return retval;
 }
-
-void convertIsoHeaderToHostRepresentation(HeaderType* inputHeader, Iso22133HeaderType *outputHeader) {
-	outputHeader->messageID = inputHeader->messageID;
-	outputHeader->receiverID = inputHeader->receiverID;
-	outputHeader->transmitterID = inputHeader->transmitterID;
-	outputHeader->messageCounter = inputHeader->messageCounter;
-	outputHeader->ackReqProtVer = inputHeader->ackReqProtVer;
-}

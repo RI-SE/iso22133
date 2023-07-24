@@ -17,7 +17,6 @@ static DebugStrings_t GREMPayloadDescription = {"Payload Data",	"", &printU8};
 
 /*!
  * \brief decodeGREMMessage Fills GREM data elements from a buffer of raw data
- * \param header output header to be filled from the message
  * \param gremDataBuffer Raw data to be decoded
  * \param bufferLength Number of bytes in buffer of raw data to be decoded
  * \param gremData Struct to be filled
@@ -25,7 +24,6 @@ static DebugStrings_t GREMPayloadDescription = {"Payload Data",	"", &printU8};
  * \return value according to ::ISOMessageReturnValue
  */
 ssize_t decodeGREMMessage(
-		Iso22133HeaderType *header,
 		const char *gremDataBuffer,
 		const size_t bufferLength,
 		GeneralResponseMessageType* gremData,
@@ -52,7 +50,6 @@ ssize_t decodeGREMMessage(
 		return retval;
 	}
 	p += sizeof (GREMdata.header);
-	convertIsoHeaderToHostRepresentation(&GREMdata.header, header);
 
 	// If message is not a GREM message, generate an error
 	if (GREMdata.header.messageID != MESSAGE_ID_GREM) {
@@ -175,7 +172,8 @@ enum ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
 /*!
  * \brief encodeGREMMessage Fills a GREM struct with relevant data fields,
  *		and corresponding value IDs and content lengths
- * \param header input header data to be used for the message
+ * \param receiverID ID of receiver of GREM message
+ * \param messageCounter Message counter of GREM message
  * \param gremObjectData Struct containing relevant GREM data
  * \param gremDataBuffer Data buffer to which message is to be printed
  * \param bufferLength Available memory in data buffer
@@ -183,7 +181,7 @@ enum ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeGREMMessage(
-		const Iso22133HeaderType *header,
+		const uint32_t receiverID,  const uint8_t messageCounter,
 		const GeneralResponseMessageType* gremObjectData,
 		char* gremDataBuffer,
 		const size_t bufferLength,
@@ -208,7 +206,7 @@ ssize_t encodeGREMMessage(
 	}
 
 	// Construct header
-	GREMData.header = buildISOHeader(header->receiverID, header->messageCounter, MESSAGE_ID_GREM, sizeof (GREMData), debug);
+	GREMData.header = buildISOHeader(receiverID,  messageCounter, MESSAGE_ID_GREM, sizeof (GREMData), debug);
 	memcpy(p, &GREMData.header, sizeof (GREMData.header));
 	p += sizeof (GREMData.header);
 	remainingBytes -= sizeof (GREMData.header);

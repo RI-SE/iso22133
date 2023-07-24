@@ -7,7 +7,8 @@
 
 /*!
  * \brief encodeMONRMessage Constructs an ISO MONR message based on object dynamics data from trajectory file or data generated in a simulator
- * \param header Input header data to be used for the message
+ * \param receiverID ID of the receiver
+ * \param messageCounter Message counter of the message
  * \param objectTime Time of the object
  * \param position Position of the object in relation to test origin (includes heading/yaw)
  * \param speed Speed of the object (longitudinal and lateral)
@@ -21,8 +22,8 @@
  * \param debug Flag for enabling of debugging
  * \return Value according to ::ISOMessageReturnValue
  */
-ssize_t encodeMONRMessage(const Iso22133HeaderType *header, const struct timeval *objectTime, 
-						  const CartesianPosition position,
+ssize_t encodeMONRMessage(const uint32_t receiverID,  const uint8_t messageCounter,
+						  const struct timeval *objectTime, const CartesianPosition position,
 						  const SpeedType speed, const AccelerationType acceleration,
 						  const unsigned char driveDirection, const unsigned char objectState,
 						  const unsigned char readyToArm, const unsigned char objectErrorState,
@@ -44,7 +45,7 @@ ssize_t encodeMONRMessage(const Iso22133HeaderType *header, const struct timeval
 	}
 
 	// Constuct the header
-	MONRData.header = buildISOHeader(header->receiverID, header->messageCounter, MESSAGE_ID_MONR, sizeof (MONRType), debug);
+	MONRData.header = buildISOHeader(receiverID,  messageCounter, MESSAGE_ID_MONR, sizeof (MONRType), debug);
 
 	// Fill contents
 	MONRData.monrStructValueID = VALUE_ID_MONR_STRUCT;
@@ -173,7 +174,6 @@ ssize_t encodeMONRMessage(const Iso22133HeaderType *header, const struct timeval
 
 /*!
  * \brief decodeMONRMessage Fills a monitor data struct from a buffer of raw data
- * \param header output header to be filled from the message
  * \param monrDataBuffer Raw data to be decoded
  * \param bufferLength Number of bytes in buffer of raw data to be decoded
  * \param currentTime Current system time, used to guess GPS week of MONR message
@@ -182,7 +182,6 @@ ssize_t encodeMONRMessage(const Iso22133HeaderType *header, const struct timeval
  * \return Number of bytes decoded, or negative value according to ::ISOMessageReturnValue
  */
 ssize_t decodeMONRMessage(
-	Iso22133HeaderType *header,
 	const char *monrDataBuffer,
 	const size_t bufferLength,
 	const struct timeval currentTime,
@@ -211,7 +210,6 @@ ssize_t decodeMONRMessage(
 		return retval;
 	}
 	p += sizeof (MONRData.header);
-	convertIsoHeaderToHostRepresentation(&MONRData.header, header);
 
 
 	// If message is not a MONR message, generate an error

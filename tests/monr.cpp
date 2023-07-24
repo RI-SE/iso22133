@@ -38,11 +38,9 @@ protected:
 	}
 	void SetUp() override
 	{
-		Iso22133HeaderType header;
-		memset(&header, 0, sizeof(header));
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
 		auto res = encodeMONRMessage(
-			&header,
+			0, 0, // ReceiverID and MessageCounter
 			&objTime,
 			pos,
 			spd,
@@ -282,9 +280,7 @@ protected:
 		// used for getting the GPS week
 		currTime.tv_sec = 1651168942;
 		currTime.tv_usec = 0;
-		Iso22133HeaderType header;
 		auto res = decodeMONRMessage(
-			&header,
 			decodeBuffer,
 			sizeof(decodeBuffer),
 			currTime,

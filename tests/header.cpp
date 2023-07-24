@@ -16,14 +16,11 @@ protected:
 		*reinterpret_cast<uint16_t*>(message + 16) = htole16(0xDEF0);		// Message ID
 	}
 	void SetUp() override {
-		memset(&hostHeader, 0, sizeof(hostHeader));
 		auto ret = decodeISOHeader(message, 18, &header, false);
-		convertIsoHeaderToHostRepresentation(&header, &hostHeader);
 		ASSERT_EQ(MESSAGE_OK, ret);
 	}
 	virtual ~HeaderDecode();
 	char message[18];
-	Iso22133HeaderType hostHeader;
 	HeaderType header;
 };
 HeaderDecode::~HeaderDecode() {}
@@ -56,38 +53,14 @@ TEST_F(HeaderDecode, MessageID) {
 	EXPECT_EQ(0xDEF0, header.messageID);
 }
 
-TEST_F(HeaderDecode, ConvertToHostMessageId) {
-	EXPECT_EQ(0xDEF0, hostHeader.messageID);
-}
-
-TEST_F(HeaderDecode, ConvertToHostMessageCounter) {
-	EXPECT_EQ(0xBC, hostHeader.messageCounter);
-}
-
-TEST_F(HeaderDecode, ConvertToHostReceiverId) {
-	EXPECT_EQ(0x3456789A, hostHeader.receiverID);
-}
-
-TEST_F(HeaderDecode, ConvertToHostTransmitterId) {
-	EXPECT_EQ(0xBCDEF012, hostHeader.transmitterID);
-}
-
-TEST_F(HeaderDecode, ConvertToHostAckReqProtVer) {
-	EXPECT_EQ(0x02, hostHeader.ackReqProtVer);
-}
-
 class HeaderEncode : public ::testing::Test
 {
 protected:
 	HeaderEncode() {}
 	virtual ~HeaderEncode();
 	void SetUp() override {
-		Iso22133HeaderType hostHeader;
-		memset(&hostHeader, 0, sizeof(hostHeader));
-		hostHeader.receiverID = 0x3456789A;
-		hostHeader.messageCounter = 0xBC;
 		setTransmitterID(0xBEEF);
-		header = buildISOHeader(hostHeader.receiverID, hostHeader.messageCounter, MESSAGE_ID_TRAJ, 123, false);
+		header = buildISOHeader(0x3456789A, 0xBC, MESSAGE_ID_TRAJ, 123, false);
 	}
 	HeaderType header;
 };

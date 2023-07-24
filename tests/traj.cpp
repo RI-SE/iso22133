@@ -10,10 +10,8 @@ protected:
 	{
 		char name[] = "some description";
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
-		Iso22133HeaderType header;
-		memset(&header, 0, sizeof(header));
 		auto res = encodeTRAJMessageHeader(
-			&header,
+			0, 0, //ReceiverID and MessageCounter
 			0x0123,
 			TRAJECTORY_INFO_RELATIVE_TO_ORIGIN,
 			name,
@@ -143,10 +141,7 @@ protected:
 
 	void SetUp() override
 	{
-		Iso22133HeaderType hostHeader;
-		memset(&hostHeader, 0, sizeof(hostHeader));
 		auto res = decodeTRAJMessageHeader(
-			&hostHeader,
 			&header,
 			decodeBuffer,
 			sizeof(decodeBuffer),
@@ -458,15 +453,11 @@ protected:
 	}
 	void SetUp() override
 	{
-		Iso22133HeaderType hostHeader;
-		memset(&hostHeader, 0, sizeof(hostHeader));
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
 		setTransmitterID(0x000000FF);
-		hostHeader.messageCounter =0;
-		hostHeader.receiverID = 0;
 		auto p = encodeBuffer;
 		auto offset = encodeTRAJMessageHeader(
-			&hostHeader,
+			0,0, //ReceiverID and MessageCounter
 			0x123,
 			TRAJECTORY_INFO_RELATIVE_TO_OBJECT,
 			"some description",

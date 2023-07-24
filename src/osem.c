@@ -11,7 +11,8 @@
 /*!
  * \brief encodeOSEMMessage Creates an OSEM message and writes it into a buffer based on supplied values. All values are passed as pointers and
  *  passing them as NULL causes the OSEM message to contain a default value for that field (a value representing "unavailable" or similar).
- * \param header input header data to be used for the message
+ * \param receiverID ID of the receiver of the OSEM message
+ * \param messageCounter Message counter of the OSEM message
  * \param controlCenterTime Time of control center
  * \param latitude_deg Latitude in degrees of the test origin
  * \param longitude_deg Longitude in degrees of the test origin
@@ -25,7 +26,8 @@
  * \return Number of bytes written to the buffer, or -1 in case of an error
  */
 ssize_t encodeOSEMMessage(
-		const Iso22133HeaderType *header,	
+		const uint32_t receiverID,
+		const uint8_t messageCounter,	
 		const ObjectSettingsType* objectSettings,
 		char *osemDataBuffer,
 		const size_t bufferLength,
@@ -62,7 +64,7 @@ ssize_t encodeOSEMMessage(
 	msgLen -= 2 * SizeDifference64bitTo48bit;
 	msgLen += timeServerUsed ? sizeof (OSEMTimeServerType) + 2*sizeof(uint16_t) : 0;
 	msgLen += idAssociationUsed ? sizeof(OSEMIDAssociationType) + 2*sizeof(uint16_t) : 0; // TODO handle id association
-	OSEMData.header = buildISOHeader(header->receiverID, header->messageCounter, MESSAGE_ID_OSEM, msgLen, debug);
+	OSEMData.header = buildISOHeader(receiverID, messageCounter, MESSAGE_ID_OSEM, msgLen, debug);
 
 	// Fill the OSEM struct with relevant values
 	OSEMData.idStructValueID = VALUE_ID_OSEM_ID_STRUCT;
@@ -243,7 +245,6 @@ ssize_t encodeOSEMMessage(
 
 /*!
  * \brief Decode OSEM messages, fills the OSEMType data struct with information and outputs a custom struct.
- * \param header output header to be filled from the message
  * \param ObjectSettingsData Struct holding origin settings, time etc.
  * \param osemDataBuffer Data buffer with values that are to be decoded
  * \param senderID Variable for holding sender of parsed OSEM message
@@ -252,7 +253,6 @@ ssize_t encodeOSEMMessage(
  * \return Value according to ::ISOMessageReturnValue
  */
 ssize_t decodeOSEMMessage(
-	Iso22133HeaderType *header,
 	ObjectSettingsType * objectSettingsData,
 	const char *osemDataBuffer, const size_t bufferLength,
 	const char debug) {
@@ -281,7 +281,6 @@ ssize_t decodeOSEMMessage(
 		return retval;
 	}
 	p += sizeof (OSEMData.header);
-	convertIsoHeaderToHostRepresentation(&OSEMData.header, header);
 
 	// If message is not a OSEM message, generate an error
 	if (OSEMData.header.messageID != MESSAGE_ID_OSEM) {

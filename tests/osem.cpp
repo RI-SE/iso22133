@@ -44,9 +44,9 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
-		Iso22133HeaderType header;
-		memset(&header, 0, sizeof(header));
-		auto res = encodeOSEMMessage(&header, &settings, encodeBuffer,
+		auto res = encodeOSEMMessage(
+			0, 0, // ReceiverID and MessageCounter
+			&settings, encodeBuffer,
 			sizeof(encodeBuffer), false);
 		ASSERT_GT(res, 0);
 	}
@@ -284,8 +284,9 @@ TEST_F(EncodeOSEM, NoTimeServerStruct)
 	timeServer[1] = 0;
 	timeServer[2] = 0;
 	timeServer[3] = 0;
-	Iso22133HeaderType header;
-	auto res = encodeOSEMMessage(&header, &settings, encodeBuffer,
+	auto res = encodeOSEMMessage(
+		0, 0, // ReceiverID and MessageCounter
+		&settings, encodeBuffer,
 		sizeof(encodeBuffer), false);
 	ASSERT_GT(res, 0);
 	union {
@@ -332,7 +333,7 @@ protected:
 		decodeBuffer[26] = 0xEF;
 		decodeBuffer[27] = 0xCD;
 		decodeBuffer[28] = 0x00;
-		decodeBuffer[29] = 0x00;	 // Sub device ID
+		decodeBuffer[29] = 0x00;	 // Sub device header
 		decodeBuffer[30] = 0x34;
 		decodeBuffer[31] = 0x12;
 		decodeBuffer[32] = 0x00;
@@ -418,9 +419,7 @@ protected:
 	virtual void SetUp()
 	{
 		memset(&settings, 0, sizeof(settings));
-		Iso22133HeaderType header;
-		memset(&header, 0, sizeof(header));
-		decodeOSEMMessage(&header, &settings, decodeBuffer, sizeof(decodeBuffer), true);
+		decodeOSEMMessage(&settings, decodeBuffer, sizeof(decodeBuffer), true);
 	}
 	char decodeBuffer[1024];
 	ObjectSettingsType settings;

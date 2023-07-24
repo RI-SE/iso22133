@@ -7,7 +7,8 @@
 
 /*!
  * \brief encodeOSTMMessage Constructs an ISO OSTM message based on specified command
- * \param header input header data to be used for the message
+ * \param receiverID id of receiver
+ * \param messageCounter Message counter of the message
  * \param command Command to send to object according to ::ObjectCommandType
  * \param ostmDataBuffer Data buffer to which OSTM is to be written
  * \param bufferLength Length of data buffer to which OSTM is to be written
@@ -15,7 +16,8 @@
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeOSTMMessage(
-	const Iso22133HeaderType *header,
+	const uint32_t receiverID,
+	const uint8_t messageCounter,
 	const enum ObjectCommandType command,
 	char *ostmDataBuffer,
 	const size_t bufferLength,
@@ -42,7 +44,7 @@ ssize_t encodeOSTMMessage(
 	}
 
 	// Construct header
-	OSTMData.header = buildISOHeader(header->receiverID, header->messageCounter, MESSAGE_ID_OSTM, sizeof (OSTMData), debug);
+	OSTMData.header = buildISOHeader(receiverID, messageCounter, MESSAGE_ID_OSTM, sizeof (OSTMData), debug);
 
 	// Fill contents
 	OSTMData.stateValueID = VALUE_ID_OSTM_STATE_CHANGE_REQUEST;
@@ -69,7 +71,6 @@ ssize_t encodeOSTMMessage(
 
 /*!
  * \brief decodeOSTMMessage Decodes an ISO OSTM message.
- * \param header output header to be filled from the message
  * \param ostmDataBuffer Buffer with data to be decoded.
  * \param bufferLength Length of OSTM data buffer.
  * \param command Decoded state change request.
@@ -78,7 +79,6 @@ ssize_t encodeOSTMMessage(
  *		::ISOMessageReturnValue if an error occurred.
  */
 ssize_t decodeOSTMMessage(
-		Iso22133HeaderType *header,
 		const char* ostmDataBuffer,
 		const size_t bufferLength,
 		enum ObjectCommandType* command,
@@ -105,7 +105,6 @@ ssize_t decodeOSTMMessage(
 		return retval;
 	}
 	p += sizeof (OSTMData.header);
-	convertIsoHeaderToHostRepresentation(&OSTMData.header, header);
 
 	// If message is not a PODI message, generate an error
 	if (OSTMData.header.messageID != MESSAGE_ID_OSTM) {
