@@ -863,7 +863,7 @@ ssize_t encodeHEABMessage(const uint32_t receiverID,  const uint8_t messageCount
 	}
 
 	// Construct header
-	HEABData.header = buildISOHeader(receiverID, messageCounter, MESSAGE_ID_STRT, sizeof (HEABData), debug);
+	HEABData.header = buildISOHeader(receiverID, messageCounter, MESSAGE_ID_HEAB, sizeof (HEABData), debug);
 
 	// Fill contents
 	HEABData.HEABStructValueID = VALUE_ID_HEAB_STRUCT;
