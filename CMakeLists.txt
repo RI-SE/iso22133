@@ -92,9 +92,7 @@ endif()
 # SWIG
 if (WITH_SWIG)
     find_package(SWIG REQUIRED)
-    if(NOT SWIG_FOUND)
-        message(WARNING "SWIG not found")
-    else()
+    if(SWIG_FOUND)
         #Policy for swig_add_library to put target inside first argument to the function
         cmake_policy(SET CMP0078 NEW)
         #Policy for passing SWIG_MODULE_NAME to swig compiler as -module <name>
@@ -121,6 +119,7 @@ if (WITH_SWIG)
             ${JNI_INCLUDE_DIRS}
             ${Boost_INCLUDE_DIRS}
         )
+
         swig_add_library(${ISO22133_SWIGGED}
             TYPE SHARED
             LANGUAGE ${SWIG_TARGET_LANG}
@@ -145,5 +144,7 @@ if (WITH_SWIG)
             install(TARGETS ${ISO22133_SWIGGED} DESTINATION ${PYTHON_SITE_PACKAGES})
             install(FILES ${CMAKE_BINARY_DIR}/iso22133.py DESTINATION ${PYTHON_SITE_PACKAGES})
         endif()
+    else()
+        message(WARNING "SWIG not found")
     endif()
 endif()
