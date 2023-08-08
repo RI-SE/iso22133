@@ -1,5 +1,7 @@
 #pragma once
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdint.h>
 
 #include "iso22133.h"
@@ -46,3 +48,8 @@ typedef struct{
 
 enum ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
 		GeneralResponseMessageType* gremData);
+
+
+#ifdef __cplusplus
+}
+#endif

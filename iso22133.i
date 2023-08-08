@@ -4,18 +4,21 @@
 %{
 #include "iso22133.h"
 #include "positioning.h"
+#include "defines.h"
+#include "dreq.h"
+#include "dres.h"
+#include "footer.h"
+#include "grem.h"
+#include "header.h"
+#include "iohelpers.h"
+#include "monr.h"
+#include "osem.h"
+#include "ostm.h"
+#include "timeconversions.h"
+// #include "traj.h"
 #define SWIG_PYTHON_STRICT_BYTE_CHAR
 %}
 
-%apply int *OUTPUT {ObjectCommandType* command};
-%inline %{
-	extern ssize_t decodeOSTMMessage(const char* ostmDataBuffer, const size_t bufferLength, enum ObjectCommandType* command, const char debug);
-%}
-
-%apply int *OUTPUT {uint32_t *senderID}
-%inline %{
-extern ssize_t decodeOSEMMessage(ObjectSettingsType *objectSettingsData, const char * osemDataBuffer, const size_t bufferLength, const char debug);
-%}
 
 
 #%javaconst(1);
@@ -26,5 +29,17 @@ typedef long int ssize_t;
 %include "typemaps.i"
 %include "stdint.i"
 %include "cpointer.i"
-%include "positioning.i"
 %include "iso22133.h"
+%include "positioning.h"
+%include "defines.h"
+%include "dreq.h"
+%include "dres.h"
+%include "footer.h"
+%include "grem.h"
+%include "header.h"
+%include "iohelpers.h"
+%include "monr.h"
+%include "osem.h"
+%include "ostm.h"
+%include "timeconversions.h"
+// %include "traj.h"

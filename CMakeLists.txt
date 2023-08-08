@@ -133,7 +133,7 @@ if (WITH_SWIG)
         )
 
         target_link_libraries(${ISO22133_SWIGGED}
-            ${ISO22133_LIBRARY}
+            ${ISO22133_TARGET}
             atomic
             ${Python_LIBRARIES}
             ${JNI_LIBRARIES}

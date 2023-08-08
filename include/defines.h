@@ -1,4 +1,7 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdint.h>
 
 // ************************* Type definitions according ISO protocol specification *******************************
@@ -157,3 +160,7 @@ static const uint8_t SupportedProtocolVersions[] = { 2 };
 #define WEEK_TIME_MS 604800000
 // Time between 1970-01-01 and 1980-01-06
 #define MS_TIME_DIFF_UTC_GPS ((uint64_t)(315964800000))
+
+#ifdef __cplusplus
+}
+#endif

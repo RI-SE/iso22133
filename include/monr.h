@@ -1,4 +1,7 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stddef.h>
 #include "header.h"
 #include "footer.h"
@@ -38,3 +41,6 @@ void convertMONRToHostRepresentation(
 		const MONRType * MONRData,
 		const struct timeval *currentTime,
 		ObjectMonitorType * monitorData);
+#ifdef __cplusplus
+}
+#endif

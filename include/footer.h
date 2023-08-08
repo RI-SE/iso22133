@@ -1,4 +1,7 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdlib.h>
 #include <stdint.h>
 #include "iso22133.h"
@@ -22,3 +25,7 @@ enum ISOMessageReturnValue verifyChecksum(
 		const size_t dataLen,
 		const uint16_t crc,
 		const char debug);
+
+#ifdef __cplusplus
+}
+#endif

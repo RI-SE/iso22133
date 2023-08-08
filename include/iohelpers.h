@@ -1,5 +1,7 @@
 #pragma once
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdint.h>
 #include <stddef.h>
 
@@ -26,3 +28,6 @@ typedef struct {
 int encodeContent(uint16_t valueID, const void* src, char** dest, const size_t contentSize, size_t* bufferSpace, DebugStrings_t *debugStruct, const char debug);
 
 void printContent(const uint16_t valueID, const uint16_t contentLength, const void* value, DebugStrings_t* deb);
+#ifdef __cplusplus
+}
+#endif
