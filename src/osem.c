@@ -72,7 +72,7 @@ ssize_t encodeOSEMMessage(
 	OSEMData.idStructContentLength = sizeof (OSEMData.ids);
 	OSEMData.ids.deviceID = objectSettings->desiredID.transmitter;
 	OSEMData.ids.subDeviceID = objectSettings->desiredID.subTransmitter;
-	OSEMData.ids.systemControlCentreID = getTransmitterID();
+	OSEMData.ids.systemControlCentreID = inputHeader->transmitterID;
 
 	OSEMData.originStructValueID = VALUE_ID_OSEM_ORIGIN_STRUCT;
 	OSEMData.originStructContentLength = sizeof (OSEMData.origin) - 2 * SizeDifference64bitTo48bit;

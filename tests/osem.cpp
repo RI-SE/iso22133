@@ -13,7 +13,6 @@ protected:
 		// IDs
 		settings.desiredID.transmitter = 0x1234;
 		settings.desiredID.subTransmitter = 0x5678;
-		setTransmitterID(0x9ABC);
 		// Origin
 		settings.coordinateSystemOrigin.latitude_deg = 12.3456789012;
 		settings.coordinateSystemOrigin.longitude_deg = 23.4567890123;
@@ -45,9 +44,9 @@ protected:
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
 		HeaderType inputHeader;
-		inputHeader.receiverID = 0;
+		inputHeader.receiverID = 0x1234;
 		inputHeader.messageCounter = 0;
-		inputHeader.transmitterID = 0;
+		inputHeader.transmitterID = 0x9ABC;
 		auto res = encodeOSEMMessage(
 			&inputHeader,
 			&settings, encodeBuffer,

@@ -532,28 +532,6 @@ static enum ISOMessageReturnValue convertSTRTToHostRepresentation(const STRTType
 		StartMessageType * startdata);
 
 
-// ************************** static variables ********************************************************************
-static uint32_t transmitterID = 0xFFFFFFFF;
-
-// ************************** function definitions ****************************************************************
-
-/*!
- * \brief setTransmitterID Sets the transmitter ID for subsequent constructed ISO messages
- * \param newTransmitterID Transmitter ID to be set
- */
-void setTransmitterID(const uint32_t newTransmitterID) {
-	transmitterID = newTransmitterID;
-}
-
-/*!
- * \brief getTransmitterID Get the configured transmitter ID
- * \return Transmitter ID
- */
-uint32_t getTransmitterID() {
-	return transmitterID;
-}
-
-
 /*!
  * \brief isValidMessageID Determines if specified id is a valid ISO message ID. The reserved range is deemed
  * invalid and vendor specific range is deemed valid.
