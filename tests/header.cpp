@@ -59,8 +59,13 @@ protected:
 	HeaderEncode() {}
 	virtual ~HeaderEncode();
 	void SetUp() override {
-		setTransmitterID(0xBEEF);
-		header = buildISOHeader(0x3456789A, 0xBC, MESSAGE_ID_TRAJ, 123, false);
+		HeaderType inputHeader;
+		inputHeader.transmitterID = 0xBEEF;
+		inputHeader.receiverID = 0x3456789A;
+		inputHeader.messageCounter = 0xBC;
+		inputHeader.messageID = MESSAGE_ID_TRAJ;
+		inputHeader.messageLength = 123;
+		header = buildISOHeader(&inputHeader, false);
 	}
 	HeaderType header;
 };

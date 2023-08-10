@@ -44,8 +44,12 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
+		HeaderType inputHeader;
+		inputHeader.receiverID = 0;
+		inputHeader.messageCounter = 0;
+		inputHeader.transmitterID = 0;
 		auto res = encodeOSEMMessage(
-			0, 0, // ReceiverID and MessageCounter
+			&inputHeader,
 			&settings, encodeBuffer,
 			sizeof(encodeBuffer), false);
 		ASSERT_GT(res, 0);
@@ -284,8 +288,12 @@ TEST_F(EncodeOSEM, NoTimeServerStruct)
 	timeServer[1] = 0;
 	timeServer[2] = 0;
 	timeServer[3] = 0;
+	HeaderType inputHeader;
+	inputHeader.receiverID = 0;
+	inputHeader.messageCounter = 0;
+	inputHeader.transmitterID = 0;
 	auto res = encodeOSEMMessage(
-		0, 0, // ReceiverID and MessageCounter
+		&inputHeader,
 		&settings, encodeBuffer,
 		sizeof(encodeBuffer), false);
 	ASSERT_GT(res, 0);

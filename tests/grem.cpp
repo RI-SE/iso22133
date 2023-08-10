@@ -18,11 +18,17 @@ protected:
 	void SetUp() override
 	{
 		memset(&encodeBuffer, 0, sizeof(encodeBuffer));
-		auto res = encodeGREMMessage(0, 0x000000F0, &grem, encodeBuffer,
+		
+		memset(&header, 0, sizeof(header));
+		header.receiverID = 0;
+		header.messageCounter = 0x000000F0;
+		header.transmitterID = 0x12345678;
+		auto res = encodeGREMMessage(&header, &grem, encodeBuffer,
 									 sizeof(encodeBuffer), true);
 		ASSERT_GT(res, 0);
 	}
 	GeneralResponseMessageType grem;
+	HeaderType header;
 	char encodeBuffer[1024];
 };
 

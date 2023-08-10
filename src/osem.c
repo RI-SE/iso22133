@@ -11,8 +11,7 @@
 /*!
  * \brief encodeOSEMMessage Creates an OSEM message and writes it into a buffer based on supplied values. All values are passed as pointers and
  *  passing them as NULL causes the OSEM message to contain a default value for that field (a value representing "unavailable" or similar).
- * \param receiverID ID of the receiver of the OSEM message
- * \param messageCounter Message counter of the OSEM message
+ * \param inputHeader data to create header with - Only use transmitterID, receiverID and messageCounter
  * \param controlCenterTime Time of control center
  * \param latitude_deg Latitude in degrees of the test origin
  * \param longitude_deg Longitude in degrees of the test origin
@@ -26,8 +25,7 @@
  * \return Number of bytes written to the buffer, or -1 in case of an error
  */
 ssize_t encodeOSEMMessage(
-		const uint32_t receiverID,
-		const uint8_t messageCounter,	
+		HeaderType *inputHeader,	
 		const ObjectSettingsType* objectSettings,
 		char *osemDataBuffer,
 		const size_t bufferLength,
@@ -64,7 +62,10 @@ ssize_t encodeOSEMMessage(
 	msgLen -= 2 * SizeDifference64bitTo48bit;
 	msgLen += timeServerUsed ? sizeof (OSEMTimeServerType) + 2*sizeof(uint16_t) : 0;
 	msgLen += idAssociationUsed ? sizeof(OSEMIDAssociationType) + 2*sizeof(uint16_t) : 0; // TODO handle id association
-	OSEMData.header = buildISOHeader(receiverID, messageCounter, MESSAGE_ID_OSEM, msgLen, debug);
+
+	inputHeader->messageID = MESSAGE_ID_OSEM;
+	inputHeader->messageLength = msgLen;
+	OSEMData.header = buildISOHeader(inputHeader, debug);
 
 	// Fill the OSEM struct with relevant values
 	OSEMData.idStructValueID = VALUE_ID_OSEM_ID_STRUCT;

@@ -9,9 +9,13 @@ protected:
 	void SetUp() override
 	{
 		char name[] = "some description";
+		HeaderType inputHeader;
+		inputHeader.receiverID = 0;
+		inputHeader.messageCounter = 0;
+		inputHeader.transmitterID = 0;
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
 		auto res = encodeTRAJMessageHeader(
-			0, 0, //ReceiverID and MessageCounter
+			&inputHeader,
 			0x0123,
 			TRAJECTORY_INFO_RELATIVE_TO_ORIGIN,
 			name,
@@ -454,10 +458,13 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
-		setTransmitterID(0x000000FF);
 		auto p = encodeBuffer;
+		HeaderType inputHeader;
+		inputHeader.receiverID = 0;
+		inputHeader.messageCounter = 0;
+		inputHeader.transmitterID = 0x000000FF;
 		auto offset = encodeTRAJMessageHeader(
-			0,0, //ReceiverID and MessageCounter
+			&inputHeader,
 			0x123,
 			TRAJECTORY_INFO_RELATIVE_TO_OBJECT,
 			"some description",

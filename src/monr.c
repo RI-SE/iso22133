@@ -7,8 +7,7 @@
 
 /*!
  * \brief encodeMONRMessage Constructs an ISO MONR message based on object dynamics data from trajectory file or data generated in a simulator
- * \param receiverID ID of the receiver
- * \param messageCounter Message counter of the message
+ * \param inputHeader data to create header with - Only use transmitterID, receiverID and messageCounter
  * \param objectTime Time of the object
  * \param position Position of the object in relation to test origin (includes heading/yaw)
  * \param speed Speed of the object (longitudinal and lateral)
@@ -22,7 +21,7 @@
  * \param debug Flag for enabling of debugging
  * \return Value according to ::ISOMessageReturnValue
  */
-ssize_t encodeMONRMessage(const uint32_t receiverID,  const uint8_t messageCounter,
+ssize_t encodeMONRMessage(HeaderType *inputHeader,
 						  const struct timeval *objectTime, const CartesianPosition position,
 						  const SpeedType speed, const AccelerationType acceleration,
 						  const unsigned char driveDirection, const unsigned char objectState,
@@ -45,7 +44,9 @@ ssize_t encodeMONRMessage(const uint32_t receiverID,  const uint8_t messageCount
 	}
 
 	// Constuct the header
-	MONRData.header = buildISOHeader(receiverID,  messageCounter, MESSAGE_ID_MONR, sizeof (MONRType), debug);
+	inputHeader->messageID = MESSAGE_ID_MONR;
+	inputHeader->messageLength = sizeof (MONRData);
+	MONRData.header = buildISOHeader(inputHeader, debug);
 
 	// Fill contents
 	MONRData.monrStructValueID = VALUE_ID_MONR_STRUCT;

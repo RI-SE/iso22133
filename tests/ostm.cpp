@@ -12,8 +12,12 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
+		HeaderType inputHeader;
+		inputHeader.receiverID = 0;
+		inputHeader.messageCounter = 0;
+		inputHeader.transmitterID = 0;
 		auto res = encodeOSTMMessage(
-			0, 0, // ReceiverID and MessageCounter
+			&inputHeader,
 			OBJECT_COMMAND_ARM,
 			encodeBuffer,
 			sizeof(encodeBuffer),

@@ -14,17 +14,17 @@
  * \param debug Flag for enabling debugging
  * \return A struct containing ISO header data
  */
-HeaderType buildISOHeader(uint32_t receiverID, uint8_t messageCounter, enum ISOMessageID id, uint32_t messageLength, const char debug) {
+HeaderType buildISOHeader(const HeaderType *input, const char debug) {
 	HeaderType header;
 
 	header.syncWord = ISO_SYNC_WORD;
-	header.transmitterID = getTransmitterID();
-	header.receiverID = receiverID;
-	header.messageCounter = messageCounter;
+	header.transmitterID = input->transmitterID;
+	header.receiverID = input->receiverID;
+	header.messageCounter = input->messageCounter;
 	header.ackReqProtVer = ACK_REQ | ISO_PROTOCOL_VERSION;
-	if (messageLength >= sizeof (HeaderType) + sizeof (FooterType)) {
-		header.messageID = (uint16_t) id;
-		header.messageLength = messageLength - sizeof (HeaderType) - sizeof (FooterType);
+	if (input->messageLength >= sizeof (HeaderType) + sizeof (FooterType)) {
+		header.messageID = (uint16_t) input->messageID;
+		header.messageLength = input->messageLength - sizeof (HeaderType) - sizeof (FooterType);
 	}
 	else {
 		fprintf(stderr, "Supplied message length too small to hold header and footer\n");
