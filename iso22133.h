@@ -501,19 +501,7 @@ typedef struct {
 	enum DreqStatusType requestStatus;
 } TestObjectDiscoveryRequestType;
 
-
-#pragma pack(push,1)			// Ensure sizeof() is useable for (most) network byte lengths
-/*! ISO message header */
-typedef struct {
-	uint16_t syncWord;
-	uint32_t messageLength;
-	uint8_t ackReqProtVer;
-	uint32_t transmitterID;
-	uint32_t receiverID;
-	uint8_t messageCounter;
-	uint16_t messageID;
-} HeaderType;
-#pragma pack(pop)
+typedef struct ISOHeaderType HeaderType;
 
 ssize_t encodeMONRMessage(HeaderType *inputHeader, const struct timeval* objectTime, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const unsigned char driveDirection, const unsigned char objectState, const unsigned char readyToArm, const unsigned char objectErrorState, const unsigned short errorCode, char * monrDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeMONRMessage(const char * monrDataBuffer, const size_t bufferLength, const struct timeval currentTime, ObjectMonitorType * MonitorData, const char debug);
