@@ -9,7 +9,7 @@ protected:
 	void SetUp() override
 	{
 		char name[] = "some description";
-		HeaderType inputHeader;
+		MessageHeaderType inputHeader;
 		inputHeader.receiverID = 0;
 		inputHeader.messageCounter = 0;
 		inputHeader.transmitterID = 0;
@@ -459,7 +459,7 @@ protected:
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
 		auto p = encodeBuffer;
-		HeaderType inputHeader;
+		MessageHeaderType inputHeader;
 		inputHeader.receiverID = 0;
 		inputHeader.messageCounter = 0;
 		inputHeader.transmitterID = 0x000000FF;

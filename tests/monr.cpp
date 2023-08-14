@@ -39,7 +39,7 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
-		HeaderType inputHeader;
+		MessageHeaderType inputHeader;
 		inputHeader.receiverID = 0;
 		inputHeader.messageCounter = 0;
 		inputHeader.transmitterID = 0;

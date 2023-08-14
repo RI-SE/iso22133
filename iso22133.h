@@ -33,6 +33,13 @@ typedef enum {
 	TEST_MODE_UNAVAILABLE = 255
 } TestModeType;
 
+/*! Message Header for building/encoding headers */
+typedef struct {
+	uint32_t transmitterID;
+	uint32_t receiverID;
+	uint8_t messageCounter;
+} MessageHeaderType;
+
 /*! OSEM settings */
 //Extracted to be swig compatible
 typedef struct {
@@ -506,54 +513,52 @@ typedef struct {
 	enum DreqStatusType requestStatus;
 } TestObjectDiscoveryRequestType;
 
-typedef struct ISOHeaderType HeaderType;
-
-ssize_t encodeMONRMessage(HeaderType *inputHeader, const struct timeval* objectTime, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const unsigned char driveDirection, const unsigned char objectState, const unsigned char readyToArm, const unsigned char objectErrorState, const unsigned short errorCode, char * monrDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeMONRMessage(MessageHeaderType *inputHeader, const struct timeval* objectTime, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const unsigned char driveDirection, const unsigned char objectState, const unsigned char readyToArm, const unsigned char objectErrorState, const unsigned short errorCode, char * monrDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeMONRMessage(const char * monrDataBuffer, const size_t bufferLength, const struct timeval currentTime, ObjectMonitorType * MonitorData, const char debug);
-ssize_t encodeTRAJMessageHeader(HeaderType *inputHeader, const uint16_t trajectoryID, const TrajectoryInfoType trajectoryInfo, const char* trajectoryName, const size_t nameLength,	const uint32_t numberOfPointsInTraj, char *trajDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeTRAJMessageHeader(MessageHeaderType *inputHeader, const uint16_t trajectoryID, const TrajectoryInfoType trajectoryInfo, const char* trajectoryName, const size_t nameLength,	const uint32_t numberOfPointsInTraj, char *trajDataBuffer, const size_t bufferLength, const char debug);
 ssize_t encodeTRAJMessagePoint(const struct timeval * pointTimeFromStart, const CartesianPosition position, const SpeedType speed, const AccelerationType acceleration, const float curvature, char * trajDataBufferPointer, const size_t remainingBufferLength, const char debug);
 ssize_t decodeTRAJMessagePoint(TrajectoryWaypointType* wayPoints, const char* trajDataBuffer, const char debug);
 ssize_t encodeTRAJMessageFooter(char * trajDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeTRAJMessageHeader(TrajectoryHeaderType* trajHeader, const char* trajDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeSTRTMessage(HeaderType *inputHeader, const StartMessageType* startData, char * strtDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeSTRTMessage(MessageHeaderType *inputHeader, const StartMessageType* startData, char * strtDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeSTRTMessage(const char *strtDataBuffer, const size_t bufferLength, const struct timeval* currentTime, StartMessageType * startData, const char debug) ;
-ssize_t encodeOSEMMessage(HeaderType *inputHeader, const ObjectSettingsType* objectSettingsData, char * osemDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeOSEMMessage(MessageHeaderType *inputHeader, const ObjectSettingsType* objectSettingsData, char * osemDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeOSEMMessage(ObjectSettingsType *objectSettingsData, const char * osemDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeOSTMMessage(HeaderType *inputHeader, const enum ObjectCommandType command, char * ostmDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeOSTMMessage(MessageHeaderType *inputHeader, const enum ObjectCommandType command, char * ostmDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeOSTMMessage(const char* ostmDataBuffer, const size_t bufferLength, enum ObjectCommandType* command, const char debug);
-ssize_t encodeHEABMessage(HeaderType *inputHeader, const struct timeval* heabTime, const enum ControlCenterStatusType status, char * heabDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeHEABMessage(MessageHeaderType *inputHeader, const struct timeval* heabTime, const enum ControlCenterStatusType status, char * heabDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeHEABMessage(const char *heabDataBuffer, const size_t bufferLength, const struct timeval currentTime, HeabMessageDataType* heabData, const char debug);
-ssize_t encodeSYPMMessage(HeaderType *inputHeader, const struct timeval synchronizationTime, const struct timeval freezeTime, char * sypmDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeMTSPMessage(HeaderType *inputHeader, const struct timeval * estSyncPointTime, char * mtspDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeTRCMMessage(HeaderType *inputHeader, const uint16_t* triggerID, const enum TriggerType_t* triggerType, const enum TriggerTypeParameter_t* param1, const enum TriggerTypeParameter_t* param2, const enum TriggerTypeParameter_t* param3, char * trcmDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeACCMMessage(HeaderType *inputHeader, const uint16_t* actionID, const enum ActionType_t* actionType, const enum ActionTypeParameter_t* param1, const enum ActionTypeParameter_t* param2, const enum ActionTypeParameter_t* param3, char * accmDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeEXACMessage(HeaderType *inputHeader, const uint16_t* actionID, const struct timeval * executionTime, char * exacDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeSYPMMessage(MessageHeaderType *inputHeader, const struct timeval synchronizationTime, const struct timeval freezeTime, char * sypmDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeMTSPMessage(MessageHeaderType *inputHeader, const struct timeval * estSyncPointTime, char * mtspDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeTRCMMessage(MessageHeaderType *inputHeader, const uint16_t* triggerID, const enum TriggerType_t* triggerType, const enum TriggerTypeParameter_t* param1, const enum TriggerTypeParameter_t* param2, const enum TriggerTypeParameter_t* param3, char * trcmDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeACCMMessage(MessageHeaderType *inputHeader, const uint16_t* actionID, const enum ActionType_t* actionType, const enum ActionTypeParameter_t* param1, const enum ActionTypeParameter_t* param2, const enum ActionTypeParameter_t* param3, char * accmDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeEXACMessage(MessageHeaderType *inputHeader, const uint16_t* actionID, const struct timeval * executionTime, char * exacDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeRCMMMessage(const char *rcmmDataBuffer, const size_t bufferLength, RemoteControlManoeuvreMessageType* rcmmData, const char debug);
-ssize_t encodeRCMMMessage(HeaderType *inputHeader, const RemoteControlManoeuvreMessageType* rcmmObjectData, char* rcmmDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeRCMMMessage(MessageHeaderType *inputHeader, const RemoteControlManoeuvreMessageType* rcmmObjectData, char* rcmmDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeGREMMessage(const char *gremDataBuffer, const size_t bufferLength, GeneralResponseMessageType* gremData, const char debug);
-ssize_t encodeGREMMessage(HeaderType *inputHeader, const GeneralResponseMessageType* gremObjectData, char* gremDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeDRESMessage(HeaderType *inputHeader, const TestObjectDiscoveryType *testObjectDiscoveryData, char *dresDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeGREMMessage(MessageHeaderType *inputHeader, const GeneralResponseMessageType* gremObjectData, char* gremDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeDRESMessage(MessageHeaderType *inputHeader, const TestObjectDiscoveryType *testObjectDiscoveryData, char *dresDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeDRESMessage(const char* dresDataBuffer, const size_t bufferLength, TestObjectDiscoveryType *testObjectDiscoveryData, const char debug);
-ssize_t encodeDREQMessage(HeaderType *inputHeader, char *dreqDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeDREQMessage(MessageHeaderType *inputHeader, char *dreqDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeDREQMessage(const char* dreqDataBuffer, const size_t bufferLength, TestObjectDiscoveryRequestType *testObjectDiscoveryRequestData, const char debug);
-ssize_t encodeINSUPMessage(HeaderType *inputHeader, const enum SupervisorCommandType, char * insupDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeDCTIMessage(HeaderType *inputHeader, const DctiMessageDataType *dctiData, char *dctiDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeINSUPMessage(MessageHeaderType *inputHeader, const enum SupervisorCommandType, char * insupDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeDCTIMessage(MessageHeaderType *inputHeader, const DctiMessageDataType *dctiData, char *dctiDataBuffer, const size_t bufferLength, const char debug);
 enum ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer, const size_t bufferLength, DctiMessageDataType* dctiData, const char debug);
 enum ISOMessageID getISOMessageType(const char * messageData, const size_t length, const char debug);
 void setISOCRCVerification(const int8_t enabled);
 
 /* AstaZero vendor specific messages - TODO move to a separate repository */
-ssize_t encodePODIMessage(HeaderType *inputHeader, const PeerObjectInjectionType* peerObjectData, char* podiDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodePODIMessage(MessageHeaderType *inputHeader, const PeerObjectInjectionType* peerObjectData, char* podiDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodePODIMessage(const char *podiDataBuffer, const size_t bufferLength, const struct timeval currentTime, PeerObjectInjectionType* peerData, const char debug);
-ssize_t encodeOPROMessage(HeaderType *inputHeader, const ObjectPropertiesType *objectPropertiesData, char * oproDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeOPROMessage(MessageHeaderType *inputHeader, const ObjectPropertiesType *objectPropertiesData, char * oproDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeOPROMessage(ObjectPropertiesType *objectPropertiesData, const char * oproDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeFOPRMessage(HeaderType *inputHeader, const ForeignObjectPropertiesType* foreignObjectPropertiesData, char *foprDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeFOPRMessage(MessageHeaderType *inputHeader, const ForeignObjectPropertiesType* foreignObjectPropertiesData, char *foprDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeFOPRMessage(ForeignObjectPropertiesType * foreignObjectPropertiesData, const char *foprDataBuffer, const size_t bufferLength, const char debug);
-ssize_t encodeRDCAMessage(HeaderType *inputHeader, const RequestControlActionType* requestControlActionData, char *rdcaDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeRDCAMessage(MessageHeaderType *inputHeader, const RequestControlActionType* requestControlActionData, char *rdcaDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeRDCAMessage(const char *rdcaDataBuffer, RequestControlActionType* requestControlActionData, const size_t bufferLength, const struct timeval currentTime, const char debug);
-ssize_t encodeGDRMMessage(HeaderType *inputHeader, const GdrmMessageDataType *gdrmData, char *gdrmDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeGDRMMessage(MessageHeaderType *inputHeader, const GdrmMessageDataType *gdrmData, char *gdrmDataBuffer, const size_t bufferLength, const char debug);
 enum ISOMessageReturnValue decodeGDRMMessage(const char *gdrmDataBuffer, const size_t bufferLength, GdrmMessageDataType* gdrmData, const char debug);
-ssize_t encodeDCMMMessage(HeaderType *inputHeader, const RemoteControlManoeuvreMessageType* command, char* dcmmDataBuffer, const size_t bufferLength, const char debug);
+ssize_t encodeDCMMMessage(MessageHeaderType *inputHeader, const RemoteControlManoeuvreMessageType* command, char* dcmmDataBuffer, const size_t bufferLength, const char debug);
 ssize_t decodeDCMMMessage(const char * dcmmDataBuffer, const size_t bufferLenght, RemoteControlManoeuvreMessageType* dcmmData, const char debug);
 #ifdef __cplusplus
 }

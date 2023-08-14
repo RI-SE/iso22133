@@ -43,7 +43,7 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
-		HeaderType inputHeader;
+		MessageHeaderType inputHeader;
 		inputHeader.receiverID = 0x1234;
 		inputHeader.messageCounter = 0;
 		inputHeader.transmitterID = 0x9ABC;
@@ -287,7 +287,7 @@ TEST_F(EncodeOSEM, NoTimeServerStruct)
 	timeServer[1] = 0;
 	timeServer[2] = 0;
 	timeServer[3] = 0;
-	HeaderType inputHeader;
+	MessageHeaderType inputHeader;
 	inputHeader.receiverID = 0;
 	inputHeader.messageCounter = 0;
 	inputHeader.transmitterID = 0;

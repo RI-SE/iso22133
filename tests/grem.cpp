@@ -28,7 +28,7 @@ protected:
 		ASSERT_GT(res, 0);
 	}
 	GeneralResponseMessageType grem;
-	HeaderType header;
+	MessageHeaderType header;
 	char encodeBuffer[1024];
 };
 

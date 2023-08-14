@@ -7,7 +7,7 @@
 
 /*!
  * \brief encodeOSTMMessage Constructs an ISO OSTM message based on specified command
- * \param inputHeader data to create header with - Only use transmitterID, receiverID and messageCounter
+ * \param inputHeader data to create header with
  * \param command Command to send to object according to ::ObjectCommandType
  * \param ostmDataBuffer Data buffer to which OSTM is to be written
  * \param bufferLength Length of data buffer to which OSTM is to be written
@@ -15,7 +15,7 @@
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeOSTMMessage(
-	HeaderType *inputHeader,
+	MessageHeaderType *inputHeader,
 	const enum ObjectCommandType command,
 	char *ostmDataBuffer,
 	const size_t bufferLength,
@@ -42,9 +42,7 @@ ssize_t encodeOSTMMessage(
 	}
 
 	// Construct header
-	inputHeader->messageID = MESSAGE_ID_OSTM;
-	inputHeader->messageLength = sizeof (OSTMData);
-	OSTMData.header = buildISOHeader(inputHeader, debug);
+	OSTMData.header = buildISOHeader(MESSAGE_ID_OSTM, inputHeader, sizeof (OSTMData), debug);
 
 	// Fill contents
 	OSTMData.stateValueID = VALUE_ID_OSTM_STATE_CHANGE_REQUEST;

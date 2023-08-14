@@ -1,5 +1,6 @@
 #include "traj.h"
 #include "iohelpers.h"
+#include "iso22133.h"
 #include <errno.h>
 #include <string.h>
 
@@ -13,7 +14,7 @@ static DebugStrings_t TRAJInfoDescription = 		{"Trajectory info",	"",	&printU8};
 /*!
  * \brief encodeTRAJMessageHeader Creates a TRAJ message header based on supplied values and resets
  *	an internal CRC to be used in the corresponding footer. The header is printed to a buffer.
- * \param inputHeader data to create header with - Only use transmitterID, receiverID and messageCounter
+ * \param inputHeader data to create header with
  * \param trajectoryID ID of the trajectory
  * \param trajectoryVersion Version of the trajectory
  * \param trajectoryName A string of maximum length 63 excluding the null terminator
@@ -28,7 +29,7 @@ static DebugStrings_t TRAJInfoDescription = 		{"Trajectory info",	"",	&printU8};
  *		EMSGSIZE	if trajectory name is too long
  */
 ssize_t encodeTRAJMessageHeader(
-	HeaderType *inputHeader,
+	MessageHeaderType *inputHeader,
 	const uint16_t trajectoryID,
 	const TrajectoryInfoType trajectoryInfo,
 	const char* trajectoryName,
@@ -69,11 +70,10 @@ ssize_t encodeTRAJMessageHeader(
 	}
 
 	// Construct ISO header
-	inputHeader->messageID = MESSAGE_ID_TRAJ;
-	inputHeader->messageLength = sizeof (TRAJHeaderType)
+	uint32_t messageLength = sizeof (TRAJHeaderType)
 		+ numberOfPointsInTraj * sizeof (TRAJPointType)
 		+ sizeof (TRAJFooterType);
-	TRAJData.header = buildISOHeader(inputHeader, debug);
+	TRAJData.header = buildISOHeader(MESSAGE_ID_TRAJ, inputHeader, messageLength, debug);
 	memcpy(p, &TRAJData.header, sizeof(TRAJData.header));
 	p += sizeof (HeaderType);
 

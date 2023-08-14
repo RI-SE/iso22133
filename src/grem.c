@@ -172,7 +172,7 @@ enum ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
 /*!
  * \brief encodeGREMMessage Fills a GREM struct with relevant data fields,
  *		and corresponding value IDs and content lengths
- * \param inputHeader data to create header with - Only use transmitterID, receiverID and messageCounter
+ * \param inputHeader data to create header with
  * \param gremObjectData Struct containing relevant GREM data
  * \param gremDataBuffer Data buffer to which message is to be printed
  * \param bufferLength Available memory in data buffer
@@ -180,7 +180,7 @@ enum ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeGREMMessage(
-		HeaderType *inputHeader,
+		MessageHeaderType *inputHeader,
 		const GeneralResponseMessageType* gremObjectData,
 		char* gremDataBuffer,
 		const size_t bufferLength,
@@ -205,9 +205,7 @@ ssize_t encodeGREMMessage(
 	}
 
 	// Construct header
-	inputHeader->messageID = MESSAGE_ID_GREM;
-	inputHeader->messageLength = sizeof (GREMData);
-	GREMData.header = buildISOHeader(inputHeader, debug);
+	GREMData.header = buildISOHeader(MESSAGE_ID_GREM, inputHeader, sizeof (GREMData), debug);
 	memcpy(p, &GREMData.header, sizeof (GREMData.header));
 	p += sizeof (GREMData.header);
 	remainingBytes -= sizeof (GREMData.header);
