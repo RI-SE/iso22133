@@ -34,33 +34,38 @@ typedef enum {
 } TestModeType;
 
 /*! OSEM settings */
+//Extracted to be swig compatible
 typedef struct {
-	struct {
-		uint32_t transmitter;
-		uint32_t subTransmitter;
-		uint32_t controlCentre;
-	} desiredID;
+	uint32_t transmitter;
+	uint32_t subTransmitter;
+	uint32_t controlCentre;
+} OSEMIds;
+typedef struct {
+	double_t position_m;
+	double_t lateral_m;
+	double_t yaw_rad;
+} OSEMDeviations;
+typedef struct {
+	double_t monr;
+	double_t monr2;
+	double_t heab;
+} OSEMMonrRate; 
+typedef struct {
+		uint32_t ip;
+		uint16_t port;
+} OSEMTimeServer;
+typedef struct {
+	OSEMIds desiredID;
 	GeographicPositionType coordinateSystemOrigin;
 	double coordinateSystemRotation_rad;
 	CoordinateSystemType coordinateSystemType;
 	struct timeval currentTime;
-	struct {
-		double_t position_m;
-		double_t lateral_m;
-		double_t yaw_rad;
-	} maxDeviation;
+	OSEMDeviations maxDeviation;
 	double_t minRequiredPositioningAccuracy_m;
 	TestModeType testMode;
 	struct timeval heabTimeout;
-	struct {
-		double_t monr;
-		double_t monr2;
-		double_t heab;
-	} rate;
-	struct {
-		uint32_t ip;
-		uint16_t port;
-	} timeServer;
+	OSEMMonrRate rate;
+	OSEMTimeServer timeServer;
 } ObjectSettingsType;
 
 /*! ISO message constants */
