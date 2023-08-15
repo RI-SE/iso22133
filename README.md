@@ -63,18 +63,18 @@ To use the encoders and decoders in other languages than C/C++, use the below pr
     ```
     sudo apt install swig
     ```
-#### Python
-2. Start your python virtual environment or use your base environment at your own risk.
-3. Start terminal and move to iso22133 folder to the setup.py file folder.
-4. Run the following command (it will build the python extension): 
-    ```
-    python setup.py build_ext
-    ```
-5. Now install the extension to your python virtual enviroment or add the generated .so file to your path in .bashrc(.zshrc)
-6. For installation run in terminal:
-    ```
-    python setup.py install
-    ```
+### Build with SWIG for Python
+In the build directory, remove old content, if needed, then:
+```
+cmake -DWITH_SWIG=TRUE -DSWIG_WITH_PYTHON=TRUE ..
+make
+```
+
+If you want it installed on the local machine:
+```
+sudo make install
+```
+
 #### Java 
 1. Make sure you have Java JDK is installed. 
 2. Make sure the iso22133.i file includes the line %javaconst(1)
