@@ -180,7 +180,7 @@ enum ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeGREMMessage(
-		MessageHeaderType *inputHeader,
+		const MessageHeaderType *inputHeader,
 		const GeneralResponseMessageType* gremObjectData,
 		char* gremDataBuffer,
 		const size_t bufferLength,

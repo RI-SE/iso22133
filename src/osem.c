@@ -25,7 +25,7 @@
  * \return Number of bytes written to the buffer, or -1 in case of an error
  */
 ssize_t encodeOSEMMessage(
-		MessageHeaderType *inputHeader,	
+		const MessageHeaderType *inputHeader,	
 		const ObjectSettingsType* objectSettings,
 		char *osemDataBuffer,
 		const size_t bufferLength,

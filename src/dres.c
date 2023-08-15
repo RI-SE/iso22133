@@ -16,7 +16,7 @@
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeDRESMessage(
-	MessageHeaderType *inputHeader,
+	const MessageHeaderType *inputHeader,
 	const TestObjectDiscoveryType *testObjectDiscoveryData,
 	char *dresDataBuffer,
 	const size_t bufferLength,

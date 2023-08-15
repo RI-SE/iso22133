@@ -15,7 +15,7 @@
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeOSTMMessage(
-	MessageHeaderType *inputHeader,
+	const MessageHeaderType *inputHeader,
 	const enum ObjectCommandType command,
 	char *ostmDataBuffer,
 	const size_t bufferLength,

@@ -29,7 +29,7 @@ static DebugStrings_t TRAJInfoDescription = 		{"Trajectory info",	"",	&printU8};
  *		EMSGSIZE	if trajectory name is too long
  */
 ssize_t encodeTRAJMessageHeader(
-	MessageHeaderType *inputHeader,
+	const MessageHeaderType *inputHeader,
 	const uint16_t trajectoryID,
 	const TrajectoryInfoType trajectoryInfo,
 	const char* trajectoryName,

@@ -14,7 +14,7 @@
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeDREQMessage(MessageHeaderType *inputHeader,
+ssize_t encodeDREQMessage(const MessageHeaderType *inputHeader,
 	char *dreqDataBuffer,
 	const size_t bufferLength,
 	const char debug)

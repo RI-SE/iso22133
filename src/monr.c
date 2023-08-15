@@ -21,7 +21,7 @@
  * \param debug Flag for enabling of debugging
  * \return Value according to ::ISOMessageReturnValue
  */
-ssize_t encodeMONRMessage(MessageHeaderType *inputHeader,
+ssize_t encodeMONRMessage(const MessageHeaderType *inputHeader,
 						  const struct timeval *objectTime, const CartesianPosition position,
 						  const SpeedType speed, const AccelerationType acceleration,
 						  const unsigned char driveDirection, const unsigned char objectState,

@@ -582,7 +582,7 @@ enum ISOMessageID getISOMessageType(const char *messageData, const size_t length
  * \param debug Flag for enabling debugging
  * \return number of bytes written to the data buffer, or -1 if an error occurred
  */
-ssize_t encodeSTRTMessage(MessageHeaderType *inputHeader, const StartMessageType* startData, char *strtDataBuffer,
+ssize_t encodeSTRTMessage(const MessageHeaderType *inputHeader, const StartMessageType* startData, char *strtDataBuffer,
 						  const size_t bufferLength, const char debug) {
 	STRTType STRTData;
 
@@ -825,7 +825,7 @@ enum ISOMessageReturnValue convertSTRTToHostRepresentation(
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeHEABMessage(MessageHeaderType *inputHeader, const struct timeval *heabTime, const enum ControlCenterStatusType status,
+ssize_t encodeHEABMessage(const MessageHeaderType *inputHeader, const struct timeval *heabTime, const enum ControlCenterStatusType status,
 						  char *heabDataBuffer, const size_t bufferLength, const char debug) {
 
 	HEABType HEABData;
@@ -1237,7 +1237,7 @@ enum ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCMMData,
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeRCMMMessage(MessageHeaderType *inputHeader, const RemoteControlManoeuvreMessageType* rcmmData,
+ssize_t encodeRCMMMessage(const MessageHeaderType *inputHeader, const RemoteControlManoeuvreMessageType* rcmmData,
 		char* rcmmDataBuffer,
 		const size_t bufferLength,
 		const char debug) {
@@ -1381,7 +1381,7 @@ ssize_t encodeRCMMMessage(MessageHeaderType *inputHeader, const RemoteControlMan
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of an error
  */
-ssize_t encodeSYPMMessage(MessageHeaderType *inputHeader, const struct timeval synchronizationTime, const struct timeval freezeTime,
+ssize_t encodeSYPMMessage(const MessageHeaderType *inputHeader, const struct timeval synchronizationTime, const struct timeval freezeTime,
 						  char *sypmDataBuffer, const size_t bufferLength, const char debug) {
  
 	SYPMType SYPMData;
@@ -1441,7 +1441,7 @@ ssize_t encodeSYPMMessage(MessageHeaderType *inputHeader, const struct timeval s
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of an error
  */
-ssize_t encodeMTSPMessage(MessageHeaderType *inputHeader, const struct timeval *estSyncPointTime, char *mtspDataBuffer,
+ssize_t encodeMTSPMessage(const MessageHeaderType *inputHeader, const struct timeval *estSyncPointTime, char *mtspDataBuffer,
 						  const size_t bufferLength, const char debug) {
 	MTSPType MTSPData;
 
@@ -1499,7 +1499,7 @@ ssize_t encodeMTSPMessage(MessageHeaderType *inputHeader, const struct timeval *
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeTRCMMessage(MessageHeaderType *inputHeader, const uint16_t * triggerID, const enum TriggerType_t * triggerType,
+ssize_t encodeTRCMMessage(const MessageHeaderType *inputHeader, const uint16_t * triggerID, const enum TriggerType_t * triggerType,
 						  const enum TriggerTypeParameter_t * param1, const enum TriggerTypeParameter_t * param2,
 						  const enum TriggerTypeParameter_t * param3, char *trcmDataBuffer,
 						  const size_t bufferLength, const char debug) {
@@ -1599,7 +1599,7 @@ ssize_t encodeTRCMMessage(MessageHeaderType *inputHeader, const uint16_t * trigg
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeACCMMessage(MessageHeaderType *inputHeader, const uint16_t * actionID, const enum ActionType_t * actionType,
+ssize_t encodeACCMMessage(const MessageHeaderType *inputHeader, const uint16_t * actionID, const enum ActionType_t * actionType,
 						  const enum ActionTypeParameter_t * param1, const enum ActionTypeParameter_t * param2,
 						  const enum ActionTypeParameter_t * param3, char *accmDataBuffer,
 						  const size_t bufferLength, const char debug) {
@@ -1692,7 +1692,7 @@ ssize_t encodeACCMMessage(MessageHeaderType *inputHeader, const uint16_t * actio
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeEXACMessage(MessageHeaderType *inputHeader, const uint16_t * actionID, const struct timeval *executionTime,
+ssize_t encodeEXACMessage(const MessageHeaderType *inputHeader, const uint16_t * actionID, const struct timeval *executionTime,
 						  char *exacDataBuffer, const size_t bufferLength, const char debug) {
 
 	EXACType EXACData;
@@ -1755,7 +1755,7 @@ ssize_t encodeEXACMessage(MessageHeaderType *inputHeader, const uint16_t * actio
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeINSUPMessage(MessageHeaderType *inputHeader, const enum SupervisorCommandType command, char *insupDataBuffer,
+ssize_t encodeINSUPMessage(const MessageHeaderType *inputHeader, const enum SupervisorCommandType command, char *insupDataBuffer,
 						   const size_t bufferLength, const char debug) {
 	INSUPType INSUPData;
 
@@ -1803,7 +1803,7 @@ ssize_t encodeINSUPMessage(MessageHeaderType *inputHeader, const enum Supervisor
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodePODIMessage(MessageHeaderType *inputHeader, const PeerObjectInjectionType* peerObjectData, 
+ssize_t encodePODIMessage(const MessageHeaderType *inputHeader, const PeerObjectInjectionType* peerObjectData, 
 		char* podiDataBuffer,
 		const size_t bufferLength,
 		const char debug) {
@@ -2392,7 +2392,7 @@ ssize_t decodeOPROMessage(
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeOPROMessage(
-		MessageHeaderType *inputHeader,
+		const MessageHeaderType *inputHeader,
 		const ObjectPropertiesType* objectPropertiesData,
 		char *oproDataBuffer,
 		const size_t bufferLength,
@@ -2493,7 +2493,7 @@ ssize_t encodeOPROMessage(
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeFOPRMessage(
-		MessageHeaderType *inputHeader,
+		const MessageHeaderType *inputHeader,
 		const ForeignObjectPropertiesType* foreignObjectPropertiesData,
 		char *foprDataBuffer,
 		const size_t bufferLength,
@@ -2890,7 +2890,7 @@ ssize_t decodeFOPRMessage(
  * \param debug Flag for enabling debugging
  * \return number of bytes written to the data buffer, or -1 if an error occurred
  */
-ssize_t encodeGDRMMessage(MessageHeaderType *inputHeader, const GdrmMessageDataType *gdrmData, char *gdrmDataBuffer, const size_t bufferLength,
+ssize_t encodeGDRMMessage(const MessageHeaderType *inputHeader, const GdrmMessageDataType *gdrmData, char *gdrmDataBuffer, const size_t bufferLength,
 						  const char debug) {
 
 	 GDRMType GDRMData;
@@ -3055,7 +3055,7 @@ ssize_t encodeGDRMMessage(MessageHeaderType *inputHeader, const GdrmMessageDataT
  * \param debug Flag for enabling debugging
  * \return number of bytes written to the data buffer, or -1 if an error occurred
  */
-ssize_t encodeDCTIMessage(MessageHeaderType *inputHeader, const DctiMessageDataType *dctiData,
+ssize_t encodeDCTIMessage(const MessageHeaderType *inputHeader, const DctiMessageDataType *dctiData,
 						char *dctiDataBuffer, const size_t bufferLength, const char debug) {
 
 	DCTIType DCTIData;
@@ -3272,7 +3272,7 @@ enum ISOMessageReturnValue convertDCTIToHostRepresentation(DCTIType* DCTIData,
  * \param debug Flag for enabling debugging
  * \return number of bytes written to the data buffer, or -1 if an error occurred
  */
-ssize_t encodeRDCAMessage(MessageHeaderType *inputHeader,
+ssize_t encodeRDCAMessage(const MessageHeaderType *inputHeader,
 						  const RequestControlActionType *rdcaData,
 						  char *rdcaDataBuffer,
 						  const size_t bufferLength, 
@@ -3694,7 +3694,7 @@ double_t mapHostHeadingToISOHeading(const double_t hostHeading_rad) {
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeDCMMMessage(MessageHeaderType *inputHeader,
+ssize_t encodeDCMMMessage(const MessageHeaderType *inputHeader,
 		const RemoteControlManoeuvreMessageType* command,
 		char* dcmmDataBuffer,
 		const size_t bufferLength,
