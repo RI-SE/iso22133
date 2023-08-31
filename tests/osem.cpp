@@ -5,13 +5,14 @@ extern "C" {
 }
 #include <string>
 #include <sstream>
+#include "testdefines.h"
 
 class EncodeOSEM : public ::testing::Test
 {
 protected:
 	EncodeOSEM() {
 		// IDs
-		settings.desiredID.transmitter = 0x1234;
+		settings.desiredID.transmitter = TEST_RECEIVER_ID_2;
 		settings.desiredID.subTransmitter = 0x5678;
 		// Origin
 		settings.coordinateSystemOrigin.latitude_deg = 12.3456789012;
@@ -44,9 +45,9 @@ protected:
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
 		MessageHeaderType inputHeader;
-		inputHeader.receiverID = 0x1234;
+		inputHeader.receiverID = TEST_RECEIVER_ID_2;
 		inputHeader.messageCounter = 0;
-		inputHeader.transmitterID = 0x9ABC;
+		inputHeader.transmitterID = TEST_TRANSMITTER_ID_2;
 		auto res = encodeOSEMMessage(
 			&inputHeader,
 			&settings, encodeBuffer,

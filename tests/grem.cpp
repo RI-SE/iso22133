@@ -6,6 +6,7 @@ extern "C"
 }
 #include <string>
 #include <sstream>
+#include "testdefines.h"
 
 class EncodeGREM : public ::testing::Test
 {
@@ -21,8 +22,8 @@ protected:
 		
 		memset(&header, 0, sizeof(header));
 		header.receiverID = 0;
-		header.messageCounter = 0x000000F0;
-		header.transmitterID = 0x12345678;
+		header.messageCounter = TEST_MESSAGE_COUNTER_15;
+		header.transmitterID = TEST_TRANSMITTER_ID_1;
 		auto res = encodeGREMMessage(&header, &grem, encodeBuffer,
 									 sizeof(encodeBuffer), true);
 		ASSERT_GT(res, 0);
