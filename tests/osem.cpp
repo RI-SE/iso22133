@@ -48,6 +48,11 @@ protected:
 			sizeof(encodeBuffer), false);
 		ASSERT_GT(res, 0);
 	}
+	void TearDown() override
+	{
+		setTransmitterID(0xFFFF);
+	}
+	
 	ObjectSettingsType settings;
 	char encodeBuffer[1024];
 	char* id = encodeBuffer + 18; // skip header

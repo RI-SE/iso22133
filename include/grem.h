@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "iso22133.h"
+#include "defines.h"
 #include "header.h"
 #include "footer.h"
 
