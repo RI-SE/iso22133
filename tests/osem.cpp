@@ -50,7 +50,7 @@ protected:
 	}
 	void TearDown() override
 	{
-		setTransmitterID(0xFFFF);
+		setTransmitterID(0xFFFFFFFF);
 	}
 	
 	ObjectSettingsType settings;

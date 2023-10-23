@@ -219,7 +219,7 @@ ssize_t decodeTRAJMessageHeader(
 		printf("\tTrajectory name: %s\n", TRAJHeaderData.trajectoryName);
 		printf("\tTrajectory info: %u\n", TRAJHeaderData.trajectoryInfo);
 		printf("\tTRAJ length: %ld bytes\n", TRAJHeaderData.header.messageLength
-			- sizeof(TRAJHeaderType) - sizeof(TRAJFooterType) + sizeof(FooterType));
+			- sizeof(TRAJHeaderType)  + sizeof(HeaderType) - sizeof(TRAJFooterType) + sizeof(FooterType));
 	}
 
 	// Fill output struct with parsed data
@@ -244,7 +244,7 @@ enum ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType*
 	trajectoryHeaderData->trajectoryID = TRAJHeaderData->trajectoryID;
 	memcpy(trajectoryHeaderData->trajectoryName, TRAJHeaderData->trajectoryName, sizeof(TRAJHeaderData->trajectoryName));
 	trajectoryHeaderData->trajectoryInfo = TRAJHeaderData->trajectoryInfo;
-	trajectoryHeaderData->trajectoryLength = trajectoryLength - sizeof(TRAJHeaderType) - sizeof(TRAJFooterType) + sizeof(FooterType);
+	trajectoryHeaderData->trajectoryLength = trajectoryLength - sizeof(TRAJHeaderType) + sizeof(HeaderType) - sizeof(TRAJFooterType) + sizeof(FooterType);
 	trajectoryHeaderData->nWaypoints = trajectoryHeaderData->trajectoryLength/sizeof(TRAJPointType);
 
 	return MESSAGE_OK;
