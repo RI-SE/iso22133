@@ -82,10 +82,10 @@ protected:
 	DecodeTRAJHeader() {
 		decodeBuffer[0] = 0x7F;
 		decodeBuffer[1] = 0x7E;	// preamble
-		decodeBuffer[2] = 0x52;
-		decodeBuffer[3] = 0x00;
+		decodeBuffer[2] = 0x1E;
+		decodeBuffer[3] = 0x03;
 		decodeBuffer[4] = 0x00;
-		decodeBuffer[5] = 0x00;	 // TODO Message length
+		decodeBuffer[5] = 0x00;	 // Message length 0x31E (sizeof(TRAJHeaderType) + sizeof(TRAJPointType) * 21 + sizeof(TRAJFooterType)) - (sizeof(TRAJHeaderType) + sizeof(HeaderType)) - (sizeof(TRAJFooterType) + sizeof(FooterType));
 		decodeBuffer[6] = 0x02;	 // Acknowledge protocol version
 		decodeBuffer[7] = 0x34;
 		decodeBuffer[8] = 0x12;
@@ -145,7 +145,7 @@ protected:
 			&header,
 			decodeBuffer,
 			sizeof(decodeBuffer),
-			false);
+			true);
 		ASSERT_GT(res, 0);
 	}
 
@@ -169,6 +169,11 @@ TEST_F(DecodeTRAJHeader, Name)
 	for (int i = 17; i < 64; i++) {
 		EXPECT_EQ(header.trajectoryName[i], '\0');
 	}
+}
+
+TEST_F(DecodeTRAJHeader, nWaypoints)
+{
+	EXPECT_EQ(header.nWaypoints, 21);
 }
 
 class EncodeTRAJPoint : public ::testing::Test
