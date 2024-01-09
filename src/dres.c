@@ -4,7 +4,6 @@
 #include <errno.h>
 #include "iso22133.h"
 #include "dres.h"
-#include "iohelpers.h"
 
 /*!
  * \brief encodeDRESMessage Constructs an ISO DRES message based on specified command
