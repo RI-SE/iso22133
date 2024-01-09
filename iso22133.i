@@ -41,4 +41,3 @@ typedef long int ssize_t;
 %include "osem.h"
 %include "ostm.h"
 %include "timeconversions.h"
-// %include "traj.h"
