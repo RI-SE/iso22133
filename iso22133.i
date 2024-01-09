@@ -15,7 +15,6 @@
 #include "osem.h"
 #include "ostm.h"
 #include "timeconversions.h"
-// #include "traj.h"
 #define SWIG_PYTHON_STRICT_BYTE_CHAR
 %}
 
