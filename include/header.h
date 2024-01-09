@@ -17,7 +17,7 @@ typedef struct {
 	uint32_t receiverID;
 	uint8_t messageCounter;
 	uint16_t messageID;
-} HeaderType;;
+} HeaderType;
 #pragma pack(pop)
 
 enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t length,
