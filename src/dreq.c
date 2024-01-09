@@ -4,7 +4,6 @@
 #include <errno.h>
 #include "iso22133.h"
 #include "dreq.h"
-#include "iohelpers.h"
 
 /*!
  * \brief encodeDREQMessage Constructs an ISO DREQ message based on specified command (DREQ contains no message data)

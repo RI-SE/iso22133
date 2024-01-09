@@ -5,7 +5,6 @@
 #include "grem.h"
 #include "iohelpers.h"
 
-
 //! GREM field descriptions
 static DebugStrings_t GREMSReceivedHeaderTransmitterDescription = {"Received Header Transmitter", "", &printU32};
 static DebugStrings_t GREMSReceivedHeaderMessageIDDescription = {"Received Header Message ID", "", &printU16};
