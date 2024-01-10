@@ -54,6 +54,7 @@ protected:
 			sizeof(encodeBuffer), false);
 		ASSERT_GT(res, 0);
 	}
+	
 	ObjectSettingsType settings;
 	char encodeBuffer[1024];
 	char* id = encodeBuffer + 18; // skip header

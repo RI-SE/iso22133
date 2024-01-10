@@ -87,10 +87,10 @@ protected:
 	DecodeTRAJHeader() {
 		decodeBuffer[0] = 0x7F;
 		decodeBuffer[1] = 0x7E;	// preamble
-		decodeBuffer[2] = 0x52;
-		decodeBuffer[3] = 0x00;
+		decodeBuffer[2] = 0x1E;
+		decodeBuffer[3] = 0x03;
 		decodeBuffer[4] = 0x00;
-		decodeBuffer[5] = 0x00;	 // TODO Message length
+		decodeBuffer[5] = 0x00;	 // Message length 0x31E (sizeof(TRAJHeaderType) + sizeof(TRAJPointType) * 21 + sizeof(TRAJFooterType)) - (sizeof(TRAJHeaderType) + sizeof(HeaderType)) - (sizeof(TRAJFooterType) + sizeof(FooterType));
 		decodeBuffer[6] = 0x02;	 // Acknowledge protocol version
 		decodeBuffer[7] = 0x34;
 		decodeBuffer[8] = 0x12;
@@ -145,11 +145,12 @@ protected:
 
 	void SetUp() override
 	{
+		memset(&header, 0, sizeof(header));
 		auto res = decodeTRAJMessageHeader(
 			&header,
 			decodeBuffer,
 			sizeof(decodeBuffer),
-			false);
+			true);
 		ASSERT_GT(res, 0);
 	}
 
@@ -173,6 +174,11 @@ TEST_F(DecodeTRAJHeader, Name)
 	for (int i = 17; i < 64; i++) {
 		EXPECT_EQ(header.trajectoryName[i], '\0');
 	}
+}
+
+TEST_F(DecodeTRAJHeader, nWaypoints)
+{
+	EXPECT_EQ(header.nWaypoints, 21);
 }
 
 class EncodeTRAJPoint : public ::testing::Test
@@ -457,53 +463,62 @@ protected:
 	}
 	void SetUp() override
 	{
+        auto trajectoryID = 0x123;
+		auto trajectoryVersion = TRAJECTORY_INFO_RELATIVE_TO_OBJECT;
+		auto trajectoryName = "some description";
+		auto nameLength = strlen(trajectoryName)-1;
+		auto numberOfPointsInTraj = 3;
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
-		auto p = encodeBuffer;
+		auto points = encodeBuffer;
+		auto bufferLength = sizeof(encodeBuffer);
+		bool debug = false;
+
 		MessageHeaderType inputHeader;
-		inputHeader.receiverID = 0;
-		inputHeader.messageCounter = 0;
-		inputHeader.transmitterID = 0x000000FF;
+		memset(&inputHeader, 0, sizeof(inputHeader));
+		inputHeader.transmitterID = 0xFFFFFFFF;
+
 		auto offset = encodeTRAJMessageHeader(
 			&inputHeader,
-			0x123,
+			trajectoryID,
 			TRAJECTORY_INFO_RELATIVE_TO_OBJECT,
-			"some description",
-			17,
-			3,
-			p,
+			trajectoryName,
+			nameLength,
+			numberOfPointsInTraj,
+			points,
 			sizeof(encodeBuffer),
 			false);
 		ASSERT_GT(offset, 0);
-		p += offset;
+		points += offset;
 		for (int i = 0; i < 3; i++) {
 			struct timeval tv = {1,2};
 			CartesianPosition pos = {1,2,3,4,true,true,true,true,true};
 			SpeedType spd = {1,2,true,true};
 			AccelerationType acc = {1,2,true,true};
+			float curvature = 12.34;
 			offset = encodeTRAJMessagePoint(
 				&tv,
 				pos,
 				spd,
 				acc,
-				12.34,
-				p,
-				sizeof(encodeBuffer) - (p-encodeBuffer),
+				curvature,
+				points,
+				sizeof(encodeBuffer) - (points-encodeBuffer),
 				false);
 			ASSERT_GT(offset, 0);
-			p += offset;
+			points += offset;
 		}
 		offset = encodeTRAJMessageFooter(
-			p,
-			sizeof(encodeBuffer) - (p - encodeBuffer),
+			points,
+			sizeof(encodeBuffer) - (points - encodeBuffer),
 			false
 		);
 		ASSERT_GT(offset, 0);
-		p += offset;
-		// Run this to view raw data for which to generate CRC
-		// for (int i = 0; i < p - encodeBuffer; ++i) {
-		// 	printf("%02x ",(uint8_t)encodeBuffer[i]);
-		// }
-		// printf("\n");
+		points += offset;
+		printf("Raw data for CRC:\n");
+		for (int i = 0; i < points - encodeBuffer - 2; ++i) {
+			printf("%02x ",(uint8_t)encodeBuffer[i]);
+		}
+		printf("\n");
 	}
 
 	char encodeBuffer[1024];
@@ -519,8 +534,8 @@ TEST_F(EncodeTRAJFooter, EndOfTransmission) {
 	EXPECT_EQ(lineInfo[4], '\x04');
 }
 
-// https://crccalc.com/?crc=7f 7e ba 00 00 00 02 ff 00 00 00 00 00 00 00 00 01 00 01 01 02 00 23 01 04 01 01 00 01 02 01 40 00 73 6f 6d 65 20 64 65 73 63 72 69 70 74 69 6f 6e 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 1e 00 e8 03 00 00 e8 03 00 00 d0 07 00 00 b8 0b 00 00 86 59 64 00 c8 00 e8 03 d0 07 a4 70 45 41 01 00 1e 00 e8 03 00 00 e8 03 00 00 d0 07 00 00 b8 0b 00 00 86 59 64 00 c8 00 e8 03 d0 07 a4 70 45 41 01 00 1e 00 e8 03 00 00 e8 03 00 00 d0 07 00 00 b8 0b 00 00 86 59 64 00 c8 00 e8 03 d0 07 a4 70 45 41 53 00 01 00 04&method=crc16&datatype=hex&outtype=0
+// https://crccalc.com/?crc=7f 7e ba 00 00 00 02 ff ff ff ff 00 00 00 00 00 01 00 01 01 02 00 23 01 04 01 01 00 01 02 01 40 00 73 6f 6d 65 20 64 65 73 63 72 69 70 74 69 6f 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 1e 00 e8 03 00 00 e8 03 00 00 d0 07 00 00 b8 0b 00 00 86 59 64 00 c8 00 e8 03 d0 07 a4 70 45 41 01 00 1e 00 e8 03 00 00 e8 03 00 00 d0 07 00 00 b8 0b 00 00 86 59 64 00 c8 00 e8 03 d0 07 a4 70 45 41 01 00 1e 00 e8 03 00 00 e8 03 00 00 d0 07 00 00 b8 0b 00 00 86 59 64 00 c8 00 e8 03 d0 07 a4 70 45 41 53 00 01 00 04&method=crc16&datatype=hex&outtype=0// CRC-16/XMODEM
 TEST_F(EncodeTRAJFooter, Crc) {
-	EXPECT_EQ(crc[0], '\x34');
-	EXPECT_EQ(crc[1], '\x21');
+	EXPECT_EQ(crc[0], '\x3D');
+	EXPECT_EQ(crc[1], '\xB5');
 }

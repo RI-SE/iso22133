@@ -75,12 +75,6 @@ typedef struct {
 	OSEMTimeServer timeServer;
 } ObjectSettingsType;
 
-/*! ISO message constants */
-enum ISOConstantsType {
-	ISO_TRAJ_HEADER_SIZE = 91,
-	ISO_TRAJ_WAYPOINT_SIZE = 70
-};
-
 typedef enum {
 	TRAJECTORY_INFO_RELATIVE_TO_OBJECT = 1,
 	TRAJECTORY_INFO_RELATIVE_TO_ORIGIN = 2,

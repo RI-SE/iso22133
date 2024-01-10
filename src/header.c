@@ -130,12 +130,12 @@ enum ISOMessageReturnValue decodeISOHeader(
 
 	if (debug) {
 		printf("syncWord = 0x%x\n", HeaderData->syncWord);
-		printf("messageLength = 0x%x\n", HeaderData->messageLength);
-		printf("ackReqProtVer = 0x%x\n", HeaderData->ackReqProtVer);
-		printf("transmitterID = 0x%x\n", HeaderData->transmitterID);
-		printf("receiverID = 0x%x\n", HeaderData->receiverID);
-		printf("messageCounter = 0x%x\n", HeaderData->messageCounter);
-		printf("messageID = 0x%x\n", HeaderData->messageID);
+		printf("messageLength = %d bytes, [0x%x]\n", HeaderData->messageLength, HeaderData->messageLength);
+		printf("ackReqProtVer = %d, [0x%x]\n", HeaderData->ackReqProtVer, HeaderData->ackReqProtVer);
+		printf("transmitterID = %d, [0x%x]\n", HeaderData->transmitterID, HeaderData->transmitterID);
+		printf("receiverID = %d, [0x%x]\n", HeaderData->receiverID, HeaderData->receiverID);
+		printf("messageCounter = %d, [0x%x]\n", HeaderData->messageCounter, HeaderData->messageCounter);
+		printf("messageID = %d, [0x%x]\n", HeaderData->messageID, HeaderData->messageID);
 	}
 
 	return retval;
