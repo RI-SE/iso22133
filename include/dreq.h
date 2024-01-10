@@ -1,4 +1,8 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "header.h"
 #include "footer.h"
 #include <stdint.h>
@@ -12,3 +16,7 @@ typedef struct {
 } DREQType;						//20 bytes
 
 #pragma pack(pop)
+
+#ifdef __cplusplus
+}
+#endif

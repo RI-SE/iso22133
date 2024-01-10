@@ -5,15 +5,15 @@ extern "C" {
 }
 #include <string>
 #include <sstream>
+#include "testdefines.h"
 
 class EncodeOSEM : public ::testing::Test
 {
 protected:
 	EncodeOSEM() {
 		// IDs
-		settings.desiredID.transmitter = 0x1234;
+		settings.desiredID.transmitter = TEST_RECEIVER_ID_2;
 		settings.desiredID.subTransmitter = 0x5678;
-		setTransmitterID(0x9ABC);
 		// Origin
 		settings.coordinateSystemOrigin.latitude_deg = 12.3456789012;
 		settings.coordinateSystemOrigin.longitude_deg = 23.4567890123;
@@ -44,13 +44,15 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
-		auto res = encodeOSEMMessage(&settings, encodeBuffer,
+		MessageHeaderType inputHeader;
+		inputHeader.receiverID = TEST_RECEIVER_ID_2;
+		inputHeader.messageCounter = 0;
+		inputHeader.transmitterID = TEST_TRANSMITTER_ID_2;
+		auto res = encodeOSEMMessage(
+			&inputHeader,
+			&settings, encodeBuffer,
 			sizeof(encodeBuffer), false);
 		ASSERT_GT(res, 0);
-	}
-	void TearDown() override
-	{
-		setTransmitterID(0xFFFFFFFF);
 	}
 	
 	ObjectSettingsType settings;
@@ -287,7 +289,13 @@ TEST_F(EncodeOSEM, NoTimeServerStruct)
 	timeServer[1] = 0;
 	timeServer[2] = 0;
 	timeServer[3] = 0;
-	auto res = encodeOSEMMessage(&settings, encodeBuffer,
+	MessageHeaderType inputHeader;
+	inputHeader.receiverID = 0;
+	inputHeader.messageCounter = 0;
+	inputHeader.transmitterID = 0;
+	auto res = encodeOSEMMessage(
+		&inputHeader,
+		&settings, encodeBuffer,
 		sizeof(encodeBuffer), false);
 	ASSERT_GT(res, 0);
 	union {
@@ -334,7 +342,7 @@ protected:
 		decodeBuffer[26] = 0xEF;
 		decodeBuffer[27] = 0xCD;
 		decodeBuffer[28] = 0x00;
-		decodeBuffer[29] = 0x00;	 // Sub device ID
+		decodeBuffer[29] = 0x00;	 // Sub device header
 		decodeBuffer[30] = 0x34;
 		decodeBuffer[31] = 0x12;
 		decodeBuffer[32] = 0x00;

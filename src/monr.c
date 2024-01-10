@@ -5,9 +5,9 @@
 #include "timeconversions.h"
 #include "defines.h"
 
-
 /*!
  * \brief encodeMONRMessage Constructs an ISO MONR message based on object dynamics data from trajectory file or data generated in a simulator
+ * \param inputHeader data to create header
  * \param objectTime Time of the object
  * \param position Position of the object in relation to test origin (includes heading/yaw)
  * \param speed Speed of the object (longitudinal and lateral)
@@ -21,7 +21,8 @@
  * \param debug Flag for enabling of debugging
  * \return Value according to ::ISOMessageReturnValue
  */
-ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosition position,
+ssize_t encodeMONRMessage(const MessageHeaderType *inputHeader,
+						  const struct timeval *objectTime, const CartesianPosition position,
 						  const SpeedType speed, const AccelerationType acceleration,
 						  const unsigned char driveDirection, const unsigned char objectState,
 						  const unsigned char readyToArm, const unsigned char objectErrorState,
@@ -43,7 +44,7 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
 	}
 
 	// Constuct the header
-	MONRData.header = buildISOHeader(MESSAGE_ID_MONR, sizeof (MONRType), debug);
+	MONRData.header = buildISOHeader(MESSAGE_ID_MONR, inputHeader, sizeof (MONRData), debug);
 
 	// Fill contents
 	MONRData.monrStructValueID = VALUE_ID_MONR_STRUCT;
@@ -175,7 +176,6 @@ ssize_t encodeMONRMessage(const struct timeval *objectTime, const CartesianPosit
  * \param monrDataBuffer Raw data to be decoded
  * \param bufferLength Number of bytes in buffer of raw data to be decoded
  * \param currentTime Current system time, used to guess GPS week of MONR message
- * \param objectID Optional output ID of object sending the parsed MONR data
  * \param monitorData Struct to be filled
  * \param debug Flag for enabling of debugging
  * \return Number of bytes decoded, or negative value according to ::ISOMessageReturnValue
@@ -184,7 +184,6 @@ ssize_t decodeMONRMessage(
 	const char *monrDataBuffer,
 	const size_t bufferLength,
 	const struct timeval currentTime,
-	uint32_t * objectID,
 	ObjectMonitorType * monitorData,
 	const char debug) {
 
@@ -203,7 +202,6 @@ ssize_t decodeMONRMessage(
 	}
 
 	memset(monitorData, 0, sizeof (*monitorData));
-	*objectID = 0;
 
 	// Decode ISO header
 	if ((retval = decodeISOHeader(p, bufferLength, &MONRData.header, debug)) != MESSAGE_OK) {
@@ -211,7 +209,7 @@ ssize_t decodeMONRMessage(
 		return retval;
 	}
 	p += sizeof (MONRData.header);
-	*objectID = MONRData.header.transmitterID;
+
 
 	// If message is not a MONR message, generate an error
 	if (MONRData.header.messageID != MESSAGE_ID_MONR) {

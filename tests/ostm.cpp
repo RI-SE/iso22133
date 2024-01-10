@@ -1,4 +1,5 @@
 #include "iso22133.h"
+#include "header.h"
 
 #include <gtest/gtest.h>
 
@@ -12,7 +13,12 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
+		MessageHeaderType inputHeader;
+		inputHeader.receiverID = 0;
+		inputHeader.messageCounter = 0;
+		inputHeader.transmitterID = 0;
 		auto res = encodeOSTMMessage(
+			&inputHeader,
 			OBJECT_COMMAND_ARM,
 			encodeBuffer,
 			sizeof(encodeBuffer),

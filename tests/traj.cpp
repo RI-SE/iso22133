@@ -9,8 +9,13 @@ protected:
 	void SetUp() override
 	{
 		char name[] = "some description";
+		MessageHeaderType inputHeader;
+		inputHeader.receiverID = 0;
+		inputHeader.messageCounter = 0;
+		inputHeader.transmitterID = 0;
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
 		auto res = encodeTRAJMessageHeader(
+			&inputHeader,
 			0x0123,
 			TRAJECTORY_INFO_RELATIVE_TO_ORIGIN,
 			name,
@@ -468,7 +473,12 @@ protected:
 		auto bufferLength = sizeof(encodeBuffer);
 		bool debug = false;
 
+		MessageHeaderType inputHeader;
+		memset(&inputHeader, 0, sizeof(inputHeader));
+		inputHeader.transmitterID = 0xFFFFFFFF;
+
 		auto offset = encodeTRAJMessageHeader(
+			&inputHeader,
 			trajectoryID,
 			TRAJECTORY_INFO_RELATIVE_TO_OBJECT,
 			trajectoryName,
@@ -504,11 +514,11 @@ protected:
 		);
 		ASSERT_GT(offset, 0);
 		points += offset;
-		// printf("Raw data for CRC:\n");
-		// for (int i = 0; i < points - encodeBuffer - 2; ++i) {
-		// 	printf("%02x ",(uint8_t)encodeBuffer[i]);
-		// }
-		// printf("\n");
+		printf("Raw data for CRC:\n");
+		for (int i = 0; i < points - encodeBuffer - 2; ++i) {
+			printf("%02x ",(uint8_t)encodeBuffer[i]);
+		}
+		printf("\n");
 	}
 
 	char encodeBuffer[1024];

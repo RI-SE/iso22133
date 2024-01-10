@@ -1,4 +1,9 @@
 #pragma once
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "header.h"
 #include "footer.h"
 #include "defines.h"
@@ -59,3 +64,7 @@ static enum ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHead
 				uint32_t trajectoryLength,	TrajectoryHeaderType* trajectoryHeaderData);
 static enum ISOMessageReturnValue convertTRAJPointToHostRepresentation(TRAJPointType* TRAJPointData,
 														TrajectoryWaypointType* wayPoint);
+
+#ifdef __cplusplus
+}
+#endif

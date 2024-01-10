@@ -1,5 +1,7 @@
 #pragma once
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <stdint.h>
 
 #include "iso22133.h"
@@ -96,3 +98,6 @@ typedef struct {
 void convertOSEMToHostRepresentation(
 		const OSEMType * OSEMData,
 		ObjectSettingsType * ObjectSettingsData);
+#ifdef __cplusplus
+}
+#endif

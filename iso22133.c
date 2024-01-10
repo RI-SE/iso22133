@@ -497,7 +497,6 @@ static DebugStrings_t DCTITransmitterIdDescription = {"TransmitterID",	"",		&pri
 
 #pragma pack(pop)
 
-
 // ************************** static function declarations ********************************************************
 
 static char isValidMessageID(const uint16_t id);
@@ -531,28 +530,6 @@ static enum ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCM
 		RemoteControlManoeuvreMessageType* rcmmData);
 static enum ISOMessageReturnValue convertSTRTToHostRepresentation(const STRTType * STRTData, const struct timeval* currentTime,
 		StartMessageType * startdata);
-
-
-// ************************** static variables ********************************************************************
-static uint32_t transmitterID = 0xFFFFFFFF;
-
-// ************************** function definitions ****************************************************************
-
-/*!
- * \brief setTransmitterID Sets the transmitter ID for subsequent constructed ISO messages
- * \param newTransmitterID Transmitter ID to be set
- */
-void setTransmitterID(const uint32_t newTransmitterID) {
-	transmitterID = newTransmitterID;
-}
-
-/*!
- * \brief getTransmitterID Get the configured transmitter ID
- * \return Transmitter ID
- */
-uint32_t getTransmitterID() {
-	return transmitterID;
-}
 
 
 /*!
@@ -596,18 +573,17 @@ enum ISOMessageID getISOMessageType(const char *messageData, const size_t length
 	}
 }
 
-
 /*!
  * \brief encodeSTRTMessage Constructs an ISO STRT message based on start time parameters
+ * \param inputHeader data to create header with
  * \param timeOfStart Time when test shall start, a value of NULL indicates that the time is not known
  * \param strtDataBuffer Data buffer in which to place encoded STRT message
  * \param bufferLength Size of data buffer in which to place encoded STRT message
  * \param debug Flag for enabling debugging
  * \return number of bytes written to the data buffer, or -1 if an error occurred
  */
-ssize_t encodeSTRTMessage(const StartMessageType* startData, char *strtDataBuffer,
+ssize_t encodeSTRTMessage(const MessageHeaderType *inputHeader, const StartMessageType* startData, char *strtDataBuffer,
 						  const size_t bufferLength, const char debug) {
-
 	STRTType STRTData;
 
 	memset(strtDataBuffer, 0, bufferLength);
@@ -618,7 +594,7 @@ ssize_t encodeSTRTMessage(const StartMessageType* startData, char *strtDataBuffe
 		return -1;
 	}
 
-	STRTData.header = buildISOHeader(MESSAGE_ID_STRT, sizeof (STRTType), debug);
+	STRTData.header = buildISOHeader(MESSAGE_ID_STRT, inputHeader, sizeof (STRTType), debug);
 
 	// Fill contents
 	STRTData.StartTimeValueIdU16 = VALUE_ID_STRT_GPS_QMS_OF_WEEK;
@@ -838,9 +814,9 @@ enum ISOMessageReturnValue convertSTRTToHostRepresentation(
 	return MESSAGE_OK;
 }
 
-
 /*!
  * \brief encodeHEABMessage Constructs an ISO HEAB message based on current control center status and system time
+ * \param inputHeader data to create header with
  * \param heabTime Timestamp to be placed in heab struct
  * \param status Current control center status according to ::ControlCenterStatusType. Entering an unaccepable value
  *	makes this parameter default to ABORT
@@ -849,7 +825,7 @@ enum ISOMessageReturnValue convertSTRTToHostRepresentation(
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeHEABMessage(const struct timeval *heabTime, const enum ControlCenterStatusType status,
+ssize_t encodeHEABMessage(const MessageHeaderType *inputHeader, const struct timeval *heabTime, const enum ControlCenterStatusType status,
 						  char *heabDataBuffer, const size_t bufferLength, const char debug) {
 
 	HEABType HEABData;
@@ -863,7 +839,7 @@ ssize_t encodeHEABMessage(const struct timeval *heabTime, const enum ControlCent
 	}
 
 	// Construct header
-	HEABData.header = buildISOHeader(MESSAGE_ID_HEAB, sizeof (HEABData), debug);
+	HEABData.header = buildISOHeader(MESSAGE_ID_HEAB, inputHeader, sizeof (HEABData), debug);
 
 	// Fill contents
 	HEABData.HEABStructValueID = VALUE_ID_HEAB_STRUCT;
@@ -903,7 +879,6 @@ ssize_t encodeHEABMessage(const struct timeval *heabTime, const enum ControlCent
 	return sizeof (HEABType);
 
 }
-
 
 /*!
  * \brief decodeHEABMessage Fills HEAB data elements from a buffer of raw data
@@ -1028,8 +1003,6 @@ enum ISOMessageReturnValue convertHEABToHostRepresentation(HEABType* HEABData,
 	return MESSAGE_OK;
 }
 
-
-
 /*!
  * \brief decodeRCMMessage Fills RCCM data elements from a buffer of raw data
  * \param rcmmDataBuffer Raw data to be decoded
@@ -1065,6 +1038,7 @@ ssize_t decodeRCMMMessage(
 		return retval;
 	}
 	p += sizeof (RCMMData.header);
+
 
 	// If message is not a RCMM message, generate an error
 	if (RCMMData.header.messageID != MESSAGE_ID_RCMM) {
@@ -1256,13 +1230,14 @@ enum ISOMessageReturnValue convertRCMMToHostRepresentation(RCMMType * RCMMData,
 /*!
  * \brief encodeRCMMMessage Fills an ISO RCMM struct with relevant data fields,
  *		and corresponding value IDs and content lengths
+ * \param inputHeader data to create header with
  * \param rcmmData Struct containing relevant RCMM data
  * \param rcmmDataBuffer Data buffer to which message is to be printed
  * \param bufferLength Available memory in data buffer
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeRCMMMessage(const RemoteControlManoeuvreMessageType* rcmmData,
+ssize_t encodeRCMMMessage(const MessageHeaderType *inputHeader, const RemoteControlManoeuvreMessageType* rcmmData,
 		char* rcmmDataBuffer,
 		const size_t bufferLength,
 		const char debug) {
@@ -1285,7 +1260,7 @@ ssize_t encodeRCMMMessage(const RemoteControlManoeuvreMessageType* rcmmData,
 		return -1;
 	}
 	// Construct header
-	RCMMData.header = buildISOHeader(MESSAGE_ID_RCMM, sizeof (RCMMData), debug);
+	RCMMData.header = buildISOHeader(MESSAGE_ID_RCMM, inputHeader, sizeof (RCMMData), debug);
 	memcpy(p, &RCMMData.header, sizeof (RCMMData.header));
 	p += sizeof (RCMMData.header);
 	remainingBytes -= sizeof (RCMMData.header);
@@ -1396,10 +1371,9 @@ ssize_t encodeRCMMMessage(const RemoteControlManoeuvreMessageType* rcmmData,
 	return p - rcmmDataBuffer;
 }
 
-
-
 /*!
  * \brief encodeSYPMMessage Fills an ISO SYPM struct with relevant data fields, and corresponding value IDs and content lengths
+ * \param inputHeader data to create header with
  * \param synchronizationTime Time along trajectory at which objects are to be synchronized
  * \param freezeTime Time along trajectory after which no further adaptation to the master is allowed
  * \param mtspDataBuffer Buffer to which SYPM message is to be written
@@ -1407,9 +1381,9 @@ ssize_t encodeRCMMMessage(const RemoteControlManoeuvreMessageType* rcmmData,
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of an error
  */
-ssize_t encodeSYPMMessage(const struct timeval synchronizationTime, const struct timeval freezeTime,
+ssize_t encodeSYPMMessage(const MessageHeaderType *inputHeader, const struct timeval synchronizationTime, const struct timeval freezeTime,
 						  char *sypmDataBuffer, const size_t bufferLength, const char debug) {
-
+ 
 	SYPMType SYPMData;
 
 	// If buffer too small to hold SYPM data, generate an error
@@ -1419,7 +1393,7 @@ ssize_t encodeSYPMMessage(const struct timeval synchronizationTime, const struct
 	}
 
 	// Construct header
-	SYPMData.header = buildISOHeader(MESSAGE_ID_SYPM, sizeof (SYPMData), debug);
+	SYPMData.header = buildISOHeader(MESSAGE_ID_SYPM, inputHeader, sizeof (SYPMData), debug);
 
 	// Fill contents
 	SYPMData.syncPointTimeValueID = VALUE_ID_SYPM_SYNC_POINT_TIME;
@@ -1460,15 +1434,15 @@ ssize_t encodeSYPMMessage(const struct timeval synchronizationTime, const struct
 
 /*!
  * \brief encodeMTSPMessage Fills an ISO MTSP struct with relevant data fields, and corresponding value IDs and content lengths
+ * \param inputHeader data to create header with
  * \param estSyncPointTime Estimated time when the master object will reach the synchronization point
  * \param mtspDataBuffer Buffer to which MTSP message is to be written
  * \param bufferLength Size of buffer to which MTSP message is to be written
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of an error
  */
-ssize_t encodeMTSPMessage(const struct timeval *estSyncPointTime, char *mtspDataBuffer,
+ssize_t encodeMTSPMessage(const MessageHeaderType *inputHeader, const struct timeval *estSyncPointTime, char *mtspDataBuffer,
 						  const size_t bufferLength, const char debug) {
-
 	MTSPType MTSPData;
 
 	memset(mtspDataBuffer, 0, bufferLength);
@@ -1480,7 +1454,7 @@ ssize_t encodeMTSPMessage(const struct timeval *estSyncPointTime, char *mtspData
 	}
 
 	// Construct header
-	MTSPData.header = buildISOHeader(MESSAGE_ID_MTSP, sizeof (MTSPData), debug);
+	MTSPData.header = buildISOHeader(MESSAGE_ID_MTSP, inputHeader, sizeof (MTSPData), debug);
 
 	// Fill contents
 	MTSPData.estSyncPointTimeValueID = VALUE_ID_MTSP_EST_SYNC_POINT_TIME;
@@ -1512,9 +1486,9 @@ ssize_t encodeMTSPMessage(const struct timeval *estSyncPointTime, char *mtspData
 	return sizeof (MTSPType);
 }
 
-
 /*!
  * \brief encodeTRCMMessage Fills an ISO TRCM struct with relevant data fields, and corresponding value IDs and content lengths
+ * \param inputHeader data to create header with
  * \param triggerID ID of the trigger to be configured
  * \param triggerType Type of the trigger to be configured according to ::TriggerType_t
  * \param param1 First parameter of the trigger to be configured according to ::TriggerTypeParameter_t
@@ -1525,11 +1499,10 @@ ssize_t encodeMTSPMessage(const struct timeval *estSyncPointTime, char *mtspData
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeTRCMMessage(const uint16_t * triggerID, const enum TriggerType_t * triggerType,
+ssize_t encodeTRCMMessage(const MessageHeaderType *inputHeader, const uint16_t * triggerID, const enum TriggerType_t * triggerType,
 						  const enum TriggerTypeParameter_t * param1, const enum TriggerTypeParameter_t * param2,
 						  const enum TriggerTypeParameter_t * param3, char *trcmDataBuffer,
 						  const size_t bufferLength, const char debug) {
-
 	TRCMType TRCMData;
 
 	memset(trcmDataBuffer, 0, bufferLength);
@@ -1541,7 +1514,7 @@ ssize_t encodeTRCMMessage(const uint16_t * triggerID, const enum TriggerType_t *
 	}
 
 	// Construct header
-	TRCMData.header = buildISOHeader(MESSAGE_ID_TRCM, sizeof (TRCMData), debug);
+	TRCMData.header = buildISOHeader(MESSAGE_ID_TRCM, inputHeader, sizeof (TRCMData), debug);
 
 	// Fill contents
 	TRCMData.triggerIDValueID = VALUE_ID_TRCM_TRIGGER_ID;
@@ -1613,11 +1586,9 @@ ssize_t encodeTRCMMessage(const uint16_t * triggerID, const enum TriggerType_t *
 }
 
 
-
-
-
 /*!
  * \brief encodeACCMMessage Fills an ISO ACCM struct with relevant data fields, and corresponding value IDs and content lengths
+ * \param inputHeader data to create header with
  * \param actionID ID of the action to be configured
  * \param actionType Type of the action to be configured according to ::ActionType_t
  * \param param1 First parameter of the action to be configured according to ::ActionTypeParameter_t
@@ -1628,7 +1599,7 @@ ssize_t encodeTRCMMessage(const uint16_t * triggerID, const enum TriggerType_t *
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeACCMMessage(const uint16_t * actionID, const enum ActionType_t * actionType,
+ssize_t encodeACCMMessage(const MessageHeaderType *inputHeader, const uint16_t * actionID, const enum ActionType_t * actionType,
 						  const enum ActionTypeParameter_t * param1, const enum ActionTypeParameter_t * param2,
 						  const enum ActionTypeParameter_t * param3, char *accmDataBuffer,
 						  const size_t bufferLength, const char debug) {
@@ -1644,7 +1615,7 @@ ssize_t encodeACCMMessage(const uint16_t * actionID, const enum ActionType_t * a
 	}
 
 	// Construct header
-	ACCMData.header = buildISOHeader(MESSAGE_ID_ACCM, sizeof (ACCMData), debug);
+	ACCMData.header = buildISOHeader(MESSAGE_ID_ACCM, inputHeader, sizeof (ACCMData), debug);
 
 	// Fill contents
 	ACCMData.actionIDValueID = VALUE_ID_ACCM_ACTION_ID;
@@ -1711,10 +1682,9 @@ ssize_t encodeACCMMessage(const uint16_t * actionID, const enum ActionType_t * a
 	return sizeof (ACCMData);
 }
 
-
-
 /*!
  * \brief encodeEXACMessage Fills an ISO EXAC struct with relevant data fields, and corresponding value IDs and content lengths
+ * \param inputHeader data to create header with
  * \param actionID ID of the action to be executed
  * \param executionTime Time when the action is to be executed
  * \param exacDataBuffer Buffer to which EXAC message is to be written
@@ -1722,7 +1692,7 @@ ssize_t encodeACCMMessage(const uint16_t * actionID, const enum ActionType_t * a
  * \param debug Flag for enabling debugging
  * \return Number of bytes written or -1 in case of an error
  */
-ssize_t encodeEXACMessage(const uint16_t * actionID, const struct timeval *executionTime,
+ssize_t encodeEXACMessage(const MessageHeaderType *inputHeader, const uint16_t * actionID, const struct timeval *executionTime,
 						  char *exacDataBuffer, const size_t bufferLength, const char debug) {
 
 	EXACType EXACData;
@@ -1736,7 +1706,7 @@ ssize_t encodeEXACMessage(const uint16_t * actionID, const struct timeval *execu
 	}
 
 	// Construct header
-	EXACData.header = buildISOHeader(MESSAGE_ID_EXAC, sizeof (EXACData), debug);
+	EXACData.header = buildISOHeader(MESSAGE_ID_EXAC, inputHeader, sizeof (EXACData), debug);
 
 	// Fill contents
 	EXACData.actionIDValueID = VALUE_ID_EXAC_ACTION_ID;
@@ -1778,13 +1748,14 @@ ssize_t encodeEXACMessage(const uint16_t * actionID, const struct timeval *execu
 /*!
  * \brief encodeINSUPMessage Fills an ISO vendor specific (RISE) INSUP struct with relevant data fields,
  *		and corresponding value IDs and content lengths
+ * \param header ISO header to be used for the message
  * \param command Command to send to supervisor
  * \param insupDataBuffer Data buffer to which INSUP is to be written
  * \param bufferLength Length of data buffer to which INSUP is to be written
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeINSUPMessage(const enum SupervisorCommandType command, char *insupDataBuffer,
+ssize_t encodeINSUPMessage(const MessageHeaderType *inputHeader, const enum SupervisorCommandType command, char *insupDataBuffer,
 						   const size_t bufferLength, const char debug) {
 	INSUPType INSUPData;
 
@@ -1797,7 +1768,7 @@ ssize_t encodeINSUPMessage(const enum SupervisorCommandType command, char *insup
 	}
 
 	// Construct header
-	INSUPData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_RISE_INSUP, sizeof (INSUPData), debug);
+	INSUPData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_RISE_INSUP, inputHeader, sizeof (INSUPData), debug);
 
 	// Fill contents
 	INSUPData.modeValueID = VALUE_ID_INSUP_MODE;
@@ -1822,17 +1793,17 @@ ssize_t encodeINSUPMessage(const enum SupervisorCommandType command, char *insup
 	return sizeof (INSUPData);
 }
 
-
 /*!
  * \brief encodePODIMessage Fills an ISO vendor specific (AstaZero) PODI struct with relevant data fields,
  *		and corresponding value IDs and content lengths
+ * \param inputHeader data to create header with
  * \param peerObjectData Struct containing relevant PODI data
  * \param podiDataBuffer Data buffer to which message is to be printed
  * \param bufferLength Available memory in data buffer
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodePODIMessage(const PeerObjectInjectionType* peerObjectData, 
+ssize_t encodePODIMessage(const MessageHeaderType *inputHeader, const PeerObjectInjectionType* peerObjectData, 
 		char* podiDataBuffer,
 		const size_t bufferLength,
 		const char debug) {
@@ -1856,7 +1827,7 @@ ssize_t encodePODIMessage(const PeerObjectInjectionType* peerObjectData,
 	}
 
 	// Construct header
-	PODIData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_PODI, sizeof (PODIData), debug);
+	PODIData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_PODI, inputHeader, sizeof (PODIData), debug);
 	memcpy(p, &PODIData.header, sizeof (PODIData.header));
 	p += sizeof (PODIData.header);
 	remainingBytes -= sizeof (PODIData.header);
@@ -1939,7 +1910,6 @@ ssize_t encodePODIMessage(const PeerObjectInjectionType* peerObjectData,
 
 	return p - podiDataBuffer;
 }
-
 
 /*!
  * \brief decodePODIMessage Fills PODI data elements from a buffer of raw data
@@ -2257,6 +2227,7 @@ ssize_t decodeOPROMessage(
 		return retval;
 	}
 	p += sizeof (OPROData.header);
+	
 
 	// If message is not a OPRO message, generate an error
 	if (OPROData.header.messageID != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_OPRO) {
@@ -2413,6 +2384,7 @@ ssize_t decodeOPROMessage(
 /*!
  * \brief encodeOPROMessage Fills an ISO vendor specific (AstaZero) OPRO struct with relevant data fields,
  *		and corresponding value IDs and content lengths
+ * \param inputHeader data to create header with
  * \param objectPropertiesData Struct containing relevant OPRO data
  * \param oproDataBuffer Data buffer to which message is to be printed
  * \param bufferLength Available memory in data buffer
@@ -2420,6 +2392,7 @@ ssize_t decodeOPROMessage(
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeOPROMessage(
+		const MessageHeaderType *inputHeader,
 		const ObjectPropertiesType* objectPropertiesData,
 		char *oproDataBuffer,
 		const size_t bufferLength,
@@ -2443,7 +2416,7 @@ ssize_t encodeOPROMessage(
 	}
 
 	// Construct header
-	OPROData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_OPRO, sizeof (OPROData), debug);
+	OPROData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_OPRO, inputHeader, sizeof (OPROData), debug);
 	memcpy(p, &OPROData.header, sizeof (OPROData.header));
 	p += sizeof (OPROData.header);
 	remainingBytes -= sizeof (OPROData.header);
@@ -2512,6 +2485,7 @@ ssize_t encodeOPROMessage(
 /*!
  * \brief encodeFOPRMessage Fills an ISO vendor specific (AstaZero) FOPR struct with relevant data fields,
  *		and corresponding value IDs and content lengths
+ * \param inputHeader data to create header with
  * \param foreignObjectPropertiesData Struct containing relevant OPRO data
  * \param foprDataBuffer Data buffer to which message is to be printed
  * \param bufferLength Available memory in data buffer
@@ -2519,6 +2493,7 @@ ssize_t encodeOPROMessage(
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeFOPRMessage(
+		const MessageHeaderType *inputHeader,
 		const ForeignObjectPropertiesType* foreignObjectPropertiesData,
 		char *foprDataBuffer,
 		const size_t bufferLength,
@@ -2542,7 +2517,7 @@ ssize_t encodeFOPRMessage(
 	}
 
 	// Construct header
-	FOPRData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_FOPR, sizeof (FOPRData), debug);
+	FOPRData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_FOPR, inputHeader, sizeof (FOPRData), debug);
 	memcpy(p, &FOPRData.header, sizeof (FOPRData.header));
 	p += sizeof (FOPRData.header);
 	remainingBytes -= sizeof (FOPRData.header);
@@ -2908,13 +2883,14 @@ ssize_t decodeFOPRMessage(
 
 /*!
  * \brief encodeGDRMMessage Constructs an ISO GDRM message (General Data Request Message)
+ * \param inputHeader data to create header with
  * \param gdrmData Struct containing relevant GDRM data
  * \param gdrmDataBuffer Data buffer in which to place encoded GDRM message
  * \param bufferLength Size of data buffer in which to place encoded GDRM message
  * \param debug Flag for enabling debugging
  * \return number of bytes written to the data buffer, or -1 if an error occurred
  */
-ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuffer, const size_t bufferLength,
+ssize_t encodeGDRMMessage(const MessageHeaderType *inputHeader, const GdrmMessageDataType *gdrmData, char *gdrmDataBuffer, const size_t bufferLength,
 						  const char debug) {
 
 	 GDRMType GDRMData;
@@ -2936,7 +2912,7 @@ ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuf
 	 }
 
 	 // Construct header
-	 GDRMData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_GDRM, sizeof (GDRMData), debug);
+	 GDRMData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_GDRM, inputHeader, sizeof (GDRMData), debug);
 	 memcpy(p, &GDRMData.header, sizeof (GDRMData.header));
 	 p += sizeof (GDRMData.header);
 	 remainingBytes -= sizeof (GDRMData.header);
@@ -2974,7 +2950,6 @@ ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuf
 	 return p - gdrmDataBuffer;
  }
 
-
  /*!
   * \brief decodeGDRMMessage Fills GDRM data elements from a buffer of raw data
   * \param gdrmDataBuffer Raw data to be decoded
@@ -2983,7 +2958,9 @@ ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuf
   * \param debug Flag for enabling of debugging
   * \return value according to ::ISOMessageReturnValue
   */
- enum ISOMessageReturnValue decodeGDRMMessage(const char *gdrmDataBuffer,										const size_t bufferLength,
+ enum ISOMessageReturnValue decodeGDRMMessage(
+										 const char *gdrmDataBuffer,
+										 const size_t bufferLength,
 										 GdrmMessageDataType* gdrmData,
 										 const char debug) {
 
@@ -3068,16 +3045,17 @@ ssize_t encodeGDRMMessage(const GdrmMessageDataType *gdrmData, char *gdrmDataBuf
 
 
 
-
 /*!
  * \brief encodeDCTIMessage Constructs an ISO DCTI message (Direct Control Transmitter Id)
+ * \param inputHeader data to create header with
+
  * \param dctiData Struct containing relevant DCTI data
  * \param dctiDataBuffer Data buffer in which to place encoded DCTI message
  * \param bufferLength Size of data buffer in which to place encoded DCTI message
  * \param debug Flag for enabling debugging
  * \return number of bytes written to the data buffer, or -1 if an error occurred
  */
-ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData,
+ssize_t encodeDCTIMessage(const MessageHeaderType *inputHeader, const DctiMessageDataType *dctiData,
 						char *dctiDataBuffer, const size_t bufferLength, const char debug) {
 
 	DCTIType DCTIData;
@@ -3099,7 +3077,7 @@ ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData,
 	}
 
 	// Construct header
-	DCTIData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCTI, sizeof (DCTIData), debug);
+	DCTIData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCTI, inputHeader, sizeof (DCTIData), debug);
 	memcpy(p, &DCTIData.header, sizeof (DCTIData.header));
 	p += sizeof (DCTIData.header);
 	remainingBytes -= sizeof (DCTIData.header);
@@ -3143,7 +3121,6 @@ ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData,
 
 }
 
-
 /*!
  * \brief decodeDCTIMessage Fills HEAB data elements from a buffer of raw data
  * \param dctiDataBuffer Raw data to be decoded
@@ -3152,7 +3129,8 @@ ssize_t encodeDCTIMessage(const DctiMessageDataType *dctiData,
  * \param debug Flag for enabling of debugging
  * \return value according to ::ISOMessageReturnValue
  */
-enum ISOMessageReturnValue decodeDCTIMessage(const char *dctiDataBuffer,
+enum ISOMessageReturnValue decodeDCTIMessage(
+										const char *dctiDataBuffer,
 										const size_t bufferLength,
 										DctiMessageDataType* dctiData,
 										const char debug) {
@@ -3287,13 +3265,15 @@ enum ISOMessageReturnValue convertDCTIToHostRepresentation(DCTIType* DCTIData,
 
 /*!
  * \brief encodeRDCAMessage Constructs an ISO RDCA message (Request Direct Control Action)
+ * \param inputHeader data to create header with
  * \param rdcaData Requested action data
  * \param rdcaDataBuffer Data buffer in which to place encoded RDCA message
  * \param bufferLength Size of data buffer in which to place encoded RDCA message
  * \param debug Flag for enabling debugging
  * \return number of bytes written to the data buffer, or -1 if an error occurred
  */
-ssize_t encodeRDCAMessage(const RequestControlActionType *rdcaData,
+ssize_t encodeRDCAMessage(const MessageHeaderType *inputHeader,
+						  const RequestControlActionType *rdcaData,
 						  char *rdcaDataBuffer,
 						  const size_t bufferLength, 
 						  const char debug) {
@@ -3328,7 +3308,7 @@ ssize_t encodeRDCAMessage(const RequestControlActionType *rdcaData,
 				+ sizeof (RDCAData.speedAction);
 	}
 	// Construct header
-	RDCAData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_RDCA, (uint32_t)(sizeof (RDCAData)-unusedMemory), debug);
+	RDCAData.header = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_RDCA, inputHeader, sizeof (RDCAData) - unusedMemory, debug);
 	memcpy(p, &RDCAData.header, sizeof (RDCAData.header));
 	p += sizeof (RDCAData.header);
 	remainingBytes -= sizeof (RDCAData.header);
@@ -3410,7 +3390,6 @@ ssize_t encodeRDCAMessage(const RequestControlActionType *rdcaData,
 
 	return p - rdcaDataBuffer;
 }
-
 
 /*!
  * \brief decodeRDCAMessage Fills RDCA data elements from a buffer of raw data
@@ -3704,16 +3683,19 @@ double_t mapHostHeadingToISOHeading(const double_t hostHeading_rad) {
 	return retval;
 }
 
+
 /*!
  * \brief encodeDCMMessage Fills an ISO vendor specific (AstaZero) DCMM struct with relevant data fields,
  *		and corresponding value IDs and content lengths
+ * \param inputHeader data to create header with
  * \param command Struct containing relevant DCMM data
  * \param dcmmDataBuffer Data buffer to which message is to be printed
  * \param bufferLength Available memory in data buffer
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeDCMMMessage(const RemoteControlManoeuvreMessageType* command,
+ssize_t encodeDCMMMessage(const MessageHeaderType *inputHeader,
+		const RemoteControlManoeuvreMessageType* command,
 		char* dcmmDataBuffer,
 		const size_t bufferLength,
 		const char debug) {
@@ -3722,9 +3704,9 @@ ssize_t encodeDCMMMessage(const RemoteControlManoeuvreMessageType* command,
 	FooterType DCMMFooter;
 	RCMMType DCMMData;
 
-	DCMMHeader = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCMM, sizeof(DCMMData), debug);
+	DCMMHeader = buildISOHeader(MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCMM, inputHeader, sizeof (DCMMData), debug);
 
-	ssize_t retval =  encodeRCMMMessage(command, dcmmDataBuffer, bufferLength, debug);
+	ssize_t retval =  encodeRCMMMessage(inputHeader, command, dcmmDataBuffer, bufferLength, debug);
 	if (retval < 0) {
 		fprintf(stderr, "DCMM wrapper error\n");
 		return retval;
@@ -3736,6 +3718,7 @@ ssize_t encodeDCMMMessage(const RemoteControlManoeuvreMessageType* command,
 
 	return retval;
 }
+
 /**
  * @brief decodeDCMMessage Fills an ISO vendor specific (AstaZero) DCMM struct with relevant data fields,
  *		and corresponding value IDs and content lengths
@@ -3745,7 +3728,8 @@ ssize_t encodeDCMMMessage(const RemoteControlManoeuvreMessageType* command,
  * @param debug Flag for enabling debugging
  * @return Number of bytes written to buffer, or -1 in case of error 
  */
-ssize_t decodeDCMMMessage(const char * dcmmDataBuffer,
+ssize_t decodeDCMMMessage(
+		const char * dcmmDataBuffer,
 		const size_t bufferLength,
 		RemoteControlManoeuvreMessageType* dcmmData,
 		const char debug) {
@@ -3771,6 +3755,7 @@ ssize_t decodeDCMMMessage(const char * dcmmDataBuffer,
 		return retval;
 	}
 	p += sizeof (DCMMData.header);
+
 
 	// If message is not a RCMM message, generate an error
 	if (DCMMData.header.messageID != MESSAGE_ID_VENDOR_SPECIFIC_ASTAZERO_DCMM) {

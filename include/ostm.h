@@ -1,4 +1,7 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include "header.h"
 #include "footer.h"
 #include <stdint.h>
@@ -18,3 +21,6 @@ typedef struct {
 
 //! OSTM value IDs
 #define VALUE_ID_OSTM_STATE_CHANGE_REQUEST 0x0064
+#ifdef __cplusplus
+}
+#endif

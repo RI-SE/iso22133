@@ -1,4 +1,8 @@
 #pragma once
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "iso22133.h"
 #include "header.h"
 #include "footer.h"
@@ -44,3 +48,6 @@ void convertDRESToHostRepresentation(
 		const DRESType * DRESData,
 		TestObjectDiscoveryType * testObjectDiscoveryData);
 
+#ifdef __cplusplus
+}
+#endif

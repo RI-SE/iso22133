@@ -1,5 +1,6 @@
 #include "traj.h"
 #include "iohelpers.h"
+#include "iso22133.h"
 #include <errno.h>
 #include <string.h>
 
@@ -13,6 +14,7 @@ static DebugStrings_t TRAJInfoDescription = 		{"Trajectory info",	"",	&printU8};
 /*!
  * \brief encodeTRAJMessageHeader Creates a TRAJ message header based on supplied values and resets
  *	an internal CRC to be used in the corresponding footer. The header is printed to a buffer.
+ * \param inputHeader data to create header with
  * \param trajectoryID ID of the trajectory
  * \param trajectoryVersion Version of the trajectory
  * \param trajectoryName A string of maximum length 63 excluding the null terminator
@@ -27,6 +29,7 @@ static DebugStrings_t TRAJInfoDescription = 		{"Trajectory info",	"",	&printU8};
  *		EMSGSIZE	if trajectory name is too long
  */
 ssize_t encodeTRAJMessageHeader(
+	const MessageHeaderType *inputHeader,
 	const uint16_t trajectoryID,
 	const TrajectoryInfoType trajectoryInfo,
 	const char* trajectoryName,
@@ -65,10 +68,11 @@ ssize_t encodeTRAJMessageHeader(
 		printf("Trajectory name <%s> too long for TRAJ message\n", trajectoryName);
 		return -1;
 	}
-
+	
 	// Construct ISO header
 	TRAJData.header = buildISOHeader(
 		MESSAGE_ID_TRAJ,
+		inputHeader,
 		sizeof (TRAJHeaderType)
 			+ numberOfPointsInTraj * sizeof (TRAJPointType)
 			+ sizeof (TRAJFooterType),
@@ -77,7 +81,7 @@ ssize_t encodeTRAJMessageHeader(
 	p += sizeof (HeaderType);
 
 	if (debug) {
-			printf("TRAJ message header:\n");
+		printf("TRAJ message header:\n");
 	}
 
 	// Fill contents

@@ -6,21 +6,21 @@
 #include <endian.h>
 #include <stdio.h>
 
-
 /*!
  * \brief buildISOHeader Constructs an ISO header based on the supplied message ID and content length
+ * \param receiverID ID of the receiver of the message for which the header is to be used
  * \param id Message ID of the message for which the header is to be used
  * \param messageLength Length of the message including header and footer
  * \param debug Flag for enabling debugging
  * \return A struct containing ISO header data
  */
-HeaderType buildISOHeader(enum ISOMessageID id, uint32_t messageLength, const char debug) {
+HeaderType buildISOHeader(enum ISOMessageID id, const MessageHeaderType *input, uint32_t messageLength, const char debug) {
 	HeaderType header;
 
 	header.syncWord = ISO_SYNC_WORD;
-	header.transmitterID = getTransmitterID();
-	header.receiverID = 0; // TODO: Set receiver ID
-	header.messageCounter = 0;
+	header.transmitterID = input->transmitterID;
+	header.receiverID = input->receiverID;
+	header.messageCounter = input->messageCounter;
 	header.ackReqProtVer = ACK_REQ | ISO_PROTOCOL_VERSION;
 	if (messageLength >= sizeof (HeaderType) + sizeof (FooterType)) {
 		header.messageID = (uint16_t) id;

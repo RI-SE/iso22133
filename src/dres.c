@@ -7,6 +7,7 @@
 
 /*!
  * \brief encodeDRESMessage Constructs an ISO DRES message based on specified command
+ * \param inputHeader data to create header with
  * \param testObjectDiscoveryData Test object discovery data
  * \param dresDataBuffer Data buffer to which DRES is to be written
  * \param bufferLength Length of data buffer to which DRES is to be written
@@ -14,6 +15,7 @@
  * \return Number of bytes written to buffer, or -1 in case of error
  */
 ssize_t encodeDRESMessage(
+	const MessageHeaderType *inputHeader,
 	const TestObjectDiscoveryType *testObjectDiscoveryData,
 	char *dresDataBuffer,
 	const size_t bufferLength,
@@ -31,7 +33,7 @@ ssize_t encodeDRESMessage(
 	}
 
 	// Construct header
-	DRESData.header = buildISOHeader(MESSAGE_ID_OSTM, sizeof (DRESData), debug);
+	DRESData.header = buildISOHeader(MESSAGE_ID_DRES, inputHeader, sizeof (DRESData), debug);
 
 	// Fill contents
     DRESData.vendorNameValueID = VALUE_ID_VENDOR_NAME;

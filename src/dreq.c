@@ -7,12 +7,13 @@
 
 /*!
  * \brief encodeDREQMessage Constructs an ISO DREQ message based on specified command (DREQ contains no message data)
+ * \param inputHeader data to create header
  * \param dreqDataBuffer Data buffer to which DREQ is to be written
  * \param bufferLength Length of data buffer to which DREQ is to be written
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeDREQMessage(
+ssize_t encodeDREQMessage(const MessageHeaderType *inputHeader,
 	char *dreqDataBuffer,
 	const size_t bufferLength,
 	const char debug)
@@ -27,7 +28,7 @@ ssize_t encodeDREQMessage(
 	}
 
 	// Construct header
-	DREQData.header = buildISOHeader(MESSAGE_ID_DREQ, sizeof (DREQData), debug);
+	DREQData.header = buildISOHeader(MESSAGE_ID_DREQ, inputHeader, sizeof (DREQData), debug);
 
 	if (debug) {
         printf("DREQ data: No data in DREQ message, just header and footer\n");

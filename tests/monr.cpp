@@ -39,7 +39,12 @@ protected:
 	void SetUp() override
 	{
 		memset(encodeBuffer, 0, sizeof(encodeBuffer));
+		MessageHeaderType inputHeader;
+		inputHeader.receiverID = 0;
+		inputHeader.messageCounter = 0;
+		inputHeader.transmitterID = 0;
 		auto res = encodeMONRMessage(
+			&inputHeader,
 			&objTime,
 			pos,
 			spd,
@@ -279,12 +284,10 @@ protected:
 		// used for getting the GPS week
 		currTime.tv_sec = 1651168942;
 		currTime.tv_usec = 0;
-		objID = 0;
 		auto res = decodeMONRMessage(
 			decodeBuffer,
 			sizeof(decodeBuffer),
 			currTime,
-			&objID,
 			&monrStruct,
 			false);
 		ASSERT_GT(res, 0);
@@ -292,7 +295,6 @@ protected:
 
 	char decodeBuffer[1024];
 	ObjectMonitorType monrStruct;
-	uint32_t objID;
 	struct timeval currTime;
 };
 
