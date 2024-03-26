@@ -4,20 +4,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 project(ISO22133 LANGUAGES C CXX)
 
-# Dependencies
-include(FetchContent)
-execute_process(
-	COMMAND ping www.github.com -c 1 -q
-	ERROR_QUIET
-	RESULT_VARIABLE NO_CONNECTION
-)
-FetchContent_Declare(googletest
-	GIT_REPOSITORY https://github.com/google/googletest.git
-	GIT_TAG main
-)
-FetchContent_MakeAvailable(googletest)
-
-
 # Swig flags
 set(WITH_SWIG OFF CACHE BOOL "Enable swigging")
 set(SWIG_WITH_JAVA OFF CACHE BOOL "Swig to target-language java")
