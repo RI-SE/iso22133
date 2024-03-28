@@ -4,20 +4,6 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 
 project(ISO22133 LANGUAGES C CXX)
 
-# Dependencies
-include(FetchContent)
-execute_process(
-	COMMAND ping www.github.com -c 1 -q
-	ERROR_QUIET
-	RESULT_VARIABLE NO_CONNECTION
-)
-FetchContent_Declare(googletest
-	GIT_REPOSITORY https://github.com/google/googletest.git
-	GIT_TAG release-1.11.0
-)
-FetchContent_MakeAvailable(googletest)
-
-
 # Swig flags
 set(WITH_SWIG OFF CACHE BOOL "Enable swigging")
 set(SWIG_WITH_JAVA OFF CACHE BOOL "Swig to target-language java")
@@ -70,7 +56,20 @@ install(TARGETS ${ISO22133_TARGET}
 # Tests
 
 # Only build tests if we are on x86_64 and not cross compiling
-if ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" AND ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "${CMAKE_HOST_SYSTEM_PROCESSOR}"))
+if (BUILD_TESTING AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" AND ("${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "${CMAKE_HOST_SYSTEM_PROCESSOR}"))
+	# Dependencies
+	include(FetchContent)
+	execute_process(
+		COMMAND ping www.github.com -c 1 -q
+		ERROR_QUIET
+		RESULT_VARIABLE NO_CONNECTION
+	)
+	FetchContent_Declare(googletest
+		GIT_REPOSITORY https://github.com/google/googletest.git
+		GIT_TAG release-1.11.0
+	)
+	FetchContent_MakeAvailable(googletest)
+
 	enable_testing()
 	file(GLOB TEST_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp)
 	add_executable(${ISO22133_TARGET}_test
