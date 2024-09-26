@@ -98,7 +98,7 @@ ssize_t encodeTRAJMessageHeader(
 	if (trajectoryName != NULL) {
 		memcpy(&TRAJData.trajectoryName, trajectoryName, nameLength);
 		// Ensure null termination
-		TRAJData.trajectoryName[TRAJ_NAME_STRING_MAX_LENGTH] = '\0';
+		TRAJData.trajectoryName[TRAJ_NAME_STRING_MAX_LENGTH - 1] = '\0';
 	}
 	memcpy(p, &TRAJData.trajectoryNameValueID, sizeof (TRAJData.trajectoryNameValueID));
 	p += sizeof (TRAJData.trajectoryNameValueID);
