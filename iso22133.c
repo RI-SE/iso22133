@@ -782,10 +782,10 @@ enum ISOMessageReturnValue convertSTRTToHostRepresentation(
 		const struct timeval* currentTime,
 		StartMessageType * startData) {
 	uint16_t gpsWeek = 0;
+	startData->isTimestampValid = 1;
 	if (currentTime) {
 		gpsWeek = (uint16_t)getAsGPSWeek(currentTime);
 	}
-
 	if (!STRTData || !startData) {
 		errno = EINVAL;
 		fprintf(stderr, "STRT input pointer error");
@@ -805,7 +805,6 @@ enum ISOMessageReturnValue convertSTRTToHostRepresentation(
 	}
 	else {
 		if (currentTime && STRTData->GPSWeek != gpsWeek) {
-			fprintf(stderr, "Parsed STRT message with non-matching GPS week");
 			startData->isTimestampValid = 0;
 			return MESSAGE_OK;
 		}
