@@ -5,5 +5,15 @@
 // Time functions
 int8_t setToGPStime(struct timeval *time, const uint16_t GPSweek, const uint32_t GPSqmsOfWeek);
 int32_t getAsGPSWeek(const struct timeval *time);
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 int64_t getAsGPSQuarterMillisecondOfWeek(const struct timeval *time);
+
+#ifdef __cplusplus
+}
+#endif
+
 uint64_t getAsGPSms(const struct timeval *time);
