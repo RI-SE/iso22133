@@ -1,7 +1,4 @@
---Hello World
-print("Hello World!")
-
--- MSCP protocol proto
+-- ISO22133 protocol dissector for Wireshark
 ISO_proto = Proto("ISO-22133","ISO:22133-1 Protocol")
 MSG_LIST =
 {[0x0001] = "TRAJ",
@@ -175,21 +172,21 @@ ISO_proto.fields = { --- HEADER
                       trajectory_version,
                       trajectory_relativeTime,
                       trajectory_name_value_id,
-		      trajectory_name_content_length,
-		      trajectory_info_value_id,
-		      trajectory_info_content_length,
-		      trajectory_info,
-          trajectory_point_value_id,
-          trajectory_point_content_length,
-          relative_time,
-          x_position,
-          y_position,
-          z_position,
-          lateral_speed,
-          longitudinal_speed,
-          lateral_acceleration,
-          longitudinal_acceleration,
-          curvature,
+                      trajectory_name_content_length,
+                      trajectory_info_value_id,
+                      trajectory_info_content_length,
+                      trajectory_info,
+                      trajectory_point_value_id,
+                      trajectory_point_content_length,
+                      relative_time,
+                      x_position,
+                      y_position,
+                      z_position,
+                      lateral_speed,
+                      longitudinal_speed,
+                      lateral_acceleration,
+                      longitudinal_acceleration,
+                      curvature,
                       xpos,
                       ypos,
                       zpos,
@@ -201,7 +198,7 @@ ISO_proto.fields = { --- HEADER
                       longAcc,
                       latAcc,
                       trajectory_curvature,
-                      
+
                       -- STRT
                       StartTime,
                       GPSWeekValueID,
@@ -275,7 +272,7 @@ ISO_proto.fields = { --- HEADER
 
                       --- CATA (Cancel Trigger&Action Message)
                       -- included from other messages
-                      
+
       		      --- Footer
       		      crc
  }
@@ -325,8 +322,8 @@ function ISO_proto.dissector(buffer,pinfo,tree)
           local start_byte = 97
           local traj_point_size = 34
           local num_points = math.floor((buffer:len()-18-2)/traj_point_size)-2
-          for i = 0,num_points-1,1 
-          do 
+          for i = 0,num_points-1,1
+          do
             --local subtree = tree:add(ISO_proto, buffer(), "TRAJ Point")
             subtree:add_le(trajectory_point_value_id, buffer(start_byte + traj_point_size * i,2))
             subtree:add_le(trajectory_point_content_length, buffer((start_byte + traj_point_size*i)+2,2))
@@ -411,7 +408,7 @@ function ISO_proto.dissector(buffer,pinfo,tree)
       subtree:add_le(xpos, buffer(26,4))
       subtree:add_le(ypos, buffer(30,4))
       subtree:add_le(zpos, buffer(34,4))
-      
+
       subtree:add_le(yaw, buffer(38,2))
       subtree:add_le(pitch, buffer(40,2))
       subtree:add_le(roll, buffer(42,2))
@@ -431,7 +428,7 @@ function ISO_proto.dissector(buffer,pinfo,tree)
     if buffer(18,2):bytes() == ByteArray.new("07") then
       pinfo.cols.protocol = "MONR2"
     end
-    
+
     if buffer(18,2):bytes() == ByteArray.new("11") then --is it DEC or HEX??
       pinfo.cols.protocol = "TRCM"
       local subtree = tree:add(ISO_proto, buffer(), "TRCM Data")
@@ -469,7 +466,7 @@ function ISO_proto.dissector(buffer,pinfo,tree)
         subtree:add_le(triggerID, buffer(15,2))
         subtree:add_le(actionID, buffer(21,2))
     end
-    
+
     local subtree = tree:add(ISO_proto, buffer(), "Message Footer")
     subtree:add_le(crc, buffer(buffer:len()-2,2))
 
@@ -478,13 +475,11 @@ function ISO_proto.dissector(buffer,pinfo,tree)
 end
 
 
--- load the udp.port table
+-- load the udp.port and tcp.port tables
 udp_table = DissectorTable.get("udp.port")
--- register our protocol
-udp_table:add(53240, ISO_proto)
-
--- load the tcp.port table
 tcp_table = DissectorTable.get("tcp.port")
--- register our protocol
+
+-- register our protocol with the udp and tcp dissector tables on the specified ports
+udp_table:add(53240, ISO_proto)
 tcp_table:add(53240, ISO_proto)
 tcp_table:add(53241, ISO_proto)
