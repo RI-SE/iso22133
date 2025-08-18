@@ -396,7 +396,7 @@ ssize_t decodeOSEMMessage(
 		return retval;
 	}
 
-	if (debug) {
+	if (true) {
 		printf
 			("OSEM message:\n\tID struct value ID: 0x%x\n\tID struct content length: %u"
 			 "\n\tDevice ID: %u \n\tSub device ID: %u \n\tSystem control centre ID: %u"
