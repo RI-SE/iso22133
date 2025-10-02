@@ -31,12 +31,15 @@ protected:
 		settings.maxDeviation.lateral_m = 0.456;
 		settings.maxDeviation.yaw_rad = 0.789;
 		settings.minRequiredPositioningAccuracy_m = 0.12;
-		settings.heabTimeout.tv_sec = 1;
-		settings.heabTimeout.tv_usec = 20000;
-		settings.testMode = TEST_MODE_SCENARIO;
+		settings.communicationTimeout.tv_sec = 1;
+		settings.communicationTimeout.tv_usec = 20000;
+		settings.testMode = TEST_MODE_PREPLANNED;
 		settings.rate.monr = 4;
 		settings.rate.monr2 = 5;
 		settings.rate.heab = 6;
+		settings.emergencyBehavior = EMERGENCY_BEHAVIOR_EMERGENCY_STOP;
+		settings.comLost = COM_LOST_EMERGENCY_STOP;
+		settings.xyzTrajPointResolution = TRAJ_POINT_RESOLUTION_mm;
 
 		settings.timeServer.ip = 0x12345678;
 		settings.timeServer.port = 0x9ABC;
@@ -235,7 +238,7 @@ TEST_F(EncodeOSEM, MinPosAcc)
 	EXPECT_EQ(accReq[11], '\x00');
 }
 
-TEST_F(EncodeOSEM, HeabTimeout)
+TEST_F(EncodeOSEM, communicationTimeout)
 {
 	// 1.020 sec = 102 cs = 0x0066
 	EXPECT_EQ(accReq[12], '\x66');
@@ -247,6 +250,25 @@ TEST_F(EncodeOSEM, TestMode)
 	// Test mode scenario
 	EXPECT_EQ(accReq[14], '\x02');
 }
+
+TEST_F(EncodeOSEM, EmergencyBehavior)
+{
+	// Emergency behavior = Emergency stop
+	EXPECT_EQ(accReq[14], '\x00');
+}
+
+TEST_F(EncodeOSEM, ComLost)
+{
+	// When connection to CC is lost = Emergency stop
+	EXPECT_EQ(accReq[14], '\x00');
+}
+
+TEST_F(EncodeOSEM, XyzTrajPointResolution)
+{
+	// XYZ Traj point resolution set to 1 mm
+	EXPECT_EQ(accReq[14], '\x00');
+}
+
 
 TEST_F(EncodeOSEM, MessageRates)
 {
@@ -500,14 +522,29 @@ TEST_F(DecodeOSEM, MinPositionAccuracy)
 	EXPECT_NEAR(settings.minRequiredPositioningAccuracy_m, 0.12, 0.01);
 }
 
-TEST_F(DecodeOSEM, HeabTimeout)
+TEST_F(DecodeOSEM, communicationTimeout)
 {
-	EXPECT_EQ(settings.heabTimeout.tv_sec, 1);
+	EXPECT_EQ(settings.communicationTimeout.tv_sec, 1);
 }
 
 TEST_F(DecodeOSEM, TestMode)
 {
 	EXPECT_EQ(settings.testMode, TEST_MODE_SCENARIO);
+}
+
+TEST_F(DecodeOSEM, EmergencyBehavior)
+{
+	EXPECT_EQ(settings.emergencyBehavior, EMERGENCY_BEHAVIOR_EMERGENCY_STOP);
+}
+
+TEST_F(DecodeOSEM, ComLost)
+{
+	EXPECT_EQ(settings.comLost, COM_LOST_EMERGENCY_STOP);
+}
+
+TEST_F(DecodeOSEM, XyzTrajPointResolution)
+{
+	EXPECT_EQ(settings.xyzTrajPointResolution, TRAJ_POINT_RESOLUTION_mm);
 }
 
 TEST_F(DecodeOSEM, MonrRate)
@@ -518,11 +555,6 @@ TEST_F(DecodeOSEM, MonrRate)
 TEST_F(DecodeOSEM, Monr2Rate)
 {
 	EXPECT_EQ(settings.rate.monr2, 5);
-}
-
-TEST_F(DecodeOSEM, HeabRate)
-{
-	EXPECT_EQ(settings.rate.heab, 6);
 }
 
 TEST_F(DecodeOSEM, TimeServerIP)

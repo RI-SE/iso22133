@@ -39,12 +39,14 @@ typedef struct {
 	uint16_t maxLateralDeviation;
 	uint16_t maxYawDeviation;
 	uint16_t maxPositionError;
-	uint16_t heabTimeout;
+	uint16_t communicationTimeout;
 	uint8_t testMode;
-	uint8_t monrRate;
-	uint8_t monr2Rate;
-	uint8_t heabRate;
+	uint16_t monrRate;
+	uint16_t monr2Rate;
 	uint32_t maxMessageLength;
+	uint8_t emergencyBehavior;
+	uint8_t comLost;
+	uint8_t xyzTrajPointResolution;
 } OSEMAccuracyRequirementsType;
 
 /*! OSEM time server struct */

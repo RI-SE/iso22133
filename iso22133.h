@@ -30,8 +30,24 @@ typedef enum {
 	TEST_MODE_PREPLANNED = 0,
 	TEST_MODE_ONLINE = 1,
 	TEST_MODE_SCENARIO = 2,
-	TEST_MODE_UNAVAILABLE = 255
+	TEST_MODE_MONITOR = 3
 } TestModeType;
+
+typedef enum {
+	EMERGENCY_BEHAVIOR_EMERGENCY_STOP = 0,
+	EMERGENCY_BEHAVIOR_USE_DPP = 1
+} EmergencyBehaviorType;
+
+typedef enum {
+	COM_LOST_EMERGENCY_STOP = 0,
+	COM_LOST_NORMAL_STOP = 1,
+	COM_LOST_USE_DPP = 2
+} ComLostType;
+
+typedef enum {
+	TRAJ_POINT_RESOLUTION_mm = 0,
+	TRAJ_POINT_RESOLUTION_10um = 1
+} xyzTrajPointResolutionType;
 
 /*! Message Header for building/encoding headers */
 typedef struct {
@@ -70,9 +86,12 @@ typedef struct {
 	OSEMDeviations maxDeviation;
 	double_t minRequiredPositioningAccuracy_m;
 	TestModeType testMode;
-	struct timeval heabTimeout;
+	struct timeval communicationTimeout;
 	OSEMMonrRate rate;
 	OSEMTimeServer timeServer;
+	EmergencyBehaviorType emergencyBehavior;
+	ComLostType comLost;
+	xyzTrajPointResolutionType xyzTrajPointResolution;
 } ObjectSettingsType;
 
 typedef enum {
