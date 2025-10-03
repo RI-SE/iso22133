@@ -108,13 +108,15 @@ ssize_t encodeOSEMMessage(
 		* MAX_YAW_DEVIATION_ONE_DEGREE_VALUE);
 	OSEMData.requirements.maxPositionError = (uint16_t)(objectSettings->minRequiredPositioningAccuracy_m
 		* MIN_POSITIONING_ACCURACY_ONE_METER_VALUE);
-	OSEMData.requirements.heabTimeout = (uint16_t)((objectSettings->heabTimeout.tv_sec
-		 + objectSettings->heabTimeout.tv_usec / 1000000.0) * COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE);
+	OSEMData.requirements.communicationTimeout = (uint16_t)((objectSettings->communicationTimeout.tv_sec
+		 + objectSettings->communicationTimeout.tv_usec / 1000000.0) * COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE);
 	OSEMData.requirements.testMode = (uint8_t)(objectSettings->testMode);
-	OSEMData.requirements.monrRate = (uint8_t)(objectSettings->rate.monr * MONR_RATE_ONE_HZ_VALUE);
-	OSEMData.requirements.monr2Rate = (uint8_t)(objectSettings->rate.monr2 * MONR2_RATE_ONE_HZ_VALUE);
-	OSEMData.requirements.heabRate = (uint8_t)(objectSettings->rate.heab * HEAB_RATE_ONE_HZ_VALUE);
+	OSEMData.requirements.monrRate = (uint16_t)(objectSettings->rate.monr * MONR_RATE_ONE_HZ_VALUE);
+	OSEMData.requirements.monr2Rate = (uint16_t)(objectSettings->rate.monr2 * MONR2_RATE_ONE_HZ_VALUE);
 	OSEMData.requirements.maxMessageLength = UINT32_MAX; // TODO set from system settings
+	OSEMData.requirements.emergencyBehavior = (uint8_t)(objectSettings->emergencyBehavior);
+	OSEMData.requirements.comLost = (uint8_t)(objectSettings->comLost);
+	OSEMData.requirements.xyzTrajPointResolution = (uint8_t)(objectSettings->xyzTrajPointResolution);
 
 	if (timeServerUsed) {
 		OSEMData.timeServerStructValueID = VALUE_ID_OSEM_TIME_SERVER_STRUCT;
@@ -143,7 +145,8 @@ ssize_t encodeOSEMMessage(
 			 "\n\tMax way deviation: %u [mm]\n\tMax lateral deviation: %u [mm]"
 			 "\n\tMax yaw deviation: %u [10 millidegrees]\n\tMax position error: %u [cm]"
 			 "\n\tHEAB timeout: %u [10 ms]\n\tTest mode: %u\n\tMONR rate: %u [1 Hz]"
-			 "\n\tMONR2 rate: %u [1 Hz]\n\tHEAB rate: %u [1 Hz]\n\tMax message length: %u [B]",
+			 "\n\tMONR2 rate: %u [1 Hz]\n\tMax message length: %u [B]\n\tEmergency behavior: %u"
+			 "\n\tConnection lost action: %u\n\tXYZ traj point resolution: %u",
 			 OSEMData.idStructValueID, OSEMData.idStructContentLength, OSEMData.ids.deviceID,
 			 OSEMData.ids.subDeviceID, OSEMData.ids.systemControlCentreID, OSEMData.originStructValueID,
 			 OSEMData.originStructContentLength, OSEMData.origin.latitude,
@@ -154,10 +157,11 @@ ssize_t encodeOSEMMessage(
 			 OSEMData.timestamp.leapSeconds, OSEMData.accReqStructValueID,
 			 OSEMData.accReqStructContentLength, OSEMData.requirements.maxWayDeviation,
 			 OSEMData.requirements.maxLateralDeviation, OSEMData.requirements.maxYawDeviation,
-			 OSEMData.requirements.maxPositionError, OSEMData.requirements.heabTimeout,
+			 OSEMData.requirements.maxPositionError, OSEMData.requirements.communicationTimeout,
 			 OSEMData.requirements.testMode, OSEMData.requirements.monrRate,
-			 OSEMData.requirements.monr2Rate, OSEMData.requirements.heabRate,
-			 OSEMData.requirements.maxMessageLength);
+			 OSEMData.requirements.monr2Rate, OSEMData.requirements.maxMessageLength,
+			 OSEMData.requirements.emergencyBehavior, OSEMData.requirements.comLost,
+			 OSEMData.requirements.xyzTrajPointResolution);
 		if (timeServerUsed) {
 			printf
 				("\n\tTime server struct value ID: 0x%x\n\tTime server struct content length: %u"
@@ -175,8 +179,8 @@ ssize_t encodeOSEMMessage(
 	OSEMData.ids.systemControlCentreID = htole32(OSEMData.ids.systemControlCentreID);
 	OSEMData.originStructValueID = htole16(OSEMData.originStructValueID);
 	OSEMData.originStructContentLength = htole16(OSEMData.originStructContentLength);
-	OSEMData.origin.latitude = (int64_t) htole48(OSEMData.origin.latitude);
-	OSEMData.origin.longitude = (int64_t) htole48(OSEMData.origin.longitude);
+	OSEMData.origin.latitude = htole64(OSEMData.origin.latitude);
+	OSEMData.origin.longitude = htole64(OSEMData.origin.longitude);
 	OSEMData.origin.altitude = htole32(OSEMData.origin.altitude);
 	OSEMData.origin.rotation = htole16(OSEMData.origin.rotation);
 	OSEMData.dateTimeStructValueID = htole16(OSEMData.dateTimeStructValueID);
@@ -190,7 +194,9 @@ ssize_t encodeOSEMMessage(
 	OSEMData.requirements.maxLateralDeviation = htole16(OSEMData.requirements.maxLateralDeviation);
 	OSEMData.requirements.maxYawDeviation = htole16(OSEMData.requirements.maxYawDeviation);
 	OSEMData.requirements.maxPositionError = htole16(OSEMData.requirements.maxPositionError);
-	OSEMData.requirements.heabTimeout = htole16(OSEMData.requirements.heabTimeout);
+	OSEMData.requirements.communicationTimeout = htole16(OSEMData.requirements.communicationTimeout);
+	OSEMData.requirements.monrRate = htole16(OSEMData.requirements.monrRate);
+	OSEMData.requirements.monr2Rate = htole16(OSEMData.requirements.monr2Rate);
 	OSEMData.requirements.maxMessageLength = htole32(OSEMData.requirements.maxMessageLength);
 
 	// Copy data from OSEM struct into the buffer
@@ -257,7 +263,6 @@ ssize_t decodeOSEMMessage(
 	const char debug) {
 
 	OSEMType OSEMData;
-	const char SizeDifference64bitTo48bit = 2;
 	const char *p = osemDataBuffer;
 	//const uint16_t ExpectedOSEMStructSize = (uint16_t) (sizeof (OSEMData) - sizeof (OSEMData.header)
 	//													- sizeof (OSEMData.footer.Crc));	//TO do check!!
@@ -313,7 +318,7 @@ ssize_t decodeOSEMMessage(
 			OSEMData.ids.systemControlCentreID = le32toh(OSEMData.ids.systemControlCentreID);
 			break;
 		case VALUE_ID_OSEM_ORIGIN_STRUCT:
-			if (contentLength != sizeof (OSEMData.origin) - 2*SizeDifference64bitTo48bit) {
+			if (contentLength != sizeof (OSEMData.origin)) {
 				fprintf(stderr, "Invalid OSEM origin struct length\n");
 				return MESSAGE_LENGTH_ERROR;
 			}
@@ -321,19 +326,18 @@ ssize_t decodeOSEMMessage(
 			OSEMData.originStructContentLength = contentLength;
 
 			// Special handling of 48 bit values
-			memcpy(&OSEMData.origin.latitude, p, sizeof (OSEMData.origin.latitude) - SizeDifference64bitTo48bit);
-			memcpy(&OSEMData.origin.longitude, p + sizeof (OSEMData.origin.latitude) - SizeDifference64bitTo48bit,
-				sizeof (OSEMData.origin.longitude) - SizeDifference64bitTo48bit);
-			memcpy(&OSEMData.origin.altitude, p + sizeof (OSEMData.origin.latitude) + sizeof (OSEMData.origin.longitude)
-				- 2*SizeDifference64bitTo48bit, sizeof (OSEMData.origin.altitude));
+			memcpy(&OSEMData.origin.latitude, p, sizeof (OSEMData.origin.latitude));
+			memcpy(&OSEMData.origin.longitude, p + sizeof (OSEMData.origin.latitude),
+				sizeof (OSEMData.origin.longitude));
+			memcpy(&OSEMData.origin.altitude, p + sizeof (OSEMData.origin.latitude) + sizeof (OSEMData.origin.longitude),
+				sizeof (OSEMData.origin.altitude));
 			memcpy(&OSEMData.origin.rotation, p + sizeof (OSEMData.origin.latitude) + sizeof (OSEMData.origin.longitude)
-				+ sizeof (OSEMData.origin.altitude) - 2*SizeDifference64bitTo48bit, sizeof (OSEMData.origin.rotation));
+				+ sizeof (OSEMData.origin.altitude), sizeof (OSEMData.origin.rotation));
 			memcpy(&OSEMData.origin.coordinateSystem, p + sizeof (OSEMData.origin.latitude) + sizeof (OSEMData.origin.longitude)
-				+ sizeof (OSEMData.origin.altitude) + sizeof (OSEMData.origin.rotation) - 2*SizeDifference64bitTo48bit,
-				sizeof (OSEMData.origin.coordinateSystem));
+				+ sizeof (OSEMData.origin.altitude) + sizeof (OSEMData.origin.rotation), sizeof (OSEMData.origin.coordinateSystem));
 
-			OSEMData.origin.latitude = le48toh(OSEMData.origin.latitude);
-			OSEMData.origin.longitude = le48toh(OSEMData.origin.longitude);
+			OSEMData.origin.latitude = le64toh(OSEMData.origin.latitude);
+			OSEMData.origin.longitude = le64toh(OSEMData.origin.longitude);
 			OSEMData.origin.altitude = le32toh(OSEMData.origin.altitude);
 			OSEMData.origin.rotation = le16toh(OSEMData.origin.rotation);
 			break;
@@ -361,7 +365,10 @@ ssize_t decodeOSEMMessage(
 			OSEMData.requirements.maxLateralDeviation = le16toh(OSEMData.requirements.maxLateralDeviation);
 			OSEMData.requirements.maxYawDeviation = le16toh(OSEMData.requirements.maxYawDeviation);
 			OSEMData.requirements.maxPositionError = le16toh(OSEMData.requirements.maxPositionError);
-			OSEMData.requirements.heabTimeout = le16toh(OSEMData.requirements.heabTimeout);
+			OSEMData.requirements.communicationTimeout = le16toh(OSEMData.requirements.communicationTimeout);
+			OSEMData.requirements.monrRate = le16toh(OSEMData.requirements.monrRate);
+			OSEMData.requirements.monr2Rate = le16toh(OSEMData.requirements.monr2Rate);
+			OSEMData.requirements.maxMessageLength= le32toh(OSEMData.requirements.maxMessageLength);
 			break;
 		case VALUE_ID_OSEM_TIME_SERVER_STRUCT:
 			if (contentLength != sizeof (OSEMData.timeserver)) {
@@ -410,7 +417,8 @@ ssize_t decodeOSEMMessage(
 			 "\n\tMax way deviation: %u [mm]\n\tMax lateral deviation: %u [mm]"
 			 "\n\tMax yaw deviation: %u [10 millidegrees]\n\tMax position error: %u [cm]"
 			 "\n\tHEAB timeout: %u [10 ms]\n\tTest mode: %u\n\tMONR rate: %u [1 Hz]"
-			 "\n\tMONR2 rate: %u [1 Hz]\n\tHEAB rate: %u [1 Hz]\n\tMax message length: %u [B]",
+			 "\n\tMONR2 rate: %u [1 Hz]\n\tMax message length: %u [B]\n\tEmergency behavior: %u"
+			 "\n\tConnection lost action: %u\n\tXYZ traj point resolution: %u",
 			 OSEMData.idStructValueID, OSEMData.idStructContentLength, OSEMData.ids.deviceID,
 			 OSEMData.ids.subDeviceID, OSEMData.ids.systemControlCentreID, OSEMData.originStructValueID,
 			 OSEMData.originStructContentLength, OSEMData.origin.latitude,
@@ -421,10 +429,11 @@ ssize_t decodeOSEMMessage(
 			 OSEMData.timestamp.leapSeconds, OSEMData.accReqStructValueID,
 			 OSEMData.accReqStructContentLength, OSEMData.requirements.maxWayDeviation,
 			 OSEMData.requirements.maxLateralDeviation, OSEMData.requirements.maxYawDeviation,
-			 OSEMData.requirements.maxPositionError, OSEMData.requirements.heabTimeout,
+			 OSEMData.requirements.maxPositionError, OSEMData.requirements.communicationTimeout,
 			 OSEMData.requirements.testMode, OSEMData.requirements.monrRate,
-			 OSEMData.requirements.monr2Rate, OSEMData.requirements.heabRate,
-			 OSEMData.requirements.maxMessageLength);
+			 OSEMData.requirements.monr2Rate, OSEMData.requirements.maxMessageLength,
+			 OSEMData.requirements.emergencyBehavior, OSEMData.requirements.comLost,
+			 OSEMData.requirements.xyzTrajPointResolution);
 			 // TODO print time server
 	}
 
@@ -489,11 +498,13 @@ void convertOSEMToHostRepresentation(
 	ObjectSettingsData->testMode = OSEMData->requirements.testMode;
 	ObjectSettingsData->rate.monr = OSEMData->requirements.monrRate / MONR_RATE_ONE_HZ_VALUE;
 	ObjectSettingsData->rate.monr2 = OSEMData->requirements.monr2Rate / MONR2_RATE_ONE_HZ_VALUE;
-	ObjectSettingsData->rate.heab = OSEMData->requirements.heabRate / HEAB_RATE_ONE_HZ_VALUE;
-	ObjectSettingsData->heabTimeout.tv_sec = OSEMData->requirements.heabTimeout / COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE;
-	ObjectSettingsData->heabTimeout.tv_usec = (OSEMData->requirements.heabTimeout
-			- ObjectSettingsData->heabTimeout.tv_sec * COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE)
+	ObjectSettingsData->communicationTimeout.tv_sec = OSEMData->requirements.communicationTimeout / COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE;
+	ObjectSettingsData->communicationTimeout.tv_usec = (OSEMData->requirements.communicationTimeout
+			- ObjectSettingsData->communicationTimeout.tv_sec * COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE)
 		/ COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE * 1000000;
+	ObjectSettingsData->emergencyBehavior = OSEMData->requirements.emergencyBehavior;
+	ObjectSettingsData->comLost = OSEMData->requirements.comLost;
+	ObjectSettingsData->xyzTrajPointResolution = OSEMData->requirements.xyzTrajPointResolution;
 	
 	// Convert timeserver
 	ObjectSettingsData->timeServer.ip = OSEMData->timeserver.ip;

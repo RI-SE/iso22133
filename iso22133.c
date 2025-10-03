@@ -145,9 +145,8 @@ typedef struct {
 	uint16_t StartTimeValueIdU16;
 	uint16_t StartTimeContentLengthU16;
 	uint32_t StartTimeU32;
-	uint16_t GPSWeekValueID;
-	uint16_t GPSWeekContentLength;
 	uint16_t GPSWeek;
+	uint16_t TrajID;
 	FooterType footer;
 } STRTType;						//27 bytes
 
@@ -603,8 +602,6 @@ ssize_t encodeSTRTMessage(const MessageHeaderType *inputHeader, const StartMessa
 
 	STRTData.StartTimeU32 = startData == NULL || startTime < 0 || !startData->isTimestampValid ?
 		GPS_SECOND_OF_WEEK_UNAVAILABLE_VALUE : (uint32_t) startTime;
-	STRTData.GPSWeekValueID = VALUE_ID_STRT_GPS_WEEK;
-	STRTData.GPSWeekContentLength = sizeof (STRTData.GPSWeek);
 	int32_t GPSWeek = getAsGPSWeek(&startData->startTime);
 
 	STRTData.GPSWeek = startData == NULL || GPSWeek < 0 || !startData->isTimestampValid ?
@@ -613,18 +610,14 @@ ssize_t encodeSTRTMessage(const MessageHeaderType *inputHeader, const StartMessa
 	if (debug) {
 		printf("STRT message:\n\tGPS second of week value ID: 0x%x\n\t"
 			   "GPS second of week content length: %u\n\tGPS second of week: %u [¼ ms]\n\t"
-			   "GPS week value ID: 0x%x\n\tGPS week content length: %u\n\t"
 			   "GPS week: %u\n", STRTData.StartTimeValueIdU16, STRTData.StartTimeContentLengthU16,
-			   STRTData.StartTimeU32, STRTData.GPSWeekValueID, STRTData.GPSWeekContentLength,
-			   STRTData.GPSWeek);
+			   STRTData.StartTimeU32, STRTData.GPSWeek);
 	}
 
 	// Swap from host endianness to little endian
 	STRTData.StartTimeValueIdU16 = htole16(STRTData.StartTimeValueIdU16);
 	STRTData.StartTimeContentLengthU16 = htole16(STRTData.StartTimeContentLengthU16);
 	STRTData.StartTimeU32 = htole32(STRTData.StartTimeU32);
-	STRTData.GPSWeekValueID = htole16(STRTData.GPSWeekValueID);
-	STRTData.GPSWeekContentLength = htole16(STRTData.GPSWeekContentLength);
 	STRTData.GPSWeek = htole16(STRTData.GPSWeek);
 
 	// Construct footer
@@ -698,7 +691,7 @@ ssize_t decodeSTRTMessage(
 	p += sizeof (STRTData.StartTimeContentLengthU16);
 	STRTData.StartTimeContentLengthU16 = le16toh(STRTData.StartTimeContentLengthU16);
 
-	if (STRTData.StartTimeContentLengthU16 != sizeof(STRTData.StartTimeU32)) {
+	if (STRTData.StartTimeContentLengthU16 != sizeof(STRTData.StartTimeU32) + sizeof(STRTData.GPSWeek) + sizeof(STRTData.TrajID)) {
 		fprintf(stderr, "StartTime Content Length %u differs from the expected length %lu\n",
 		STRTData.StartTimeContentLengthU16, sizeof(STRTData.StartTimeU32));
 		return MESSAGE_CONTENT_OUT_OF_RANGE;
@@ -708,28 +701,16 @@ ssize_t decodeSTRTMessage(
 	p += sizeof (STRTData.StartTimeU32);
 	STRTData.StartTimeU32 = le32toh(STRTData.StartTimeU32);
 
-	memcpy(&STRTData.GPSWeekValueID, p, sizeof (STRTData.GPSWeekValueID));
-	p += sizeof (STRTData.GPSWeekValueID);
-	STRTData.GPSWeekValueID = le16toh(STRTData.GPSWeekValueID);
-
-	if (STRTData.GPSWeekValueID != VALUE_ID_STRT_GPS_WEEK) {
-		fprintf(stderr, "GPSWeek Value Id differs from expected\n");
-		return MESSAGE_VALUE_ID_ERROR;
-	}
-
-	memcpy(&STRTData.GPSWeekContentLength, p, sizeof (STRTData.GPSWeekContentLength));
-	p += sizeof (STRTData.GPSWeekContentLength);
-	STRTData.GPSWeekContentLength = le16toh(STRTData.GPSWeekContentLength);
-
-	if (STRTData.GPSWeekContentLength != sizeof(STRTData.GPSWeek)) {
-		fprintf(stderr, "GPSWeek Content Length %u differs from the expected length %lu\n",
-		STRTData.GPSWeekContentLength, sizeof(STRTData.GPSWeek));
-		return MESSAGE_CONTENT_OUT_OF_RANGE;
-	}
 
 	memcpy(&STRTData.GPSWeek, p, sizeof (STRTData.GPSWeek));
 	p += sizeof (STRTData.GPSWeek);
 	STRTData.GPSWeek = le16toh(STRTData.GPSWeek);
+
+	memcpy(&STRTData.TrajID, p, sizeof (STRTData.TrajID));
+	p += sizeof (STRTData.TrajID);
+	STRTData.TrajID = le16toh(STRTData.TrajID);
+
+
 
 	// Decode footer
 	if ((retval =
@@ -754,12 +735,11 @@ ssize_t decodeSTRTMessage(
 		printf("AckReq = %d\n", STRTData.header.ackReqProtVer);
 		printf("MessageId = %d\n", STRTData.header.messageID);
 		printf("MessageLength = %d\n", STRTData.header.messageLength);
-		printf("StartTime value ID: 0x%x\n", STRTData.StartTimeValueIdU16);
-		printf("StartTime content length: %u\n", STRTData.StartTimeContentLengthU16);
+		printf("STRT value ID: 0x%x\n", STRTData.StartTimeValueIdU16);
+		printf("STRT content length: %u\n", STRTData.StartTimeContentLengthU16);
  		printf("StartTime value: %u\n", STRTData.StartTimeU32);
-		printf("GPSWeek value ID: 0x%x\n", STRTData.GPSWeekValueID);
-		printf("GPSWeek content length: %u\n", STRTData.GPSWeekContentLength);
-		printf("GPSWeek value: %u\n", STRTData.GPSWeek);
+		printf("GPSWeek: %u\n", STRTData.GPSWeek);
+		printf("TrajID: %u\n", STRTData.TrajID);
 	}
 
 
