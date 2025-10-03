@@ -607,7 +607,7 @@ ssize_t encodeSTRTMessage(const MessageHeaderType *inputHeader, const StartMessa
 	STRTData.GPSWeek = startData == NULL || GPSWeek < 0 || !startData->isTimestampValid ?
 				GPS_WEEK_UNAVAILABLE_VALUE : (uint16_t) GPSWeek;
 
-	if (true) {
+	if (debug) {
 		printf("STRT message:\n\tGPS second of week value ID: 0x%x\n\t"
 			   "GPS second of week content length: %u\n\tGPS second of week: %u [¼ ms]\n\t"
 			   "GPS week: %u\n", STRTData.StartTimeValueIdU16, STRTData.StartTimeContentLengthU16,
