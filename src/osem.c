@@ -31,7 +31,6 @@ ssize_t encodeOSEMMessage(
 		const size_t bufferLength,
 		const char debug) {
 
-	const char SizeDifference64bitTo48bit = 2;
 	OSEMType OSEMData;
 	struct tm *printableTime;
 	char *p = osemDataBuffer;
@@ -50,7 +49,7 @@ ssize_t encodeOSEMMessage(
 	memset(osemDataBuffer, 0, bufferLength);
 
 	// If buffer too small to hold OSEM data, generate an error
-	if (bufferLength < sizeof (OSEMData) - 2 * SizeDifference64bitTo48bit) {
+	if (bufferLength < sizeof (OSEMData)) {
 		fprintf(stderr, "Buffer too small to hold necessary OSEM data\n");
 		return -1;
 	}
@@ -59,7 +58,6 @@ ssize_t encodeOSEMMessage(
 	uint32_t msgLen = sizeof (HeaderType) + sizeof(OSEMIDType) + sizeof(OSEMOriginType)
 		+ sizeof(OSEMDateTimeType) + sizeof(OSEMAccuracyRequirementsType)
 		+ 4*2*sizeof(uint16_t) + sizeof (FooterType);
-	msgLen -= 2 * SizeDifference64bitTo48bit;
 	msgLen += timeServerUsed ? sizeof (OSEMTimeServerType) + 2*sizeof(uint16_t) : 0;
 	msgLen += idAssociationUsed ? sizeof(OSEMIDAssociationType) + 2*sizeof(uint16_t) : 0; // TODO handle id association
 
@@ -73,7 +71,7 @@ ssize_t encodeOSEMMessage(
 	OSEMData.ids.systemControlCentreID = inputHeader->transmitterID;
 
 	OSEMData.originStructValueID = VALUE_ID_OSEM_ORIGIN_STRUCT;
-	OSEMData.originStructContentLength = sizeof (OSEMData.origin) - 2 * SizeDifference64bitTo48bit;
+	OSEMData.originStructContentLength = sizeof (OSEMData.origin);
 	OSEMData.origin.latitude = objectSettings->coordinateSystemOrigin.isLatitudeValid ?
 		(int64_t)(objectSettings->coordinateSystemOrigin.latitude_deg * LATITUDE_ONE_DEGREE_VALUE)
 			  : LATITUDE_UNAVAILABLE_VALUE;
@@ -213,10 +211,10 @@ ssize_t encodeOSEMMessage(
 	memcpy(p, &OSEMData.originStructValueID, sizeof (OSEMData.originStructValueID)
 		+ sizeof (OSEMData.originStructContentLength));
 	p += sizeof (OSEMData.originStructValueID) + sizeof (OSEMData.originStructContentLength);
-	memcpy(p, &OSEMData.origin.latitude, sizeof (OSEMData.origin.latitude) - SizeDifference64bitTo48bit);
-	p += sizeof (OSEMData.origin.latitude) - SizeDifference64bitTo48bit;
-	memcpy(p, &OSEMData.origin.longitude, sizeof (OSEMData.origin.longitude) - SizeDifference64bitTo48bit);
-	p += sizeof (OSEMData.origin.longitude) - SizeDifference64bitTo48bit;
+	memcpy(p, &OSEMData.origin.latitude, sizeof (OSEMData.origin.latitude));
+	p += sizeof (OSEMData.origin.latitude);
+	memcpy(p, &OSEMData.origin.longitude, sizeof (OSEMData.origin.longitude));
+	p += sizeof (OSEMData.origin.longitude);
 	memcpy(p, &OSEMData.origin.altitude, sizeof (OSEMData.origin.altitude)
 		+ sizeof (OSEMData.origin.rotation) + sizeof (OSEMData.origin.coordinateSystem));
 	p += sizeof (OSEMData.origin.altitude) + sizeof (OSEMData.origin.rotation)
