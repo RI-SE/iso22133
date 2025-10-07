@@ -71,7 +71,7 @@ typedef struct {
 typedef struct {
 	double_t monr;
 	double_t monr2;
-	double_t heab;
+	double_t heabTimeout;
 } OSEMMonrRate; 
 typedef struct {
 		uint32_t ip;

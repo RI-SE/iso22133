@@ -106,7 +106,7 @@ ssize_t encodeOSEMMessage(
 		* MAX_YAW_DEVIATION_ONE_DEGREE_VALUE);
 	OSEMData.requirements.maxPositionError = (uint16_t)(objectSettings->minRequiredPositioningAccuracy_m
 		* MIN_POSITIONING_ACCURACY_ONE_METER_VALUE);
-	OSEMData.requirements.communicationTimeout = (uint16_t)((objectSettings->communicationTimeout.tv_sec
+	OSEMData.requirements.heabTimeout = (uint16_t)((objectSettings->communicationTimeout.tv_sec
 		 + objectSettings->communicationTimeout.tv_usec / 1000000.0) * COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE);
 	OSEMData.requirements.testMode = (uint8_t)(objectSettings->testMode);
 	OSEMData.requirements.monrRate = (uint16_t)(objectSettings->rate.monr * MONR_RATE_ONE_HZ_VALUE);
@@ -155,7 +155,7 @@ ssize_t encodeOSEMMessage(
 			 OSEMData.timestamp.leapSeconds, OSEMData.accReqStructValueID,
 			 OSEMData.accReqStructContentLength, OSEMData.requirements.maxWayDeviation,
 			 OSEMData.requirements.maxLateralDeviation, OSEMData.requirements.maxYawDeviation,
-			 OSEMData.requirements.maxPositionError, OSEMData.requirements.communicationTimeout,
+			 OSEMData.requirements.maxPositionError, OSEMData.requirements.heabTimeout,
 			 OSEMData.requirements.testMode, OSEMData.requirements.monrRate,
 			 OSEMData.requirements.monr2Rate, OSEMData.requirements.maxMessageLength,
 			 OSEMData.requirements.emergencyBehavior, OSEMData.requirements.comLost,
@@ -192,7 +192,7 @@ ssize_t encodeOSEMMessage(
 	OSEMData.requirements.maxLateralDeviation = htole16(OSEMData.requirements.maxLateralDeviation);
 	OSEMData.requirements.maxYawDeviation = htole16(OSEMData.requirements.maxYawDeviation);
 	OSEMData.requirements.maxPositionError = htole16(OSEMData.requirements.maxPositionError);
-	OSEMData.requirements.communicationTimeout = htole16(OSEMData.requirements.communicationTimeout);
+	OSEMData.requirements.heabTimeout = htole16(OSEMData.requirements.heabTimeout);
 	OSEMData.requirements.monrRate = htole16(OSEMData.requirements.monrRate);
 	OSEMData.requirements.monr2Rate = htole16(OSEMData.requirements.monr2Rate);
 	OSEMData.requirements.maxMessageLength = htole32(OSEMData.requirements.maxMessageLength);
@@ -363,7 +363,7 @@ ssize_t decodeOSEMMessage(
 			OSEMData.requirements.maxLateralDeviation = le16toh(OSEMData.requirements.maxLateralDeviation);
 			OSEMData.requirements.maxYawDeviation = le16toh(OSEMData.requirements.maxYawDeviation);
 			OSEMData.requirements.maxPositionError = le16toh(OSEMData.requirements.maxPositionError);
-			OSEMData.requirements.communicationTimeout = le16toh(OSEMData.requirements.communicationTimeout);
+			OSEMData.requirements.heabTimeout = le16toh(OSEMData.requirements.heabTimeout);
 			OSEMData.requirements.monrRate = le16toh(OSEMData.requirements.monrRate);
 			OSEMData.requirements.monr2Rate = le16toh(OSEMData.requirements.monr2Rate);
 			OSEMData.requirements.maxMessageLength= le32toh(OSEMData.requirements.maxMessageLength);
@@ -427,7 +427,7 @@ ssize_t decodeOSEMMessage(
 			 OSEMData.timestamp.leapSeconds, OSEMData.accReqStructValueID,
 			 OSEMData.accReqStructContentLength, OSEMData.requirements.maxWayDeviation,
 			 OSEMData.requirements.maxLateralDeviation, OSEMData.requirements.maxYawDeviation,
-			 OSEMData.requirements.maxPositionError, OSEMData.requirements.communicationTimeout,
+			 OSEMData.requirements.maxPositionError, OSEMData.requirements.heabTimeout,
 			 OSEMData.requirements.testMode, OSEMData.requirements.monrRate,
 			 OSEMData.requirements.monr2Rate, OSEMData.requirements.maxMessageLength,
 			 OSEMData.requirements.emergencyBehavior, OSEMData.requirements.comLost,
@@ -496,8 +496,8 @@ void convertOSEMToHostRepresentation(
 	ObjectSettingsData->testMode = OSEMData->requirements.testMode;
 	ObjectSettingsData->rate.monr = OSEMData->requirements.monrRate / MONR_RATE_ONE_HZ_VALUE;
 	ObjectSettingsData->rate.monr2 = OSEMData->requirements.monr2Rate / MONR2_RATE_ONE_HZ_VALUE;
-	ObjectSettingsData->communicationTimeout.tv_sec = OSEMData->requirements.communicationTimeout / COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE;
-	ObjectSettingsData->communicationTimeout.tv_usec = (OSEMData->requirements.communicationTimeout
+	ObjectSettingsData->communicationTimeout.tv_sec = OSEMData->requirements.heabTimeout / COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE;
+	ObjectSettingsData->communicationTimeout.tv_usec = (OSEMData->requirements.heabTimeout
 			- ObjectSettingsData->communicationTimeout.tv_sec * COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE)
 		/ COMMUNICATION_TIMEOUT_ONE_SECOND_VALUE * 1000000;
 	ObjectSettingsData->emergencyBehavior = OSEMData->requirements.emergencyBehavior;
