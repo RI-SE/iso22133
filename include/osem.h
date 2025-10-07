@@ -39,7 +39,7 @@ typedef struct {
 	uint16_t maxLateralDeviation;
 	uint16_t maxYawDeviation;
 	uint16_t maxPositionError;
-	uint16_t communicationTimeout;
+	uint16_t heabTimeout;
 	uint8_t testMode;
 	uint16_t monrRate;
 	uint16_t monr2Rate;

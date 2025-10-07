@@ -36,7 +36,7 @@ protected:
 		settings.testMode = TEST_MODE_PREPLANNED;
 		settings.rate.monr = 4;
 		settings.rate.monr2 = 5;
-		settings.rate.heab = 6;
+		settings.rate.heabTimeout = 6;
 		settings.emergencyBehavior = EMERGENCY_BEHAVIOR_EMERGENCY_STOP;
 		settings.comLost = COM_LOST_EMERGENCY_STOP;
 		settings.xyzTrajPointResolution = TRAJ_POINT_RESOLUTION_mm;
@@ -238,7 +238,7 @@ TEST_F(EncodeOSEM, MinPosAcc)
 	EXPECT_EQ(accReq[11], '\x00');
 }
 
-TEST_F(EncodeOSEM, communicationTimeout)
+TEST_F(EncodeOSEM, heabTimeout)
 {
 	// 1.020 sec = 102 cs = 0x0066
 	EXPECT_EQ(accReq[12], '\x66');
@@ -522,7 +522,7 @@ TEST_F(DecodeOSEM, MinPositionAccuracy)
 	EXPECT_NEAR(settings.minRequiredPositioningAccuracy_m, 0.12, 0.01);
 }
 
-TEST_F(DecodeOSEM, communicationTimeout)
+TEST_F(DecodeOSEM, heabTimeout)
 {
 	EXPECT_EQ(settings.communicationTimeout.tv_sec, 1);
 }
