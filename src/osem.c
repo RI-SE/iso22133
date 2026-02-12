@@ -24,7 +24,7 @@
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to the buffer, or -1 in case of an error
  */
-ssize_t encodeOSEMMessage(
+size_t encodeOSEMMessage(
 		const MessageHeaderType *inputHeader,	
 		const ObjectSettingsType* objectSettings,
 		char *osemDataBuffer,
@@ -255,7 +255,7 @@ ssize_t encodeOSEMMessage(
  * \param debug Flag for enabling debugging
  * \return Value according to ::ISOMessageReturnValue
  */
-ssize_t decodeOSEMMessage(
+size_t decodeOSEMMessage(
 	ObjectSettingsType * objectSettingsData,
 	const char *osemDataBuffer, const size_t bufferLength,
 	const char debug) {
@@ -273,7 +273,7 @@ ssize_t decodeOSEMMessage(
 		return ISO_FUNCTION_ERROR;
 	}
 
-	ssize_t retval = MESSAGE_OK;
+	size_t retval = MESSAGE_OK;
 
 	memset(objectSettingsData, 0, sizeof (*objectSettingsData));
 	memset(&OSEMData, 0, sizeof (OSEMData));

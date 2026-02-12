@@ -10,6 +10,9 @@ extern "C" {
 #include <stddef.h>
 #if defined __linux || defined __APPLE__
 	#include <sys/time.h>
+#else
+#include <WinSock2.h>
+#include "winsock.h"
 #endif
 
 

@@ -28,7 +28,7 @@ static DebugStrings_t TRAJInfoDescription = 		{"Trajectory info",	"",	&printU8};
  *		ENOBUFS		if supplied buffer is too small to hold header
  *		EMSGSIZE	if trajectory name is too long
  */
-ssize_t encodeTRAJMessageHeader(
+size_t encodeTRAJMessageHeader(
 	const MessageHeaderType *inputHeader,
 	const uint16_t trajectoryID,
 	const TrajectoryInfoType trajectoryInfo,
@@ -141,7 +141,7 @@ ssize_t encodeTRAJMessageHeader(
  *		ENOBUFS		if supplied buffer is too small to hold header
  *		EMSGSIZE	if trajectory name is too long
  */
-ssize_t decodeTRAJMessageHeader(
+size_t decodeTRAJMessageHeader(
 		TrajectoryHeaderType* trajHeader,
 		const char* trajDataBuffer,
 		const size_t bufferLength,
@@ -149,10 +149,10 @@ ssize_t decodeTRAJMessageHeader(
 
 	TRAJHeaderType TRAJHeaderData;
 	const char *p = trajDataBuffer;
-	ssize_t retval = MESSAGE_OK;
+	size_t retval = MESSAGE_OK;
 	uint16_t valueID = 0;
 	uint16_t contentLength = 0;
-	ssize_t expectedContentLength = 0;
+	size_t expectedContentLength = 0;
 
 	if (trajDataBuffer == NULL || trajHeader == NULL) {
 		errno = EINVAL;
@@ -269,7 +269,7 @@ enum ISOMessageReturnValue convertTRAJHeaderToHostRepresentation(TRAJHeaderType*
  *		EINVAL		if one of the input parameters are invalid
  *		ENOBUFS		if supplied buffer is too small to hold point
  */
-ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const CartesianPosition position,
+size_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const CartesianPosition position,
 							   const SpeedType speed, const AccelerationType acceleration,
 							   const float curvature, char *trajDataBufferPointer,
 							   const size_t remainingBufferLength, const char debug) {
@@ -398,13 +398,13 @@ ssize_t encodeTRAJMessagePoint(const struct timeval *pointTimeFromStart, const C
  *		EINVAL		if one of the input parameters are invalid
  *		ENOBUFS		if supplied buffer is too small to hold footer
  */
-ssize_t encodeTRAJMessageFooter(
+size_t encodeTRAJMessageFooter(
 	char *trajDataBuffer,
 	const size_t remainingBufferLength,
 	const char debug) {
 
 	TRAJFooterType TRAJData;
-	ssize_t dataLen = 0;
+	size_t dataLen = 0;
 	char* p = trajDataBuffer;
 
 	if (remainingBufferLength < sizeof (TRAJFooterType)) {
@@ -457,15 +457,15 @@ ssize_t encodeTRAJMessageFooter(
  *		ENOBUFS		if supplied buffer is too small to hold header
  *		EMSGSIZE	if trajectory name is too long
  */
-ssize_t decodeTRAJMessagePoint(
+size_t decodeTRAJMessagePoint(
 		TrajectoryWaypointType* wayPoint,
 		const char* trajDataBuffer,
 		const char debug) {
 
 	TRAJPointType TRAJPointData;
 	const char *p = trajDataBuffer;
-	ssize_t retval = MESSAGE_OK;
-	const ssize_t expectedContentLength = sizeof (TRAJPointData)
+	size_t retval = MESSAGE_OK;
+	const size_t expectedContentLength = sizeof (TRAJPointData)
 		- sizeof (TRAJPointData.trajectoryPointValueID)
 		- sizeof (TRAJPointData.trajectoryPointContentLength);
 

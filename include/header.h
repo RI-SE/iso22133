@@ -20,7 +20,7 @@ typedef struct {
 } HeaderType;
 #pragma pack(pop)
 
-enum ISOMessageReturnValue decodeISOHeader(const char *MessageBuffer, const size_t length,
+enum ISOMessageReturnValue ISO22133_API decodeISOHeader(const char *MessageBuffer, const size_t length,
 											 HeaderType * HeaderData, const char debug);
 
 HeaderType buildISOHeader(enum ISOMessageID id, const MessageHeaderType *input, uint32_t messageLength, const char debug);

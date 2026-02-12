@@ -58,6 +58,7 @@ typedef struct {
 /*! OSEM ID association struct */
 typedef struct {
 	// TODO
+	uint32_t a; // Compiling empty struct threw an error
 } OSEMIDAssociationType;
 
 /*! OSEM message */

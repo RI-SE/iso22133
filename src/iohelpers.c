@@ -2,7 +2,11 @@
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
-#include <endian.h>
+#ifdef _WIN64 
+	#include "defines.h"
+#else 
+	#include <endian.h>
+#endif
 
 void printContent(
 		const uint16_t valueID,

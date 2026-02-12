@@ -6,7 +6,7 @@
 #define SWIG_PYTHON_STRICT_BYTE_CHAR
 %}
 typedef double double_t;
-typedef long int ssize_t;
+typedef long int size_t;
 
 struct timeval {
 long int tv_sec;

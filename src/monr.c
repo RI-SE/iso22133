@@ -21,7 +21,7 @@
  * \param debug Flag for enabling of debugging
  * \return Value according to ::ISOMessageReturnValue
  */
-ssize_t encodeMONRMessage(const MessageHeaderType *inputHeader,
+size_t encodeMONRMessage(const MessageHeaderType *inputHeader,
 						  const struct timeval *objectTime, const CartesianPosition position,
 						  const SpeedType speed, const AccelerationType acceleration,
 						  const unsigned char driveDirection, const unsigned char objectState,
@@ -180,7 +180,7 @@ ssize_t encodeMONRMessage(const MessageHeaderType *inputHeader,
  * \param debug Flag for enabling of debugging
  * \return Number of bytes decoded, or negative value according to ::ISOMessageReturnValue
  */
-ssize_t decodeMONRMessage(
+size_t decodeMONRMessage(
 	const char *monrDataBuffer,
 	const size_t bufferLength,
 	const struct timeval currentTime,
@@ -193,7 +193,7 @@ ssize_t decodeMONRMessage(
 														- sizeof (MONRData.footer.Crc) -
 														sizeof (MONRData.monrStructValueID)
 														- sizeof (MONRData.monrStructContentLength));
-	ssize_t retval = MESSAGE_OK;
+	size_t retval = MESSAGE_OK;
 
 	if (monitorData == NULL || monrDataBuffer == NULL) {
 		errno = EINVAL;

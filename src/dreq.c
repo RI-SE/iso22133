@@ -1,9 +1,22 @@
 #include <stdio.h>
 #include <string.h>
-#include <endian.h>
 #include <errno.h>
 #include "iso22133.h"
 #include "dreq.h"
+
+#ifdef _WIN64 
+	#include <windows.h>
+	  // Define endian conversion functions for Windows
+	#define htole16(x) (x)
+	#define htole32(x) (x)
+	#define htole64(x) (x)
+	#define le16toh(x) (x)
+	#define le32toh(x) (x)
+	#define le64toh(x) (x)
+#else 
+	#include <endian.h>
+#endif
+
 
 /*!
  * \brief encodeDREQMessage Constructs an ISO DREQ message based on specified command (DREQ contains no message data)
@@ -13,7 +26,7 @@
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeDREQMessage(const MessageHeaderType *inputHeader,
+size_t encodeDREQMessage(const MessageHeaderType *inputHeader,
 	char *dreqDataBuffer,
 	const size_t bufferLength,
 	const char debug)
@@ -51,7 +64,7 @@ ssize_t encodeDREQMessage(const MessageHeaderType *inputHeader,
  *		::ISOMessageReturnValue if an error occurred.
  */
 
-ssize_t decodeDREQMessage(
+size_t decodeDREQMessage(
 		const char* dreqDataBuffer,
 		const size_t bufferLength,
 		TestObjectDiscoveryRequestType *testObjectDiscoveryRequestData,
@@ -59,10 +72,10 @@ ssize_t decodeDREQMessage(
 
 	DREQType DREQData;
 	const char *p = dreqDataBuffer;
-	ssize_t retval = MESSAGE_OK;
+	size_t retval = MESSAGE_OK;
 	uint16_t valueID = 0;
 	uint16_t contentLength = 0;
-	ssize_t expectedContentLength = 0;
+	size_t expectedContentLength = 0;
 
 	if (dreqDataBuffer == NULL || testObjectDiscoveryRequestData == NULL) {
 	 	errno = EINVAL;

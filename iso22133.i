@@ -23,7 +23,7 @@
 #%javaconst(1);
 
 typedef double double_t;
-typedef long int ssize_t;
+typedef long int size_t;
 
 %include "typemaps.i"
 %include "stdint.i"

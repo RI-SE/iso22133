@@ -1,10 +1,21 @@
 #include <stdio.h>
 #include <string.h>
-#include <endian.h>
 #include <errno.h>
 #include "iso22133.h"
 #include "dres.h"
-
+#ifdef _WIN64 
+#include "defines.h"
+	//#include <windows.h>
+	//  // Define endian conversion functions for Windows
+	//#define htole16(x) (x)
+	//#define htole32(x) (x)
+	//#define htole64(x) (x)
+	//#define le16toh(x) (x)
+	//#define le32toh(x) (x)
+	//#define le64toh(x) (x)
+#else 
+	#include <endian.h>
+#endif
 /*!
  * \brief encodeDRESMessage Constructs an ISO DRES message based on specified command
  * \param inputHeader data to create header with
@@ -14,7 +25,7 @@
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeDRESMessage(
+size_t encodeDRESMessage(
 	const MessageHeaderType *inputHeader,
 	const TestObjectDiscoveryType *testObjectDiscoveryData,
 	char *dresDataBuffer,
@@ -115,7 +126,7 @@ ssize_t encodeDRESMessage(
  *		::ISOMessageReturnValue if an error occurred.
  */
 
-ssize_t decodeDRESMessage(
+size_t decodeDRESMessage(
 		const char* dresDataBuffer,
 		const size_t bufferLength,
 		TestObjectDiscoveryType *testObjectDiscoveryData,
@@ -123,10 +134,10 @@ ssize_t decodeDRESMessage(
 
 	DRESType DRESData;
 	const char *p = dresDataBuffer;
-	ssize_t retval = MESSAGE_OK;
+	size_t retval = MESSAGE_OK;
 	uint16_t valueID = 0;
 	uint16_t contentLength = 0;
-	ssize_t expectedContentLength = 0;
+	size_t expectedContentLength = 0;
 
 	if (dresDataBuffer == NULL || testObjectDiscoveryData == NULL) {
 	 	errno = EINVAL;

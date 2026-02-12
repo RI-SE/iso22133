@@ -1,9 +1,20 @@
 #include "ostm.h"
 #include <stdio.h>
 #include <string.h>
-#include <endian.h>
 #include <errno.h>
 #include "iso22133.h"
+#ifdef _WIN64 
+	#include <windows.h>
+	  // Define endian conversion functions for Windows
+	#define htole16(x) (x)
+	#define htole32(x) (x)
+	#define htole64(x) (x)
+	#define le16toh(x) (x)
+	#define le32toh(x) (x)
+	#define le64toh(x) (x)
+#else 
+	#include <endian.h>
+#endif
 
 /*!
  * \brief encodeOSTMMessage Constructs an ISO OSTM message based on specified command
@@ -14,7 +25,7 @@
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeOSTMMessage(
+size_t encodeOSTMMessage(
 	const MessageHeaderType *inputHeader,
 	const enum ObjectCommandType command,
 	char *ostmDataBuffer,
@@ -76,7 +87,7 @@ ssize_t encodeOSTMMessage(
  * \return Size of decoded message, or negative according to
  *		::ISOMessageReturnValue if an error occurred.
  */
-ssize_t decodeOSTMMessage(
+size_t decodeOSTMMessage(
 		const char* ostmDataBuffer,
 		const size_t bufferLength,
 		enum ObjectCommandType* command,
@@ -84,10 +95,10 @@ ssize_t decodeOSTMMessage(
 
 	OSTMType OSTMData;
 	const char *p = ostmDataBuffer;
-	ssize_t retval = MESSAGE_OK;
+	size_t retval = MESSAGE_OK;
 	uint16_t valueID = 0;
 	uint16_t contentLength = 0;
-	ssize_t expectedContentLength = 0;
+	size_t expectedContentLength = 0;
 
 	if (ostmDataBuffer == NULL || command == NULL) {
 		errno = EINVAL;

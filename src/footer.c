@@ -2,9 +2,13 @@
 #include "defines.h"
 
 #include <string.h>
-#include <endian.h>
 #include <stdio.h>
 
+#ifdef _WIN64 
+	#include <windows.h>
+#else 
+	#include <endian.h>
+#endif
 
 static int8_t isCRCVerificationEnabled = DEFAULT_CRC_CHECK_ENABLED;
 

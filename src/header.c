@@ -3,7 +3,11 @@
 #include "footer.h"
 
 #include <string.h>
-#include <endian.h>
+#ifdef _WIN64 
+	#include <windows.h>
+#else 
+	#include <endian.h>
+#endif
 #include <stdio.h>
 
 /*!

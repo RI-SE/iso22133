@@ -35,7 +35,7 @@ target_include_directories(${ISO22133_TARGET} PUBLIC
 	$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 
-target_link_libraries(${ISO22133_TARGET} m)
+#target_link_libraries(${ISO22133_TARGET} m) #library not existing on windows?
 
 set_property(TARGET ${ISO22133_TARGET} PROPERTY
 	PUBLIC_HEADER ${CMAKE_CURRENT_SOURCE_DIR}/iso22133.h

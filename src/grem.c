@@ -22,7 +22,7 @@ static DebugStrings_t GREMPayloadDescription = {"Payload Data",	"", &printU8};
  * \param debug Flag for enabling of debugging
  * \return value according to ::ISOMessageReturnValue
  */
-ssize_t decodeGREMMessage(
+size_t decodeGREMMessage(
 		const char *gremDataBuffer,
 		const size_t bufferLength,
 		GeneralResponseMessageType* gremData,
@@ -30,10 +30,10 @@ ssize_t decodeGREMMessage(
 
 	GREMType GREMdata;
 	const char *p = gremDataBuffer;
-	ssize_t retval = MESSAGE_OK;
+	size_t retval = MESSAGE_OK;
 	uint16_t valueID = 0;
 	uint16_t contentLength = 0;
-	ssize_t expectedContentLength = 0;
+	size_t expectedContentLength = 0;
 
 	if (gremDataBuffer == NULL || gremData == NULL) {
 		errno = EINVAL;
@@ -178,7 +178,7 @@ enum ISOMessageReturnValue convertGREMoHostRepresentation(GREMType* GREMdata,
  * \param debug Flag for enabling debugging
  * \return Number of bytes written to buffer, or -1 in case of error
  */
-ssize_t encodeGREMMessage(
+size_t encodeGREMMessage(
 		const MessageHeaderType *inputHeader,
 		const GeneralResponseMessageType* gremObjectData,
 		char* gremDataBuffer,
