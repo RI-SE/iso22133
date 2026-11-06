@@ -20,7 +20,9 @@ set(ISO22133_TARGET ${TARGET_NAMESPACE}${PROJECT_NAME})
 include(GNUInstallDirs)
 # When building all packages in util top CMakeLists not only this lib we need to set this cmake policy to OLD due to target namespace are not unique in the same build tree in util
 # ref for info about the policy https://cmake.org/cmake/help/latest/policy/CMP0002.html 
-cmake_policy(SET CMP0002 OLD)
+if(CMAKE_VERSION VERSION_LESS 4.0)
+    cmake_policy(SET CMP0002 OLD)
+endif()
 
 file(GLOB SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/src/*.c)
 add_library(${ISO22133_TARGET} SHARED
@@ -66,7 +68,7 @@ if (BUILD_TESTING AND "${CMAKE_SYSTEM_PROCESSOR}" STREQUAL "x86_64" AND ("${CMAK
 	)
 	FetchContent_Declare(googletest
 		GIT_REPOSITORY https://github.com/google/googletest.git
-		GIT_TAG release-1.11.0
+		GIT_TAG v1.15.2
 	)
 	FetchContent_MakeAvailable(googletest)
 
